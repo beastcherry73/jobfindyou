@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ResumeAI — Resume Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+  :root {
+    --bg: #080b12;
+    --surface: #0f1420;
+    --card: #131926;
+    --border: #1e2535;
+    --border-light: #252d40;
+    --text: #e4e8f0;
+    --muted: #6b7590;
+    --accent: #4f8ef7;
+    --accent2: #7c5cfc;
+    --good: #34d399;
+    --bad: #f87171;
+    --gradient: linear-gradient(135deg, #4f8ef7, #7c5cfc);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+    background: rgba(8,11,18,0.85);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 20px; }
+  .nav-links a {
+    font-size: 0.88rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover, .nav-links a.active { color: var(--text); }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 60px 20px 40px;
+  }
+  .hero-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    border: 1px solid rgba(124,92,252,0.3);
+    background: rgba(124,92,252,0.08);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .hero h1 span {
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero p { color: var(--muted); font-size: 0.95rem; }
+
+  /* CHOICE SCREEN */
+  #choiceScreen {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+  .choice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 560px) { .choice-grid { grid-template-columns: 1fr; } }
+
+  .choice-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 24px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    text-align: center;
+  }
+  .choice-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(79,142,247,0.12);
+  }
+  .choice-icon { font-size: 2.5rem; margin-bottom: 16px; }
+  .choice-card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+  }
+  .choice-card p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+  .choice-tag {
+    display: inline-block;
+    margin-top: 14px;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(79,142,247,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(79,142,247,0.2);
+  }
+
+  /* FORMS */
+  .form-screen {
+    display: none;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid var(--border-light);
+    color: var(--muted);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+    font-family: 'Inter', sans-serif;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .back-btn:hover { color: var(--text); border-color: var(--text); }
+
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 16px;
+  }
+  .form-card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 7px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: #0a0e18;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .field textarea { min-height: 80px; resize: vertical; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 500px) { .field-row { grid-template-columns: 1fr; } }
+
+  .add-btn {
+    background: none;
+    border: 1px dashed var(--border-light);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.83rem;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.2s;
+    margin-top: 4px;
+  }
+  .add-btn:hover { border-color: var(--accent); }
+
+  .entry-block {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .remove-btn {
+    position: absolute; top: 12px; right: 12px;
+    background: none; border: none;
+    color: var(--bad); cursor: pointer; font-size: 1rem;
+  }
+
+  .generate-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--gradient);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: opacity 0.2s;
+  }
+  .generate-btn:hover { opacity: 0.9; }
+  .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* IMPROVE FORM */
+  .drop-zone {
+    border: 2px dashed var(--border-light);
+    border-radius: 12px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .drop-zone:hover { border-color: var(--accent); background: rgba(79,142,247,0.05); }
+  .drop-zone input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-zone p { color: var(--muted); font-size: 0.9rem; }
+  .file-name { color: var(--accent); font-size: 0.88rem; margin-top: 6px; font-weight: 500; }
+
+  /* LOADING */
+  .loading {
+    display: none; text-align: center; padding: 40px; color: var(--muted);
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border-light);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RESULT */
+  #resultScreen {
+    display: none;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px 80px;
+  }
+  .result-actions {
+    display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .result-actions button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .btn-primary {
+    background: var(--gradient); color: white; border: none;
+  }
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--border-light);
+    color: var(--text);
+    transition: border-color 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+
+  /* simulated A4 paper sheet on screen */
+  .resume-output {
+    background: #ffffff;
+    color: #1e293b;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 20mm 15mm;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    font-family: 'Inter', sans-serif;
+    width: 100%;
+    max-width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    white-space: normal;
+    text-align: left;
+  }
+  .resume-output h1 {
+    font-size: 1.8rem;
+    color: #0f172a;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 6px;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .resume-output h1 + p, .resume-output p.contact-info {
+    text-align: center;
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-top: -4px;
+    margin-bottom: 24px;
+  }
+  .resume-output h2 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin: 22px 0 10px;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid #e2e8f0;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .resume-output h3 {
+    font-size: 0.92rem;
+    color: #1e293b;
+    margin: 12px 0 4px;
+    font-weight: 600;
+  }
+  .resume-output ul {
+    padding-left: 20px;
+    margin-bottom: 12px;
+  }
+  .resume-output li {
+    margin-bottom: 4px;
+    color: #334155;
+    font-size: 0.85rem;
+  }
+  .resume-output p {
+    color: #334155;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+  }
+
+  .error-box {
+    display: none;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.3);
+    color: var(--bad);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 20mm 15mm;
+  }
+
+  @media print {
+    body, html {
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+    nav, .hero, .result-actions, .back-btn, #choiceScreen, .form-screen, .error-box, .loading, #scratchLoading, #improveLoading {
+      display: none !important;
+    }
+    #resultScreen {
+      display: block !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+    }
+    .resume-output {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+    .resume-output h1, .resume-output h2, .resume-output h3, .resume-output p, .resume-output li {
+      color: #000000 !important;
+    }
+    .resume-output h2 {
+      border-bottom: 1.5px solid #000000 !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="/">ResumeAI</a>
+  <div class="nav-links">
+    <a href="/">Analyze</a>
+    <a href="/generate" class="active">Generate</a>
+    <span style="font-size:0.82rem; color:var(--muted); border-left: 1px solid var(--border); padding-left: 15px; margin-left: 5px;">Hi, {{ user_name }}</span>
+    <form action="/logout" method="post" style="display:inline">
+      <button type="submit" style="background: none; border: none; color: var(--accent); font-size: 0.82rem; font-weight: 600; cursor: pointer; margin-left: 10px;">Log out</button>
+    </form>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">Resume Generator</div>
+  <h1>Build a resume that <span>gets noticed</span></h1>
+  <p>Create a polished, ATS-friendly resume from scratch or let AI upgrade your existing one.</p>
+</div>
+
+<!-- CHOICE SCREEN -->
+<div id="choiceScreen">
+  <div class="choice-grid">
+    <div class="choice-card" onclick="showScreen('scratch')">
+      <div class="choice-icon">✨</div>
+      <h3>Build from Scratch</h3>
+      <p>Fill in your details and let AI craft a polished, professional resume for you.</p>
+      <span class="choice-tag">Best for new resumes</span>
+    </div>
+    <div class="choice-card" onclick="showScreen('improve')">
+      <div class="choice-icon">⚡</div>
+      <h3>Improve Existing</h3>
+      <p>Upload your current resume and AI will rewrite and enhance it significantly.</p>
+      <span class="choice-tag">Best for upgrades</span>
+    </div>
+  </div>
+</div>
+
+<!-- SCRATCH FORM -->
+<div class="form-screen" id="scratchScreen">
+  <button class="back-btn" onclick="showChoice()">← Back</button>
+  <div class="error-box" id="scratchError"></div>
+
+  <div class="form-card">
+    <h3>Personal Info</h3>
+    <div class="field-row">
+      <div class="field"><label>Full Name</label><input type="text" id="fullName" placeholder="Venu Babu"></div>
+      <div class="field"><label>Job Title</label><input type="text" id="jobTitle" placeholder="Senior IAM Consultant"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Email</label><input type="email" id="email" placeholder="you@email.com"></div>
+      <div class="field"><label>Phone</label><input type="text" id="phone" placeholder="+91 ..."></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Location</label><input type="text" id="location" placeholder="Hyderabad, India"></div>
+      <div class="field"><label>LinkedIn / Portfolio</label><input type="text" id="linkedin" placeholder="linkedin.com/in/..."></div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>Professional Summary</h3>
+    <div class="field">
+      <label>Brief summary of who you are</label>
+      <textarea id="summary" placeholder="Senior IAM consultant with 18+ years of experience..."></textarea>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>Work Experience</h3>
+    <div id="expEntries">
+      <div class="entry-block">
+        <div class="field-row">
+          <div class="field"><label>Job Title</label><input type="text" class="exp-title" placeholder="Senior Consultant"></div>
+          <div class="field"><label>Company</label><input type="text" class="exp-company" placeholder="Wells Fargo"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Start Date</label><input type="text" class="exp-start" placeholder="Jan 2018"></div>
+          <div class="field"><label>End Date</label><input type="text" class="exp-end" placeholder="Present"></div>
+        </div>
+        <div class="field">
+          <label>Key responsibilities & achievements</label>
+          <textarea class="exp-desc" placeholder="Led IAM modernization for 50+ applications..."></textarea>
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addExp()">+ Add another role</button>
+  </div>
+
+  <div class="form-card">
+    <h3>Education</h3>
+    <div id="eduEntries">
+      <div class="entry-block">
+        <div class="field-row">
+          <div class="field"><label>Degree</label><input type="text" class="edu-degree" placeholder="Master of Computer Applications"></div>
+          <div class="field"><label>Institution</label><input type="text" class="edu-inst" placeholder="Osmania University"></div>
+        </div>
+        <div class="field"><label>Year</label><input type="text" class="edu-year" placeholder="2005"></div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="addEdu()">+ Add another degree</button>
+  </div>
+
+  <div class="form-card">
+    <h3>Skills & Certifications</h3>
+    <div class="field">
+      <label>Skills (comma separated)</label>
+      <input type="text" id="skills" placeholder="PingFederate, Okta, SAML, OAuth, AWS, Azure...">
+    </div>
+    <div class="field">
+      <label>Certifications</label>
+      <input type="text" id="certs" placeholder="CA SiteMinder R12.x, ITIL V3, Azure Administrator">
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h3>Target Role (optional)</h3>
+    <div class="field">
+      <label>Job description or role you're targeting</label>
+      <textarea id="targetRole" placeholder="Paste a job description to tailor the resume..."></textarea>
+    </div>
+  </div>
+
+  <div class="error-box" id="scratchError2"></div>
+  <button class="generate-btn" id="scratchBtn" onclick="generateScratch()">Generate My Resume</button>
+  <div class="loading" id="scratchLoading"><div class="spinner"></div><p>Building your resume...</p></div>
+</div>
+
+<!-- IMPROVE FORM -->
+<div class="form-screen" id="improveScreen">
+  <button class="back-btn" onclick="showChoice()">← Back</button>
+  <div class="error-box" id="improveError"></div>
+
+  <div class="form-card">
+    <h3>Upload Your Resume</h3>
+    <div class="drop-zone" id="improveDropZone">
+      <input type="file" id="improveFile" accept=".pdf,.txt">
+      <div style="font-size:2rem; margin-bottom:10px;">📎</div>
+      <p>Drop your resume here or <strong style="color:var(--accent)">browse</strong></p>
+      <p style="font-size:0.78rem; margin-top:4px;">PDF or TXT</p>
+      <div class="file-name" id="improveFileName"></div>
+    </div>
+
+    <div class="field">
+      <label>What would you like improved? (optional)</label>
+      <textarea id="improveInstructions" placeholder="Make it more ATS friendly, strengthen the bullet points, add more impact metrics..."></textarea>
+    </div>
+
+    <div class="field">
+      <label>Target job description (optional)</label>
+      <textarea id="improveJD" placeholder="Paste the job posting to tailor the rewrite..."></textarea>
+    </div>
+  </div>
+
+  <button class="generate-btn" id="improveBtn" onclick="generateImprove()">Improve My Resume</button>
+  <div class="loading" id="improveLoading"><div class="spinner"></div><p>Rewriting your resume...</p></div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="resultScreen">
+  <div class="result-actions">
+    <button class="btn-secondary" onclick="startOver()">← Start Over</button>
+    <button class="btn-primary" onclick="copyResume()">Copy Resume</button>
+    <button class="btn-primary" onclick="window.print()">Print / Save PDF</button>
+  </div>
+  <div class="resume-output" id="resumeOutput"></div>
+</div>
+
+<script>
+function showScreen(screen) {
+  document.getElementById('choiceScreen').style.display = 'none';
+  if (screen === 'scratch') {
+    document.getElementById('scratchScreen').style.display = 'block';
+  } else {
+    document.getElementById('improveScreen').style.display = 'block';
+  }
+}
+
+function showChoice() {
+  document.getElementById('choiceScreen').style.display = 'block';
+  document.getElementById('scratchScreen').style.display = 'none';
+  document.getElementById('improveScreen').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'none';
+}
+
+function startOver() {
+  document.getElementById('resultScreen').style.display = 'none';
+  showChoice();
+}
+
+// File input label
+document.getElementById('improveFile').addEventListener('change', function() {
+  document.getElementById('improveFileName').textContent = this.files[0]?.name || '';
+});
+
+// Add experience entry
+function addExp() {
+  const div = document.createElement('div');
+  div.className = 'entry-block';
+  div.innerHTML = `
+    <button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+    <div class="field-row">
+      <div class="field"><label>Job Title</label><input type="text" class="exp-title" placeholder="Consultant"></div>
+      <div class="field"><label>Company</label><input type="text" class="exp-company" placeholder="Company"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Start Date</label><input type="text" class="exp-start" placeholder="Jan 2015"></div>
+      <div class="field"><label>End Date</label><input type="text" class="exp-end" placeholder="Dec 2018"></div>
+    </div>
+    <div class="field"><label>Key responsibilities & achievements</label>
+      <textarea class="exp-desc" placeholder="Led..."></textarea></div>`;
+  document.getElementById('expEntries').appendChild(div);
+}
+
+function addEdu() {
+  const div = document.createElement('div');
+  div.className = 'entry-block';
+  div.innerHTML = `
+    <button class="remove-btn" onclick="this.parentElement.remove()">✕</button>
+    <div class="field-row">
+      <div class="field"><label>Degree</label><input type="text" class="edu-degree" placeholder="Bachelor of Science"></div>
+      <div class="field"><label>Institution</label><input type="text" class="edu-inst" placeholder="University"></div>
+    </div>
+    <div class="field"><label>Year</label><input type="text" class="edu-year" placeholder="2003"></div>`;
+  document.getElementById('eduEntries').appendChild(div);
+}
+
+function collectScratchData() {
+  const exp = [...document.querySelectorAll('#expEntries .entry-block')].map(el => ({
+    title: el.querySelector('.exp-title')?.value,
+    company: el.querySelector('.exp-company')?.value,
+    start: el.querySelector('.exp-start')?.value,
+    end: el.querySelector('.exp-end')?.value,
+    desc: el.querySelector('.exp-desc')?.value,
+  }));
+
+  const edu = [...document.querySelectorAll('#eduEntries .entry-block')].map(el => ({
+    degree: el.querySelector('.edu-degree')?.value,
+    institution: el.querySelector('.edu-inst')?.value,
+    year: el.querySelector('.edu-year')?.value,
+  }));
+
+  return {
+    name: document.getElementById('fullName').value,
+    title: document.getElementById('jobTitle').value,
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    location: document.getElementById('location').value,
+    linkedin: document.getElementById('linkedin').value,
+    summary: document.getElementById('summary').value,
+    experience: exp,
+    education: edu,
+    skills: document.getElementById('skills').value,
+    certifications: document.getElementById('certs').value,
+    targetRole: document.getElementById('targetRole').value,
+  };
+}
+
+async function generateScratch() {
+  const data = collectScratchData();
+  const errBox = document.getElementById('scratchError2');
+  errBox.style.display = 'none';
+
+  if (!data.name) {
+    errBox.textContent = 'Please enter your full name.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('scratchBtn').disabled = true;
+  document.getElementById('scratchLoading').style.display = 'block';
+
+  try {
+    const res = await fetch('/api/generate/scratch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error);
+    showResult(result.resume);
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = 'block';
+  } finally {
+    document.getElementById('scratchBtn').disabled = false;
+    document.getElementById('scratchLoading').style.display = 'none';
+  }
+}
+
+async function generateImprove() {
+  const fileInput = document.getElementById('improveFile');
+  const errBox = document.getElementById('improveError');
+  errBox.style.display = 'none';
+
+  if (!fileInput.files.length) {
+    errBox.textContent = 'Please upload a resume file.';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('resume', fileInput.files[0]);
+  formData.append('instructions', document.getElementById('improveInstructions').value);
+  formData.append('job_description', document.getElementById('improveJD').value);
+
+  document.getElementById('improveBtn').disabled = true;
+  document.getElementById('improveLoading').style.display = 'block';
+
+  try {
+    const res = await fetch('/api/generate/improve', { method: 'POST', body: formData });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error);
+    showResult(result.resume);
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = 'block';
+  } finally {
+    document.getElementById('improveBtn').disabled = false;
+    document.getElementById('improveLoading').style.display = 'none';
+  }
+}
+
+function showResult(text) {
+  document.getElementById('scratchScreen').style.display = 'none';
+  document.getElementById('improveScreen').style.display = 'none';
+  document.getElementById('choiceScreen').style.display = 'none';
+  const output = document.getElementById('resumeOutput');
+  output.innerHTML = marked.parse(text);
+  document.getElementById('resultScreen').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyResume() {
+  const text = document.getElementById('resumeOutput').innerText;
+  navigator.clipboard.writeText(text).then(() => alert('Resume copied to clipboard!'));
+}
+</script>
+</body>
+</html>
