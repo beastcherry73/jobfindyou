@@ -1350,8 +1350,26 @@
           
           <div class="search-row">
             <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Software Engineer)">
-            <input type="text" id="jobLocation" placeholder="Location (e.g. Remote, Austin)">
+            <input type="text" id="jobLocation" placeholder="Location (e.g. Remote, Austin)" list="locationList">
             <button class="btn btn-primary" onclick="searchJobs()">🔍 Find Jobs</button>
+            <datalist id="locationList">
+              <option value="Austin, TX"></option>
+              <option value="Australia"></option>
+              <option value="Austin, USA"></option>
+              <option value="Remote"></option>
+              <option value="San Francisco, CA"></option>
+              <option value="New York, NY"></option>
+              <option value="London, UK"></option>
+              <option value="Seattle, WA"></option>
+              <option value="Toronto, ON"></option>
+              <option value="Boston, MA"></option>
+              <option value="Berlin, DE"></option>
+              <option value="Sydney, AU"></option>
+              <option value="Melbourne, AU"></option>
+              <option value="Chicago, IL"></option>
+              <option value="Dallas, TX"></option>
+              <option value="Los Angeles, CA"></option>
+            </datalist>
           </div>
 
           <div style="border-top: 1px solid var(--border); padding-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
