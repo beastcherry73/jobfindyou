@@ -777,6 +777,13 @@ def delete_analysis(analysis_id):
         return jsonify({"error": str(e)}), 500
 
 
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 init_db()
 
 if __name__ == "__main__":
