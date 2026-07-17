@@ -1880,7 +1880,10 @@ async function loadHistory() {
       `;
       list.appendChild(el);
     });
-  } catch (e) { console.error('History load error:', e); }
+  } catch (e) {
+    console.error('History load error:', e);
+    $('historyList').innerHTML = `<div class="history-empty" style="color:#EF4444; font-size:0.75rem; padding:15px 8px;">⚠️ Load failed: ${e.message}</div>`;
+  }
 }
 
 function markHistoryActive(id) {
