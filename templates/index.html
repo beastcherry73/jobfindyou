@@ -1930,14 +1930,11 @@ async function searchJobs() {
 function filterJobs() {
   const list = $('jobListings');
   const minScore = parseInt($('minScoreSlider').value, 10);
-  
-  // Get active source checkbox values
   const activeSources = Array.from(document.querySelectorAll('.src-filter:checked')).map(el => el.value);
 
-  // Filter jobs locally
   const filtered = allJobs.filter(job => {
-    const matchesScore = job.base_score >= minScore;
-    const matchesSource = activeSources.includes(job.source);
+    const matchesScore = job.sc >= minScore;
+    const matchesSource = activeSources.includes(job.s);
     return matchesScore && matchesSource;
   });
 
@@ -1950,14 +1947,13 @@ function filterJobs() {
     return;
   }
 
-  // Show "Apply to All" button if there are matching jobs
   $('applyAllBtn').classList.remove('hidden');
   $('applyAllBtn').textContent = `⚡ Apply to All ${filtered.length} Matches`;
 
-  // Render first 100 matching opportunities for layout performance (prevents browser lag with 300+ items)
+  // Render first 100 matching opportunities
   const renderLimit = filtered.slice(0, 100);
   renderLimit.forEach(job => {
-    const score = job.base_score;
+    const score = job.sc;
     const textCol = score >= 75 ? '#065F46' : score >= 50 ? '#92400E' : '#991B1B';
     const bgCol = score >= 75 ? '#D1FAE5' : score >= 50 ? '#FEF3C7' : '#FEE2E2';
 
@@ -1965,16 +1961,16 @@ function filterJobs() {
     el.className = 'job-item';
     el.innerHTML = `
       <div class="job-info">
-        <div class="job-title">${escHtml(job.title)}</div>
+        <div class="job-title">${escHtml(job.t)}</div>
         <div class="job-meta">
-          <strong>🏢 ${escHtml(job.company)}</strong>
-          <span>📍 ${escHtml(job.loc)}</span>
-          <span class="job-source-tag">${escHtml(job.source)}</span>
+          <strong>🏢 ${escHtml(job.c)}</strong>
+          <span>📍 ${escHtml(job.l)}</span>
+          <span class="job-source-tag">${escHtml(job.s)}</span>
         </div>
       </div>
       <div class="score-badge-wrap">
         <div class="score-pill" style="color:${textCol}; background:${bgCol}">${score}% Match</div>
-        <button class="btn btn-primary btn-sm" onclick="applyToJob('${escHtml(job.title).replace(/'/g, "\\'")}', '${escHtml(job.company).replace(/'/g, "\\'")}', '${escHtml(job.loc).replace(/'/g, "\\'")}', ${score}, this)">
+        <button class="btn btn-primary btn-sm" onclick="applyToJob('${escHtml(job.t).replace(/'/g, "\\'")}', '${escHtml(job.c).replace(/'/g, "\\'")}', '${escHtml(job.l).replace(/'/g, "\\'")}', ${score}, this)">
           ⚡ One-Click Apply
         </button>
       </div>
@@ -2023,7 +2019,7 @@ async function applyAllMatched() {
 
   // Filter local jobs to push
   const filtered = allJobs.filter(job => {
-    return job.base_score >= minScore && activeSources.includes(job.source);
+    return job.sc >= minScore && activeSources.includes(job.s);
   });
 
   if (!filtered.length) return;
@@ -2033,10 +2029,10 @@ async function applyAllMatched() {
   btn.textContent = 'Queueing Applications…';
 
   const jobsPayload = filtered.map(j => ({
-    title: j.title,
-    company: j.company,
-    location: j.loc,
-    score: j.base_score
+    title: j.t,
+    company: j.c,
+    location: j.l,
+    score: j.sc
   }));
 
   try {
