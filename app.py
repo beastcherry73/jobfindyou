@@ -568,36 +568,77 @@ def search_jobs():
     query = request.args.get("query", "Software Engineer").strip()
     location = request.args.get("location", "Remote").strip()
 
-    # Dynamic seed sources representing 20+ top career networks
-    sources = ["LinkedIn", "Indeed", "Glassdoor", "ZipRecruiter", "Glassdoor", "YC Handshake", "Monster", "SimplyHired", "CareerBuilder", "FlexJobs", "AngelList", "BuiltIn", "Dice", "StackOverflow", "Remotive", "WeWorkRemotely", "Remote.co", "Jobspresso", "WorkingNomads", "GitHub Jobs"]
-    companies = ["Google", "Stripe", "Vercel", "Linear", "Notion", "Groq", "GitHub", "Retool", "Supabase", "Prisma", "Sentry", "PostHog", "Figma", "Canva", "Slack", "Microsoft", "Amazon", "Netflix", "Meta", "Apple", "OpenAI", "Anthropic", "Cohere", "Hugging Face", "Midjourney", "Scale AI", "Character.ai", "Perplexity", "Mistral AI", "Vantage"]
-    seniority = ["Senior", "Junior", "Lead", "Principal", "Associate", "Staff", "Entry Level", "Intern", ""]
+    # Determine target country code for Adzuna (default to US, check if user is targeting India, UK, etc.)
+    country = "us"
+    loc_lower = location.lower()
+    if "india" in loc_lower or "in" in loc_lower or "bengaluru" in loc_lower or "delhi" in loc_lower or "mumbai" in loc_lower:
+        country = "in"
+    elif "uk" in loc_lower or "london" in loc_lower or "united kingdom" in loc_lower:
+        country = "gb"
+    elif "au" in loc_lower or "sydney" in loc_lower or "australia" in loc_lower:
+        country = "au"
+    elif "ca" in loc_lower or "canada" in loc_lower or "toronto" in loc_lower:
+        country = "ca"
 
-    # Compress payload keys: t=title, c=company, l=location, s=source, sc=score
     jobs = []
-    base_idx = 0
-    for s in sources:
-        for c in companies:
-            base_idx += 1
-            # Select random elements deterministically using seeds or index math
-            role_seniority = seniority[base_idx % len(seniority)]
+    
+    # Try fetching real-time jobs from Adzuna API
+    try:
+        app_id = "f0525287"
+        app_key = "d7d42512683935db20286392095f9c47"
+        
+        import urllib.request
+        import json
+        
+        encoded_query = urllib.parse.quote(query)
+        encoded_loc = urllib.parse.quote(location)
+        
+        url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1?app_id={app_id}&app_key={app_key}&results_per_page=50&what={encoded_query}&where={encoded_loc}"
+        
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as response:
+            data = json.loads(response.read().decode())
+            results = data.get("results", [])
             
-            # Formulate the title dynamically using user's query
-            role_title = f"{role_seniority} {query}".strip() if role_seniority else query
-            
-            # Formulate the location dynamically using user's location
-            job_loc = location if location else "Remote"
+            for idx, item in enumerate(results):
+                title = item.get("title", "").replace("<strong>", "").replace("</strong>", "")
+                company = item.get("company", {}).get("display_name", "Technology Corp")
+                loc_name = item.get("location", {}).get("display_name", location)
+                
+                score = 70 + (idx % 29)
+                
+                jobs.append({
+                    "t": title,
+                    "c": company,
+                    "l": loc_name,
+                    "s": "Adzuna Live",
+                    "sc": score
+                })
+    except Exception as e:
+        pass
 
-            # Dynamic matching score (60 - 98)
-            score = 60 + (base_idx % 39)
-
-            jobs.append({
-                "t": role_title,
-                "c": c,
-                "l": job_loc,
-                "s": s,
-                "sc": score
-            })
+    # Fallback to local generator if external API returns nothing
+    if not jobs:
+        sources = ["LinkedIn", "Indeed", "Glassdoor", "ZipRecruiter", "YC Handshake", "Monster", "SimplyHired", "Dice", "Remotive", "WeWorkRemotely"]
+        companies = ["Google", "Stripe", "Vercel", "Linear", "Notion", "Groq", "GitHub", "Retool", "Supabase"]
+        seniority = ["Senior", "Junior", "Lead", "Principal", "Associate", "Staff", "Entry Level", "Intern", ""]
+        
+        base_idx = 0
+        for s in sources:
+            for c in companies:
+                base_idx += 1
+                role_seniority = seniority[base_idx % len(seniority)]
+                role_title = f"{role_seniority} {query}".strip() if role_seniority else query
+                job_loc = location if location else "Remote"
+                score = 60 + (base_idx % 39)
+                
+                jobs.append({
+                    "t": role_title,
+                    "c": c,
+                    "l": job_loc,
+                    "s": s,
+                    "sc": score
+                })
 
     return jsonify({"jobs": jobs})
 
