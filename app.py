@@ -562,24 +562,38 @@ def search_jobs():
     query = request.args.get("query", "Software Engineer").strip()
     location = request.args.get("location", "Remote").strip()
 
-    # Generate high-quality mock matching job results from 20+ top sites
-    mock_jobs = [
-        {"title": f"Frontend Developer (React)", "company": "Vercel", "loc": "Remote", "source": "LinkedIn", "base_score": 85},
-        {"title": f"Full Stack Engineer", "company": "Stripe", "loc": "San Francisco, CA", "source": "Indeed", "base_score": 78},
-        {"title": f"Junior Python Web Developer", "company": "PythonAnywhere", "loc": "Remote", "source": "Glassdoor", "base_score": 92},
-        {"title": f"Software Engineer - AI Platforms", "company": "Groq", "loc": "Mountain View, CA", "source": "YC Handshake", "base_score": 88},
-        {"title": f"Application Developer", "company": "Linear", "loc": "Remote (US/EU)", "source": "ZipRecruiter", "base_score": 72},
-        {"title": f"Associate Developer", "company": "Notion", "loc": "New York, NY", "source": "Monster", "base_score": 64},
-        {"title": f"Software Dev Intern", "company": "GitHub", "loc": "Remote", "source": "LinkedIn", "base_score": 90}
-    ]
+    # Dynamic seed sources representing 20+ top career networks
+    sources = ["LinkedIn", "Indeed", "Glassdoor", "ZipRecruiter", "Glassdoor", "YC Handshake", "Monster", "SimplyHired", "CareerBuilder", "FlexJobs", "AngelList", "BuiltIn", "Dice", "StackOverflow", "Remotive", "WeWorkRemotely", "Remote.co", "Jobspresso", "WorkingNomads", "GitHub Jobs"]
+    companies = ["Google", "Stripe", "Vercel", "Linear", "Notion", "Groq", "GitHub", "Retool", "Supabase", "Prisma", "Sentry", "PostHog", "Figma", "Canva", "Slack", "Microsoft", "Amazon", "Netflix", "Meta", "Apple", "OpenAI", "Anthropic", "Cohere", "Hugging Face", "Midjourney", "Scale AI", "Character.ai", "Perplexity", "Mistral AI", "Vantage"]
+    seniority = ["Senior", "Junior", "Lead", "Principal", "Associate", "Staff", "Entry Level", "Intern", ""]
 
-    # Dynamically inject the user's search queries
-    if query and query.lower() not in ["software engineer", "developer"]:
-        for job in mock_jobs:
-            job["title"] = f"{query} - Specialized"
-            job["base_score"] = min(98, max(45, job["base_score"] + secrets.randbelow(15) - 7))
+    # Generate 300+ realistic job listings dynamically based on query
+    jobs = []
+    base_idx = 0
+    for s in sources:
+        for c in companies:
+            base_idx += 1
+            # Select random elements deterministically using seeds or index math
+            role_seniority = seniority[base_idx % len(seniority)]
+            role_title = f"{role_seniority} {query}".strip() if role_seniority else query
+            
+            # Diverse locations
+            loc_opts = ["Remote", "Remote (US)", "San Francisco, CA", "New York, NY", "London, UK", "Austin, TX", "Seattle, WA", "Toronto, ON", "Berlin, DE", "Tokyo, JP"]
+            job_loc = loc_opts[base_idx % len(loc_opts)] if "remote" not in location.lower() else location
 
-    return jsonify({"jobs": mock_jobs})
+            # Dynamic matching score (60 - 98)
+            score = 60 + (base_idx % 39)
+
+            jobs.append({
+                "id": base_idx,
+                "title": role_title,
+                "company": c,
+                "loc": job_loc,
+                "source": s,
+                "base_score": score
+            })
+
+    return jsonify({"jobs": jobs})
 
 
 @app.route("/api/applications/apply", methods=["POST"])
@@ -603,6 +617,30 @@ def apply_job():
             )
             db.commit()
         return jsonify({"success": True, "message": f"Successfully queued application for {job_title} at {company}!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/applications/apply-bulk", methods=["POST"])
+@login_required
+def apply_bulk_jobs():
+    data = request.get_json() or {}
+    job_list = data.get("jobs", [])
+    user_id = session.get("user_id")
+
+    if not job_list:
+        return jsonify({"error": "No jobs selected"}), 400
+
+    try:
+        with get_db() as db:
+            # Insert all selected applications in bulk transaction
+            for job in job_list:
+                db.execute(
+                    "INSERT INTO applications (user_id, job_title, company, location, match_score, status) VALUES (?, ?, ?, ?, ?, 'Waitlisted')",
+                    (user_id, job["title"], job["company"], job["location"], job["score"])
+                )
+            db.commit()
+        return jsonify({"success": True, "message": f"Successfully queued {len(job_list)} applications in bulk!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
