@@ -1969,23 +1969,6 @@ async function joinWaitlist() {
   }
 }
 
-async function searchJobs() {
-  const q = $('jobQuery').value.strip ? $('jobQuery').value.strip() : $('jobQuery').value;
-  const loc = $('jobLocation').value.strip ? $('jobLocation').value.strip() : $('jobLocation').value;
-  const list = $('jobListings');
-  list.innerHTML = '<div style="text-align:center; padding:30px 10px;"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:10px; color:var(--muted)">Scanning 20+ websites for matching roles…</p></div>';
-
-  try {
-    const res = await fetch(`/api/jobs/search?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error);
-
-    list.innerHTML = '';
-    if (!data.jobs || !data.jobs.length) {
-      list.innerHTML = '<div style="text-align:center; padding:30px 10px; color:var(--muted)">No listings found matching that query.</div>';
-      return;
-    }
-
 let allJobs = [];
 
 async function searchJobs() {
