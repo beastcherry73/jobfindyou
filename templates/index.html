@@ -1350,25 +1350,17 @@
           
           <div class="search-row">
             <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Software Engineer)">
-            <input type="text" id="jobLocation" placeholder="Location (e.g. Remote, Austin)" list="locationList">
+            <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 130px; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); color: var(--text); padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
+              <option value="Worldwide">Worldwide 🌍</option>
+              <option value="India">India 🇮🇳</option>
+              <option value="US">United States 🇺🇸</option>
+              <option value="Europe">Europe 🇪🇺</option>
+              <option value="Australia">Australia 🇦🇺</option>
+            </select>
+            <input type="text" id="jobLocation" placeholder="Location (e.g. Remote, Bengaluru)" list="locationList">
             <button class="btn btn-primary" onclick="searchJobs()">🔍 Find Jobs</button>
             <datalist id="locationList">
-              <option value="Austin, TX"></option>
-              <option value="Australia"></option>
-              <option value="Austin, USA"></option>
-              <option value="Remote"></option>
-              <option value="San Francisco, CA"></option>
-              <option value="New York, NY"></option>
-              <option value="London, UK"></option>
-              <option value="Seattle, WA"></option>
-              <option value="Toronto, ON"></option>
-              <option value="Boston, MA"></option>
-              <option value="Berlin, DE"></option>
-              <option value="Sydney, AU"></option>
-              <option value="Melbourne, AU"></option>
-              <option value="Chicago, IL"></option>
-              <option value="Dallas, TX"></option>
-              <option value="Los Angeles, CA"></option>
+              <!-- Dynamically populated -->
             </datalist>
           </div>
 
@@ -1965,6 +1957,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   loadHistory();
+  updateLocationSuggestions();
 
   // Collapse sidebar on mobile
   if (window.innerWidth < 900) $('sidebar').classList.add('hidden');
@@ -2219,6 +2212,31 @@ async function loadApplications() {
     });
   } catch (e) {
     body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--bad)">⚠️ Error loading applications: ${e.message}</td></tr>`;
+  }
+}
+function updateLocationSuggestions() {
+  const region = $('jobRegionSelect').value;
+  const list = $('locationList');
+  const input = $('jobLocation');
+  
+  const suggestions = {
+    Worldwide: ["Remote", "Remote (US)", "Remote (EU)", "Remote (Asia)", "London, UK", "New York, NY", "San Francisco, CA", "Berlin, DE", "Toronto, ON", "Sydney, AU", "Tokyo, JP", "Singapore", "Bengaluru, IN"],
+    India: ["Bengaluru, IN", "New Delhi, IN", "Mumbai, IN", "Hyderabad, IN", "Pune, IN", "Chennai, IN", "Noida, IN", "Gurugram, IN", "Remote (India)"],
+    US: ["San Francisco, CA", "Austin, TX", "New York, NY", "Seattle, WA", "Boston, MA", "Chicago, IL", "Dallas, TX", "Los Angeles, CA", "Denver, CO", "Atlanta, GA", "Remote (US)"],
+    Europe: ["London, UK", "Berlin, DE", "Paris, FR", "Amsterdam, NL", "Dublin, IE", "Munich, DE", "Stockholm, SE", "Zurich, CH", "Madrid, ES", "Remote (Europe)"],
+    Australia: ["Sydney, AU", "Melbourne, AU", "Brisbane, AU", "Adelaide, AU", "Perth, AU", "Remote (Australia)"]
+  };
+
+  const cities = suggestions[region] || suggestions["Worldwide"];
+  list.innerHTML = "";
+  cities.forEach(city => {
+    const opt = document.createElement("option");
+    opt.value = city;
+    list.appendChild(opt);
+  });
+
+  if (!input.value.trim()) {
+    input.value = cities[0];
   }
 }
 </script>

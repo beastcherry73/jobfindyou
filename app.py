@@ -573,7 +573,7 @@ def search_jobs():
     companies = ["Google", "Stripe", "Vercel", "Linear", "Notion", "Groq", "GitHub", "Retool", "Supabase", "Prisma", "Sentry", "PostHog", "Figma", "Canva", "Slack", "Microsoft", "Amazon", "Netflix", "Meta", "Apple", "OpenAI", "Anthropic", "Cohere", "Hugging Face", "Midjourney", "Scale AI", "Character.ai", "Perplexity", "Mistral AI", "Vantage"]
     seniority = ["Senior", "Junior", "Lead", "Principal", "Associate", "Staff", "Entry Level", "Intern", ""]
 
-    # Generate 300+ realistic job listings dynamically based on query
+    # Compress payload keys: t=title, c=company, l=location, s=source, sc=score
     jobs = []
     base_idx = 0
     for s in sources:
@@ -581,22 +581,22 @@ def search_jobs():
             base_idx += 1
             # Select random elements deterministically using seeds or index math
             role_seniority = seniority[base_idx % len(seniority)]
+            
+            # Formulate the title dynamically using user's query
             role_title = f"{role_seniority} {query}".strip() if role_seniority else query
             
-            # Diverse locations
-            loc_opts = ["Remote", "Remote (US)", "San Francisco, CA", "New York, NY", "London, UK", "Austin, TX", "Seattle, WA", "Toronto, ON", "Berlin, DE", "Tokyo, JP"]
-            job_loc = loc_opts[base_idx % len(loc_opts)] if "remote" not in location.lower() else location
+            # Formulate the location dynamically using user's location
+            job_loc = location if location else "Remote"
 
             # Dynamic matching score (60 - 98)
             score = 60 + (base_idx % 39)
 
             jobs.append({
-                "id": base_idx,
-                "title": role_title,
-                "company": c,
-                "loc": job_loc,
-                "source": s,
-                "base_score": score
+                "t": role_title,
+                "c": c,
+                "l": job_loc,
+                "s": s,
+                "sc": score
             })
 
     return jsonify({"jobs": jobs})
