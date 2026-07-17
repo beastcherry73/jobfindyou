@@ -2095,7 +2095,8 @@ function filterJobs() {
 
   const filtered = allJobs.filter(job => {
     const matchesScore = job.sc >= minScore;
-    const matchesSource = activeSources.includes(job.s);
+    // Show all jobs if activeSources checklist is empty/unpopulated
+    const matchesSource = activeSources.length === 0 || activeSources.includes(job.s);
     return matchesScore && matchesSource;
   });
 
