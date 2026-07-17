@@ -1409,25 +1409,11 @@
               <input type="range" id="minScoreSlider" min="60" max="95" value="60" oninput="$('scoreVal').textContent = this.value + '%'; filterJobs();" style="width:100%; accent-color:var(--accent);">
             </div>
 
-            <!-- Site/Source filters (15 platforms) -->
+            <!-- Site/Source filters (Dynamic) -->
             <div style="grid-column: span 1; min-width: 250px;">
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Job Sources (15 Platforms)</label>
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 12px; max-height:100px; overflow-y:auto; padding:4px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15); font-size:0.75rem;">
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="LinkedIn" class="src-filter" onchange="filterJobs()"> LinkedIn</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Indeed" class="src-filter" onchange="filterJobs()"> Indeed</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Glassdoor" class="src-filter" onchange="filterJobs()"> Glassdoor</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="YC Handshake" class="src-filter" onchange="filterJobs()"> YC Handshake</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="ZipRecruiter" class="src-filter" onchange="filterJobs()"> ZipRecruiter</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Monster" class="src-filter" onchange="filterJobs()"> Monster</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="SimplyHired" class="src-filter" onchange="filterJobs()"> SimplyHired</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="CareerBuilder" class="src-filter" onchange="filterJobs()"> CareerBuilder</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="FlexJobs" class="src-filter" onchange="filterJobs()"> FlexJobs</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="AngelList" class="src-filter" onchange="filterJobs()"> AngelList</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="BuiltIn" class="src-filter" onchange="filterJobs()"> BuiltIn</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Dice" class="src-filter" onchange="filterJobs()"> Dice</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="StackOverflow" class="src-filter" onchange="filterJobs()"> StackOverflow</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Remotive" class="src-filter" onchange="filterJobs()"> Remotive</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="WeWorkRemotely" class="src-filter" onchange="filterJobs()"> WWR</label>
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Job Sources</label>
+              <div id="dynamicSourceFilters" style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 12px; max-height:100px; overflow-y:auto; padding:8px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15); font-size:0.75rem;">
+                <div style="grid-column: span 2; text-align:center; color:var(--muted)">No sources loaded yet</div>
               </div>
             </div>
           </div>
@@ -2034,6 +2020,24 @@ async function searchJobs() {
     if (!res.ok) throw new Error(data.error);
 
     allJobs = data.jobs || [];
+    
+    // Dynamically build checkboxes based on actual sources returned
+    const filterContainer = $('dynamicSourceFilters');
+    filterContainer.innerHTML = '';
+    
+    if (!allJobs.length) {
+      filterContainer.innerHTML = '<div style="grid-column: span 2; text-align:center; color:var(--muted)">No sources loaded yet</div>';
+    } else {
+      // Find all unique sites
+      const uniqueSources = [...new Set(allJobs.map(j => j.s))];
+      uniqueSources.forEach(src => {
+        const lbl = document.createElement('label');
+        lbl.style.cssText = 'display:flex; align-items:center; gap:4px; cursor:pointer';
+        lbl.innerHTML = `<input type="checkbox" checked value="${escHtml(src)}" class="src-filter" onchange="filterJobs()"> ${escHtml(src)}`;
+        filterContainer.appendChild(lbl);
+      });
+    }
+
     filterJobs();
   } catch (e) {
     list.innerHTML = `<div style="text-align:center; padding:30px 10px; color:var(--bad)">⚠️ Error scanning jobs: ${e.message}</div>`;

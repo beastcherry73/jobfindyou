@@ -618,13 +618,14 @@ def search_jobs():
                 elif sal_min:
                     sal_str = f"${int(sal_min):,}+"
 
+                original_site = item.get("site_name", "Adzuna")
                 score = 70 + (idx % 29)
                 
                 jobs.append({
                     "t": title,
                     "c": company,
                     "l": loc_name,
-                    "s": "Adzuna Live",
+                    "s": original_site,
                     "sc": score,
                     "sa": sal_str,
                     "d": desc[:180] + "..." if len(desc) > 180 else desc,
