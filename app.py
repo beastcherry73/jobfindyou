@@ -115,8 +115,14 @@ def call_groq(prompt, max_tokens=3000):
     return response.choices[0].message.content
 
 def get_db():
-    db = sqlite3.connect(app.config["DATABASE"])
+    # Increase timeout to 30 seconds and enable WAL mode to prevent locks on cloud hosting
+    db = sqlite3.connect(app.config["DATABASE"], timeout=30.0)
     db.row_factory = sqlite3.Row
+    try:
+        db.execute("PRAGMA journal_mode=WAL")
+        db.execute("PRAGMA synchronous=NORMAL")
+    except Exception:
+        pass
     return db
 
 def init_db():

@@ -860,6 +860,83 @@
     .flex { display: flex; }
     .items-center { align-items: center; }
     .gap-10 { gap: 10px; }
+
+    /* ── MOBILE RESPONSIVENESS POLISH ──────────────────────── */
+    @media (max-width: 900px) {
+      .app-shell {
+        position: relative;
+        overflow: hidden;
+      }
+      .sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.4);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .sidebar.hidden {
+        transform: translateX(-100%);
+        margin-left: 0 !important;
+        display: flex !important; /* keep in DOM for drawer animation */
+      }
+      .main-panel {
+        padding: 16px;
+        width: 100%;
+      }
+      .panel-hero {
+        padding: 24px 16px;
+      }
+      .panel-hero h1 {
+        font-size: 1.8rem;
+        line-height: 1.3;
+      }
+      .content-area {
+        padding: 0;
+      }
+      .card {
+        padding: 18px 20px;
+      }
+      
+      /* Mobile job board rows */
+      .job-item {
+        padding: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .score-badge-wrap {
+        width: 100%;
+        justify-content: space-between;
+        border-top: 1px dashed var(--border);
+        padding-top: 12px;
+      }
+
+      /* Mobile Table Cards transformation */
+      table.track-table, table.track-table thead, table.track-table tbody, table.track-table th, table.track-table td, table.track-table tr {
+        display: block;
+      }
+      table.track-table thead { display: none; }
+      table.track-table tr {
+        border-bottom: 1px solid var(--border);
+        padding: 12px 6px;
+      }
+      table.track-table td {
+        border-bottom: none;
+        padding: 6px 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      table.track-table td::before {
+        content: attr(data-label);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+    }
   </style>
 </head>
 <body>
@@ -2107,19 +2184,19 @@ async function loadApplications() {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>
+        <td data-label="Job Details">
           <div style="font-weight:600; color:var(--text)">${escHtml(app.job_title)}</div>
           <div style="font-size:0.78rem; color:var(--muted)">🏢 ${escHtml(app.company)} · 📍 ${escHtml(app.location || 'Remote')}</div>
         </td>
-        <td>
+        <td data-label="Match Score">
           <div style="font-weight:700; color:var(--accent)">${app.match_score}%</div>
         </td>
-        <td>
+        <td data-label="Status">
           <span class="status-pill" style="background:${bg}; color:${fg}">
             ● ${escHtml(app.status)}
           </span>
         </td>
-        <td style="color:var(--text-soft); font-size:0.82rem">
+        <td data-label="Submitted" style="color:var(--text-soft); font-size:0.82rem">
           ${dateStr}
         </td>
       `;
