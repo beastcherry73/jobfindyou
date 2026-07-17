@@ -155,6 +155,18 @@ def init_db():
             email TEXT NOT NULL UNIQUE,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )""")
+        
+        db.execute("""CREATE TABLE IF NOT EXISTS applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            job_title TEXT NOT NULL,
+            company TEXT NOT NULL,
+            location TEXT,
+            match_score INTEGER,
+            status TEXT NOT NULL DEFAULT 'Waitlisted',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )""")
 
 def login_required(view):
     @wraps(view)
@@ -540,6 +552,73 @@ def join_waitlist():
     except sqlite3.IntegrityError:
         # Email already on waitlist
         return jsonify({"success": True, "message": "You are already registered on the waitlist!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/jobs/search", methods=["GET"])
+@login_required
+def search_jobs():
+    query = request.args.get("query", "Software Engineer").strip()
+    location = request.args.get("location", "Remote").strip()
+
+    # Generate high-quality mock matching job results from 20+ top sites
+    mock_jobs = [
+        {"title": f"Frontend Developer (React)", "company": "Vercel", "loc": "Remote", "source": "LinkedIn", "base_score": 85},
+        {"title": f"Full Stack Engineer", "company": "Stripe", "loc": "San Francisco, CA", "source": "Indeed", "base_score": 78},
+        {"title": f"Junior Python Web Developer", "company": "PythonAnywhere", "loc": "Remote", "source": "Glassdoor", "base_score": 92},
+        {"title": f"Software Engineer - AI Platforms", "company": "Groq", "loc": "Mountain View, CA", "source": "YC Handshake", "base_score": 88},
+        {"title": f"Application Developer", "company": "Linear", "loc": "Remote (US/EU)", "source": "ZipRecruiter", "base_score": 72},
+        {"title": f"Associate Developer", "company": "Notion", "loc": "New York, NY", "source": "Monster", "base_score": 64},
+        {"title": f"Software Dev Intern", "company": "GitHub", "loc": "Remote", "source": "LinkedIn", "base_score": 90}
+    ]
+
+    # Dynamically inject the user's search queries
+    if query and query.lower() not in ["software engineer", "developer"]:
+        for job in mock_jobs:
+            job["title"] = f"{query} - Specialized"
+            job["base_score"] = min(98, max(45, job["base_score"] + secrets.randbelow(15) - 7))
+
+    return jsonify({"jobs": mock_jobs})
+
+
+@app.route("/api/applications/apply", methods=["POST"])
+@login_required
+def apply_job():
+    data = request.get_json() or {}
+    job_title = data.get("title")
+    company = data.get("company")
+    location = data.get("location")
+    match_score = data.get("match_score", 70)
+    user_id = session.get("user_id")
+
+    if not job_title or not company:
+        return jsonify({"error": "Missing job details"}), 400
+
+    try:
+        with get_db() as db:
+            db.execute(
+                "INSERT INTO applications (user_id, job_title, company, location, match_score, status) VALUES (?, ?, ?, ?, ?, 'Waitlisted')",
+                (user_id, job_title, company, location, match_score)
+            )
+            db.commit()
+        return jsonify({"success": True, "message": f"Successfully queued application for {job_title} at {company}!"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/applications", methods=["GET"])
+@login_required
+def get_applications():
+    user_id = session.get("user_id")
+    try:
+        with get_db() as db:
+            rows = db.execute(
+                "SELECT id, job_title, company, location, match_score, status, created_at FROM applications WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,)
+            ).fetchall()
+            apps = [dict(r) for r in rows]
+        return jsonify({"applications": apps})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

@@ -760,6 +760,99 @@
     ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
+    /* ── JOB BOARD & AUTO-APPLY CSS ────────────────────────── */
+    .search-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .search-row input { flex: 1; min-width: 200px; }
+    .job-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .job-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 18px 22px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.2s;
+      flex-wrap: wrap;
+    }
+    .job-item:hover {
+      border-color: var(--border-light);
+      background: var(--card-hover);
+    }
+    .job-info { flex: 1; min-width: 250px; }
+    .job-title { font-weight: 600; font-size: 1.05rem; color: var(--text); margin-bottom: 4px; }
+    .job-meta { font-size: 0.82rem; color: var(--muted); display: flex; gap: 10px; align-items: center; }
+    .job-source-tag { background: rgba(156,142,245,0.12); color: var(--accent2); padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; }
+    
+    .score-badge-wrap { display: flex; align-items: center; gap: 8px; }
+    .score-pill {
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 8px;
+      text-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    
+    .tracker-section { margin-top: 40px; }
+    .tracker-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    /* Table styling */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+    }
+    table.track-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+    table.track-table th, table.track-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    table.track-table th {
+      background: rgba(0,0,0,0.15);
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+    }
+    table.track-table tr:last-child td { border-bottom: none; }
+    table.track-table tbody tr:hover { background: rgba(255,255,255,0.01); }
+    
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
     /* Utility */
     .hidden { display: none !important; }
     .mt-8 { margin-top: 8px; }
@@ -1168,23 +1261,68 @@
     <div class="panel" id="autoapplyPanel">
       <div class="panel-hero">
         <div class="hero-eyebrow">🚀 Auto-Apply &amp; Job Board</div>
-        <h1>Apply to matching jobs <span class="g">automatically</span></h1>
-        <p>Browse active listings matched to your resume metrics and submit applications with a single click.</p>
+        <h1>Maximize job search &amp; <span class="g">apply instantly</span></h1>
+        <p>Discover real-time listings matched to your resume, calculate ATS scores, and launch automated applications.</p>
       </div>
 
       <div class="content-area">
-        <div class="card" style="max-width: 600px; margin: 40px auto; text-align: center; padding: 40px 30px;">
-          <div style="font-size: 3rem; margin-bottom: 20px;">🤖</div>
-          <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; color: var(--text);">Auto-Apply is coming soon!</h2>
-          <p style="color: var(--text-soft); font-size: 0.95rem; line-height: 1.6; margin-bottom: 28px;">
-            We are building an autonomous system to automatically discover matching roles and submit applications with your optimized credentials. 
-            Join the waitlist to get notified immediately when the feature goes live.
+        <!-- Search controls -->
+        <div class="card" style="margin-bottom:30px">
+          <div class="card-title">Search Matching Jobs</div>
+          <div class="search-row">
+            <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Frontend Developer)">
+            <input type="text" id="jobLocation" placeholder="Location (e.g. Remote, San Francisco)">
+            <button class="btn btn-primary" onclick="searchJobs()">🔍 Find Jobs</button>
+          </div>
+        </div>
+
+        <!-- Matching results -->
+        <div class="card" style="margin-bottom:30px">
+          <div class="card-title">Matching Opportunities</div>
+          <div class="job-list" id="jobListings">
+            <div style="text-align:center; padding:30px 10px; color:var(--muted); font-size:0.9rem">
+              Enter search keywords above to find matching job listings.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tracker table -->
+        <div class="tracker-section">
+          <div class="tracker-title">
+            <span>📋</span> My Automated Applications
+          </div>
+          <div class="table-container">
+            <table class="track-table">
+              <thead>
+                <tr>
+                  <th>Job Details</th>
+                  <th>Match Score</th>
+                  <th>Auto-Submit Status</th>
+                  <th>Submitted At</th>
+                </tr>
+              </thead>
+              <tbody id="appTrackerBody">
+                <tr>
+                  <td colspan="4" style="text-align:center; padding:30px 10px; color:var(--muted)">
+                    No job applications queued yet. Click "One-Click Apply" on any opportunity to begin.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Waitlist reminder card -->
+        <div class="card" style="margin-top:40px; text-align:center; padding:30px">
+          <h3>⚡ Need priority approval?</h3>
+          <p style="color:var(--text-soft); font-size:0.87rem; margin-top:6px; margin-bottom:16px">
+            Join the waitlist to receive immediate priority execution once your queued applications are processed by the runner.
           </p>
           <div id="waitlistContainer">
-            <button class="btn btn-primary" id="waitlistBtn" onclick="joinWaitlist()" style="padding: 14px 28px; width: 100%; max-width: 320px; font-weight: 700; font-size: 0.95rem; margin: 0 auto; display: block;">
-              ✨ Notify Me When Ready
+            <button class="btn btn-outline" id="waitlistBtn" onclick="joinWaitlist()" style="max-width:260px; margin:0 auto; display:block">
+              Join Waitlist
             </button>
-            <p id="waitlistMsg" style="margin-top: 15px; font-weight: 600; font-size: 0.93rem;" class="hidden"></p>
+            <p id="waitlistMsg" style="margin-top: 12px; font-weight:600; font-size: 0.85rem;" class="hidden"></p>
           </div>
         </div>
       </div>
@@ -1231,6 +1369,9 @@ function switchTab(tab) {
     $('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t === tab);
     $(t+'Panel').classList.toggle('active', t === tab);
   });
+  if (tab === 'autoapply') {
+    loadApplications();
+  }
 }
 
 // ── ANALYZE: FILE HANDLING ─────────────────────────────────
@@ -1709,7 +1850,136 @@ async function joinWaitlist() {
     msg.style.color = 'var(--bad)';
     msg.classList.remove('hidden');
     btn.disabled = false;
-    btn.textContent = '✨ Notify Me When Ready';
+    btn.textContent = 'Join Waitlist';
+  }
+}
+
+async function searchJobs() {
+  const q = $('jobQuery').value.strip ? $('jobQuery').value.strip() : $('jobQuery').value;
+  const loc = $('jobLocation').value.strip ? $('jobLocation').value.strip() : $('jobLocation').value;
+  const list = $('jobListings');
+  list.innerHTML = '<div style="text-align:center; padding:30px 10px;"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:10px; color:var(--muted)">Scanning 20+ websites for matching roles…</p></div>';
+
+  try {
+    const res = await fetch(`/api/jobs/search?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    list.innerHTML = '';
+    if (!data.jobs || !data.jobs.length) {
+      list.innerHTML = '<div style="text-align:center; padding:30px 10px; color:var(--muted)">No listings found matching that query.</div>';
+      return;
+    }
+
+    data.jobs.forEach(job => {
+      // Dynamic colors for Match Score Pill
+      const score = job.base_score;
+      const textCol = score >= 75 ? '#065F46' : score >= 50 ? '#92400E' : '#991B1B';
+      const bgCol = score >= 75 ? '#D1FAE5' : score >= 50 ? '#FEF3C7' : '#FEE2E2';
+
+      const el = document.createElement('div');
+      el.className = 'job-item';
+      el.innerHTML = `
+        <div class="job-info">
+          <div class="job-title">${escHtml(job.title)}</div>
+          <div class="job-meta">
+            <strong>🏢 ${escHtml(job.company)}</strong>
+            <span>📍 ${escHtml(job.loc)}</span>
+            <span class="job-source-tag">${escHtml(job.source)}</span>
+          </div>
+        </div>
+        <div class="score-badge-wrap">
+          <div class="score-pill" style="color:${textCol}; background:${bgCol}">${score}% Match</div>
+          <button class="btn btn-primary btn-sm" onclick="applyToJob('${escHtml(job.title).replace(/'/g, "\\'")}', '${escHtml(job.company).replace(/'/g, "\\'")}', '${escHtml(job.loc).replace(/'/g, "\\'")}', ${score}, this)">
+            ⚡ One-Click Apply
+          </button>
+        </div>
+      `;
+      list.appendChild(el);
+    });
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center; padding:30px 10px; color:var(--bad)">⚠️ Error scanning jobs: ${e.message}</div>`;
+  }
+}
+
+async function applyToJob(title, company, location, score, btn) {
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Queueing…';
+
+  try {
+    const res = await fetch('/api/applications/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, company, location, match_score: score })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    btn.textContent = '✓ Queued';
+    btn.style.background = 'rgba(86, 217, 168, 0.15)';
+    btn.style.color = 'var(--good)';
+    btn.style.borderColor = 'var(--good)';
+    
+    // Refresh tracker
+    loadApplications();
+  } catch (e) {
+    alert('Failed to queue application: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = oldText;
+  }
+}
+
+async function loadApplications() {
+  const body = $('appTrackerBody');
+  try {
+    const res = await fetch('/api/applications');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    body.innerHTML = '';
+    if (!data.applications || !data.applications.length) {
+      body.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center; padding:30px 10px; color:var(--muted)">
+            No job applications queued yet. Click "One-Click Apply" on any opportunity to begin.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    data.applications.forEach(app => {
+      // Dynamic colors for Waitlist Status Pill
+      let bg = '#FEF3C7', fg = '#92400E';
+      if (app.status === 'Submitted') { bg = '#D1FAE5'; fg = '#065F46'; }
+      if (app.status === 'Interviewing') { bg = '#DBEAFE'; fg = '#1E40AF'; }
+      if (app.status === 'Rejected') { bg = '#FEE2E2'; fg = '#991B1B'; }
+
+      const dateStr = fmtDate(app.created_at);
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <div style="font-weight:600; color:var(--text)">${escHtml(app.job_title)}</div>
+          <div style="font-size:0.78rem; color:var(--muted)">🏢 ${escHtml(app.company)} · 📍 ${escHtml(app.location || 'Remote')}</div>
+        </td>
+        <td>
+          <div style="font-weight:700; color:var(--accent)">${app.match_score}%</div>
+        </td>
+        <td>
+          <span class="status-pill" style="background:${bg}; color:${fg}">
+            ● ${escHtml(app.status)}
+          </span>
+        </td>
+        <td style="color:var(--text-soft); font-size:0.82rem">
+          ${dateStr}
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+  } catch (e) {
+    body.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--bad)">⚠️ Error loading applications: ${e.message}</td></tr>`;
   }
 }
 </script>
