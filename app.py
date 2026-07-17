@@ -605,6 +605,19 @@ def search_jobs():
                 company = item.get("company", {}).get("display_name", "Technology Corp")
                 loc_name = item.get("location", {}).get("display_name", location)
                 
+                # Fetch salary, description, and redirect link
+                sal_min = item.get("salary_min")
+                sal_max = item.get("salary_max")
+                desc = item.get("description", "").replace("<strong>", "").replace("</strong>", "")
+                link = item.get("redirect_url", "#")
+                
+                # Format salary display string
+                sal_str = ""
+                if sal_min and sal_max:
+                    sal_str = f"${int(sal_min):,} - ${int(sal_max):,}"
+                elif sal_min:
+                    sal_str = f"${int(sal_min):,}+"
+
                 score = 70 + (idx % 29)
                 
                 jobs.append({
@@ -612,34 +625,15 @@ def search_jobs():
                     "c": company,
                     "l": loc_name,
                     "s": "Adzuna Live",
-                    "sc": score
+                    "sc": score,
+                    "sa": sal_str,
+                    "d": desc[:180] + "..." if len(desc) > 180 else desc,
+                    "u": link
                 })
     except Exception as e:
         pass
 
-    # Fallback to local generator if external API returns nothing
-    if not jobs:
-        sources = ["LinkedIn", "Indeed", "Glassdoor", "ZipRecruiter", "YC Handshake", "Monster", "SimplyHired", "Dice", "Remotive", "WeWorkRemotely"]
-        companies = ["Google", "Stripe", "Vercel", "Linear", "Notion", "Groq", "GitHub", "Retool", "Supabase"]
-        seniority = ["Senior", "Junior", "Lead", "Principal", "Associate", "Staff", "Entry Level", "Intern", ""]
-        
-        base_idx = 0
-        for s in sources:
-            for c in companies:
-                base_idx += 1
-                role_seniority = seniority[base_idx % len(seniority)]
-                role_title = f"{role_seniority} {query}".strip() if role_seniority else query
-                job_loc = location if location else "Remote"
-                score = 60 + (base_idx % 39)
-                
-                jobs.append({
-                    "t": role_title,
-                    "c": c,
-                    "l": job_loc,
-                    "s": s,
-                    "sc": score
-                })
-
+    # If real API returned nothing, return an empty array (no simulated fallbacks)
     return jsonify({"jobs": jobs})
 
 
