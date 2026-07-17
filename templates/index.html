@@ -1453,7 +1453,11 @@
             <div style="grid-column: span 1; min-width: 250px;">
               <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Job Sources</label>
               <div id="dynamicSourceFilters" style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 12px; max-height:100px; overflow-y:auto; padding:8px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15); font-size:0.75rem;">
-                <div style="grid-column: span 2; text-align:center; color:var(--muted)">No sources loaded yet</div>
+                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="LinkedIn" class="src-filter" onchange="filterJobs()"> LinkedIn</label>
+                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Indeed" class="src-filter" onchange="filterJobs()"> Indeed</label>
+                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Glassdoor" class="src-filter" onchange="filterJobs()"> Glassdoor</label>
+                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="ZipRecruiter" class="src-filter" onchange="filterJobs()"> ZipRecruiter</label>
+                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Adzuna" class="src-filter" onchange="filterJobs()"> Adzuna</label>
               </div>
             </div>
           </div>
