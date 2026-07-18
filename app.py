@@ -825,33 +825,6 @@ def get_analyses():
                 (user_id,)
             ).fetchall()
             analyses = [dict(r) for r in rows]
-            
-            # Auto-seed realistic sample resume if user has 0 uploaded resumes
-            if not analyses:
-                sample_filename = "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf"
-                sample_jd = "Senior DevOps & Cloud Infrastructure Engineer responsible for AWS, Kubernetes, Terraform, and CI/CD pipelines."
-                sample_summary = "Senior DevOps & Cloud Infrastructure Specialist with 6+ years of experience managing Kubernetes clusters, AWS cloud architectures, Terraform Infrastructure-as-Code, CI/CD automation pipelines, and IAM security controls."
-                sample_dim = json.dumps({"impact": 90, "brevity": 86, "style": 88, "structure": 90, "skills": 86})
-                sample_str = json.dumps(["Strong Kubernetes & Docker container orchestration", "Hands-on Terraform Infrastructure-as-Code", "CI/CD Pipeline automation with GitHub Actions & Jenkins"])
-                sample_weak = json.dumps(["Could highlight quantified cost-reduction metrics (e.g., saved 35% AWS cloud expenditure)"])
-                sample_miss = json.dumps(["AWS Certified Solutions Architect certification ID"])
-                sample_ats = json.dumps(["ATS score is high (88%). Section headers are clean and machine-readable."])
-                sample_sug = json.dumps(["Add AWS Architect certification badge near contact details."])
-                sample_kw = json.dumps(["Kubernetes", "AWS", "Terraform", "Docker", "CI/CD", "Python", "Linux", "Bash", "Prometheus", "Grafana"])
-
-                db.execute("""
-                    INSERT INTO analyses (user_id, filename, job_description, overall_score, dimension_scores, summary, strengths, weaknesses, missing_sections, ats_issues, suggestions, suggested_keywords)
-                    VALUES (?, ?, ?, 88, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (user_id, sample_filename, sample_jd, sample_dim, sample_summary, sample_str, sample_weak, sample_miss, sample_ats, sample_sug, sample_kw))
-                db.commit()
-
-                # Re-fetch analyses after seeding
-                rows = db.execute(
-                    "SELECT id, filename, overall_score, summary, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
-                    (user_id,)
-                ).fetchall()
-                analyses = [dict(r) for r in rows]
-
         return jsonify(analyses)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
