@@ -2293,6 +2293,11 @@ function filterJobs() {
 
 async function applyToJob(title, company, location, score, portalUrl, btn) {
   const resumeSelect = $('jobResumeSelect');
+  if (!resumeSelect.value || resumeSelect.value === "") {
+    alert("📄 Please upload your resume on the 'Analyze' tab first before applying!");
+    switchTab('analyze');
+    return;
+  }
   const selectedResumeText = resumeSelect.options[resumeSelect.selectedIndex] ? resumeSelect.options[resumeSelect.selectedIndex].text : "Default Active Resume";
 
   $('modalJobTitle').textContent = title;
@@ -2443,16 +2448,23 @@ async function loadApplications() {
     const data = await res.json();
     if (res.ok && data) {
       const select = $('jobResumeSelect');
-      // Save current selection value
-      const currVal = select.value;
-      select.innerHTML = '<option value="default">Default Active Resume</option>';
-      data.forEach(item => {
+      select.innerHTML = '';
+      if (!data.length) {
         const opt = document.createElement('option');
-        opt.value = item.id;
-        opt.textContent = `${item.filename} (${item.overall_score} Score)`;
+        opt.value = "";
+        opt.disabled = true;
+        opt.selected = true;
+        opt.textContent = '📄 No Resume Uploaded Yet (Upload on Analyze Tab First)';
         select.appendChild(opt);
-      });
-      select.value = currVal;
+      } else {
+        data.forEach((item, idx) => {
+          const opt = document.createElement('option');
+          opt.value = item.id;
+          opt.textContent = `📄 ${item.filename} (Score: ${item.overall_score}%)`;
+          if (idx === 0) opt.selected = true;
+          select.appendChild(opt);
+        });
+      }
     }
   } catch (e) { console.warn('Could not populate resumes dropdown', e); }
 

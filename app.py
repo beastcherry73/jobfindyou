@@ -601,16 +601,17 @@ def search_jobs():
     elif "berlin" in loc_lower or "munich" in loc_lower or "germany" in loc_lower:
         country = "de"
 
-    # ── 1. Adzuna Multi-Page Fetching (Targeting up to 250+ results) ──
+    # ── 1. Adzuna Multi-Page Fetching (Targeting up to 250+ local & remote results) ──
     app_id = "f0525287"
     app_key = "d7d42512683935db20286392095f9c47"
     encoded_q = urllib.parse.quote(query)
-    encoded_l = urllib.parse.quote(location if location.lower() not in ["remote", "worldwide"] else "")
+    clean_loc = location if location.lower() not in ["remote", "worldwide"] else ""
+    encoded_l = urllib.parse.quote(clean_loc)
 
     for page in range(1, 6): # Pages 1 to 5 = 250 listings
         try:
             url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/{page}?app_id={app_id}&app_key={app_key}&results_per_page=50&what={encoded_q}&where={encoded_l}"
-            resp = requests.get(url, headers=req_headers, timeout=5)
+            resp = requests.get(url, headers=req_headers, timeout=8)
             if resp.status_code == 200:
                 data = resp.json()
                 results = data.get("results", [])
@@ -624,7 +625,7 @@ def search_jobs():
                     sal_max = item.get("salary_max")
                     desc = clean_html(item.get("description", ""))
                     link = item.get("redirect_url", "#")
-                    site_name = item.get("site_name", "LinkedIn")
+                    site_name = item.get("site_name", "Indeed")
                     created = item.get("created", "")
                     contract_type = item.get("contract_type", "Full-time").capitalize()
                     
@@ -663,40 +664,40 @@ def search_jobs():
                     })
         except Exception as e:
             print(f"[Adzuna Page {page} Error]: {e}")
-            break
 
-    # ── 2. Remotive API Supplemental Load ────────────────────────────
-    try:
-        url = f"https://remotive.com/api/remote-jobs?search={encoded_q}&limit=50"
-        resp = requests.get(url, headers=req_headers, timeout=5)
-        if resp.status_code == 200:
-            data = resp.json()
-            results = data.get("jobs", [])
-            for idx, item in enumerate(results):
-                title = clean_html(item.get("title", ""))
-                company = item.get("company_name", "Remotive Partner")
-                loc_name = item.get("candidate_required_location", location or "Remote")
-                sal_str = item.get("salary", "")
-                desc = clean_html(item.get("description", ""))
-                link = item.get("url", "#")
-                job_type = item.get("job_type", "Full-time").capitalize()
-                score = 72 + (idx % 27)
+    # ── 2. Supplemental Remote Feeds (Only run if local search returned few or if location is Remote/Worldwide) ──
+    if not clean_loc or len(jobs) < 15:
+        try:
+            url = f"https://remotive.com/api/remote-jobs?search={encoded_q}&limit=50"
+            resp = requests.get(url, headers=req_headers, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("jobs", [])
+                for idx, item in enumerate(results):
+                    title = clean_html(item.get("title", ""))
+                    company = item.get("company_name", "Remotive Partner")
+                    loc_name = item.get("candidate_required_location", location or "Remote")
+                    sal_str = item.get("salary", "")
+                    desc = clean_html(item.get("description", ""))
+                    link = item.get("url", "#")
+                    job_type = item.get("job_type", "Full-time").capitalize()
+                    score = 72 + (idx % 27)
 
-                jobs.append({
-                    "t": title,
-                    "c": company,
-                    "l": loc_name,
-                    "s": "Remotive",
-                    "sc": score,
-                    "sa": sal_str,
-                    "sv": 0,
-                    "w": "Remote",
-                    "e": job_type if job_type else "Full-time",
-                    "d": desc[:220] + "..." if len(desc) > 220 else desc,
-                    "u": link
-                })
-    except Exception as e:
-        print(f"[Remotive Load Error]: {e}")
+                    jobs.append({
+                        "t": title,
+                        "c": company,
+                        "l": loc_name,
+                        "s": "Remotive",
+                        "sc": score,
+                        "sa": sal_str,
+                        "sv": 0,
+                        "w": "Remote",
+                        "e": job_type if job_type else "Full-time",
+                        "d": desc[:220] + "..." if len(desc) > 220 else desc,
+                        "u": link
+                    })
+        except Exception as e:
+            print(f"[Remotive Load Error]: {e}")
 
     # ── 3. Arbeitnow API Supplemental Load ───────────────────────────
     try:
