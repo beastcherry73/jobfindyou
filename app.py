@@ -577,10 +577,11 @@ def join_waitlist():
 
 
 @app.route("/api/jobs/search", methods=["GET"])
+@app.route("/api/jobs/search", methods=["GET"])
 @login_required
 def search_jobs():
-    query = request.args.get("query", "Software Engineer").strip()
-    location = request.args.get("location", "Remote").strip()
+    query = request.args.get("query", "").strip() or "DevOps Engineer"
+    location = request.args.get("location", "").strip() or "Charlotte, NC"
     country_input = request.args.get("country", "us").strip().lower()
 
     jobs = []
@@ -708,9 +709,9 @@ def search_jobs():
         except Exception as e:
             print(f"[Arbeitnow Error]: {e}")
 
-    # ── 3. Dedicated Location-Matched Engine (Guarantees On-Site, Hybrid & Remote for city searches) ──
-    if len(jobs) < 20 and clean_loc:
-        city_name = location.split(',')[0].strip().title()
+    # ── 3. Dedicated Location-Matched Engine (Guarantees On-Site, Hybrid & Remote for all searches) ──
+    if len(jobs) < 15:
+        city_name = location.split(',')[0].strip().title() if location else "Charlotte"
         top_employers = {
             "Charlotte": ["Bank of America", "Wells Fargo", "Duke Energy", "Lowe's", "Truist Financial", "Honeywell", "TIAA", "Red Ventures", "Atrium Health", "Centene"],
             "Auckland": ["Xero", "Air New Zealand", "Spark NZ", "Fisher & Paykel", "ASB Bank", "Datacom", "Fonterra", "Fletcher Building"],
