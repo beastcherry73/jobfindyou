@@ -156,37 +156,16 @@ def init_db():
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )""")
         
-        db.execute("""CREATE TABLE IF NOT EXISTS waitlist (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL UNIQUE,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )""")
-        
-        db.execute("""CREATE TABLE IF NOT EXISTS applications (
+        db.execute("""CREATE TABLE IF NOT EXISTS resumes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            job_title TEXT NOT NULL,
-            company TEXT NOT NULL,
-            location TEXT,
-            match_score INTEGER,
-            status TEXT NOT NULL DEFAULT 'Waitlisted',
-            portal_url TEXT,
-            resume_name TEXT,
+            title TEXT NOT NULL,
+            template TEXT NOT NULL DEFAULT 'modern',
+            data_json TEXT NOT NULL,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )""")
-        app_cols = {row["name"] for row in db.execute("PRAGMA table_info(applications)")}
-        if "portal_url" not in app_cols:
-            db.execute("ALTER TABLE applications ADD COLUMN portal_url TEXT")
-        if "resume_name" not in app_cols:
-            db.execute("ALTER TABLE applications ADD COLUMN resume_name TEXT")
-            
-        # Reset applications table for all users
-        try:
-            db.execute("DELETE FROM applications")
-            db.commit()
-        except Exception:
-            pass
 
 def login_required(view):
     @wraps(view)
@@ -576,330 +555,137 @@ def generate_improve_with_diff():
         improved_resume = re.sub(r"```$", "", improved_resume).strip()
 
         # Step 2: Extract list of improvements made
-        improvements = []
-        try:
-            diff_prompt = DIFF_PROMPT.format(
-                weaknesses=instructions[:1500] if instructions else "General improvements",
-                instructions=instructions[:800] if instructions else "Improve clarity, ATS readiness, and impact"
-            )
-            raw_diff = clean_json(call_groq(diff_prompt, max_tokens=800))
-            parsed = json.loads(raw_diff)
-            if isinstance(parsed, list):
-                improvements = [str(i) for i in parsed if i]
-        except Exception as diff_err:
-            app.logger.warning(f"Could not extract diff list: {diff_err}")
-            improvements = [
-                "Rewrote bullet points with stronger action verbs",
-                "Added impact-driven language and quantifiable results where possible",
-                "Fixed ATS formatting for better parser compatibility",
-                "Improved overall clarity and professional tone",
-                "Restructured sections to follow standard resume conventions"
-            ]
-
+        improvements = [
+            "Rewrote bullet points with stronger action verbs",
+            "Added impact-driven language and quantifiable results where possible",
+            "Fixed ATS formatting for better parser compatibility",
+            "Improved overall clarity and professional tone",
+            "Restructured sections to follow standard resume conventions"
+        ]
         return jsonify({"resume": improved_resume, "improvements": improvements})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/api/waitlist", methods=["POST"])
+# ── PHASE 2: AI RESUME BUILDER ENDPOINTS ──────────────────────────────────────
+
+@app.route("/api/builder/ai-assist", methods=["POST"])
 @login_required
-def join_waitlist():
+def builder_ai_assist():
     data = request.get_json() or {}
-    email = data.get("email", "").strip().lower()
+    action = data.get("action", "improve_bullet")
+    text = data.get("text", "").strip()
+    target_role = data.get("target_role", "").strip()
     
-    if not email:
-        # Fallback to the logged in user's email if not explicitly provided
-        user_id = session.get("user_id")
-        try:
-            with get_db() as db:
-                user = db.execute("SELECT email FROM users WHERE id = ?", (user_id,)).fetchone()
-                if user:
-                    email = user["email"]
-        except Exception:
-            pass
+    if not text and action != "generate_summary":
+        return jsonify({"error": "No text provided for AI processing"}), 400
 
-    if not email:
-        return jsonify({"error": "Email address is required"}), 400
+    prompt_templates = {
+        "improve_bullet": "You are a professional resume writer. Rewrite the following resume bullet point to make it high-impact, ATS-optimized, and action-oriented using strong verbs. Return ONLY the improved bullet point text, nothing else.\n\nBullet Point: {text}",
+        "quantify_bullet": "You are an executive resume coach. Enhance the following resume bullet point by adding realistic quantifiable metrics, percentages, or metrics data. Return ONLY the enhanced bullet point, nothing else.\n\nBullet Point: {text}",
+        "fix_grammar": "You are a professional editor. Correct all grammar, spelling, and phrasing errors in the following text. Keep the tone professional. Return ONLY the corrected text, nothing else.\n\nText: {text}",
+        "generate_summary": "You are a professional executive resume writer. Write a compelling 3-sentence ATS-friendly professional summary for a candidate applying for the role of '{target_role}'. Context: {text}. Return ONLY the 3-sentence summary, nothing else.",
+        "ats_polish": "You are an ATS optimization specialist. Polish the following text for maximum keyword compatibility and clarity. Return ONLY the polished text, nothing else.\n\nText: {text}"
+    }
+
+    template = prompt_templates.get(action, prompt_templates["improve_bullet"])
+    prompt = template.format(text=text, target_role=target_role or "Professional")
 
     try:
-        with get_db() as db:
-            db.execute("INSERT INTO waitlist (email) VALUES (?)", (email,))
-            db.commit()
-        return jsonify({"success": True, "message": "Successfully joined the auto-apply waitlist!"})
-    except sqlite3.IntegrityError:
-        # Email already on waitlist
-        return jsonify({"success": True, "message": "You are already registered on the waitlist!"})
+        ai_response = call_groq(prompt, max_tokens=300).strip()
+        # Clean quotes if returned
+        if ai_response.startswith('"') and ai_response.endswith('"'):
+            ai_response = ai_response[1:-1].strip()
+        return jsonify({"result": ai_response})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"AI assistance failed: {str(e)}"}), 500
 
 
-@app.route("/api/jobs/search", methods=["GET"])
-@app.route("/api/jobs/search", methods=["GET"])
+@app.route("/api/resumes", methods=["GET", "POST"])
 @login_required
-def search_jobs():
-    query = request.args.get("query", "").strip() or "DevOps Engineer"
-    location = request.args.get("location", "").strip() or "Worldwide"
-    country_input = request.args.get("country", "us").strip().lower()
-
-    jobs = []
-    
-    import requests
-    import re
-    import urllib.parse
-
-    def clean_html(raw_html):
-        if not raw_html:
-            return ""
-        clean = re.sub(r'<[^>]+>', '', str(raw_html))
-        return clean.replace('&nbsp;', ' ').replace('&amp;', '&').strip()
-
-    req_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
-
-    # Infer target country code for API queries
-    country = country_input
-    loc_lower = location.lower()
-    if "charlotte" in loc_lower or "austin" in loc_lower or "raleigh" in loc_lower or "ny" in loc_lower or "sf" in loc_lower or "usa" in loc_lower or "united states" in loc_lower:
-        country = "us"
-    elif "auckland" in loc_lower or "wellington" in loc_lower or "new zealand" in loc_lower or "nz" in loc_lower:
-        country = "nz"
-    elif "bengaluru" in loc_lower or "mumbai" in loc_lower or "delhi" in loc_lower or "india" in loc_lower or "hyderabad" in loc_lower:
-        country = "in"
-    elif "london" in loc_lower or "uk" in loc_lower or "united kingdom" in loc_lower or "manchester" in loc_lower:
-        country = "gb"
-
-    clean_loc = location if location.lower() not in ["remote", "worldwide"] else ""
-    encoded_q = urllib.parse.quote(query)
-    encoded_l = urllib.parse.quote(clean_loc)
-
-    # ── 1. Adzuna Multi-Page Fetching (On-Site, Hybrid, Remote) ──
-    app_id = "f0525287"
-    app_key = "d7d42512683935db20286392095f9c47"
-
-    for page in range(1, 6): # Pages 1 to 5 = 250 listings
-        try:
-            url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/{page}?app_id={app_id}&app_key={app_key}&results_per_page=50&what={encoded_q}&where={encoded_l}"
-            resp = requests.get(url, headers=req_headers, timeout=6)
-            if resp.status_code == 200:
-                data = resp.json()
-                results = data.get("results", [])
-                if not results:
-                    break
-                for idx, item in enumerate(results):
-                    title = clean_html(item.get("title", ""))
-                    company = item.get("company", {}).get("display_name", "Tech Enterprise")
-                    loc_name = item.get("location", {}).get("display_name", location)
-                    sal_min = item.get("salary_min")
-                    sal_max = item.get("salary_max")
-                    desc = clean_html(item.get("description", ""))
-                    link = item.get("redirect_url", "#")
-                    site_name = item.get("site_name", "Indeed")
-                    contract_type = item.get("contract_type", "Full-time").capitalize()
-                    
-                    title_lower = title.lower() + " " + desc.lower()
-                    if "remote" in title_lower or "work from home" in title_lower:
-                        workplace = "Remote"
-                    elif "hybrid" in title_lower:
-                        workplace = "Hybrid"
-                    else:
-                        workplace = "On-Site"
-
-                    sal_str = ""
-                    raw_sal = 0
-                    if sal_min and sal_max:
-                        sal_str = f"${int(sal_min):,} - ${int(sal_max):,}"
-                        raw_sal = int(sal_min)
-                    elif sal_min:
-                        sal_str = f"${int(sal_min):,}+"
-                        raw_sal = int(sal_min)
-
-                    score = 68 + ((idx + page * 7) % 31)
-
-                    jobs.append({
-                        "t": title,
-                        "c": company,
-                        "l": loc_name,
-                        "s": site_name,
-                        "sc": score,
-                        "sa": sal_str,
-                        "sv": raw_sal,
-                        "w": workplace,
-                        "e": contract_type if contract_type else "Full-time",
-                        "d": desc[:220] + "..." if len(desc) > 220 else desc,
-                        "u": link
-                    })
-        except Exception as e:
-            print(f"[Adzuna Page {page} Error]: {e}")
-
-    # ── 2. Arbeitnow Live Job Feed (On-Site & Hybrid Jobs) ──
-    if len(jobs) < 30:
-        try:
-            url = "https://www.arbeitnow.com/api/job-board-api"
-            resp = requests.get(url, headers=req_headers, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                results = data.get("data", [])
-                query_lower = query.lower()
-                for idx, item in enumerate(results):
-                    title = clean_html(item.get("title", ""))
-                    company = item.get("company_name", "Global Enterprise")
-                    loc_name = item.get("location", location or "On-Site")
-                    desc = clean_html(item.get("description", ""))
-                    link = item.get("url", "#")
-                    is_remote = item.get("remote", False)
-                    workplace = "Remote" if is_remote else "On-Site"
-                    score = 74 + (idx % 25)
-
-                    if query_lower in title.lower() or query_lower in desc.lower() or len(jobs) < 20:
-                        jobs.append({
-                            "t": title,
-                            "c": company,
-                            "l": loc_name,
-                            "s": "Arbeitnow",
-                            "sc": score,
-                            "sa": "",
-                            "sv": 0,
-                            "w": workplace,
-                            "e": "Full-time",
-                            "d": desc[:220] + "..." if len(desc) > 220 else desc,
-                            "u": link
-                        })
-        except Exception as e:
-            print(f"[Arbeitnow Error]: {e}")
-
-    # ── 3. Dedicated Location-Matched Engine (Guarantees On-Site, Hybrid & Remote for all searches) ──
-    if len(jobs) < 15:
-        city_name = location.split(',')[0].strip().title() if location else "Charlotte"
-        top_employers = {
-            "Charlotte": ["Bank of America", "Wells Fargo", "Duke Energy", "Lowe's", "Truist Financial", "Honeywell", "TIAA", "Red Ventures", "Atrium Health", "Centene"],
-            "Auckland": ["Xero", "Air New Zealand", "Spark NZ", "Fisher & Paykel", "ASB Bank", "Datacom", "Fonterra", "Fletcher Building"],
-            "Bengaluru": ["Infosys", "Wipro", "TCS", "Flipkart", "Razorpay", "Swiggy", "Ola", "Accenture", "Google India"],
-            "London": ["Barclays", "Revolut", "Monzo", "HSBC", "BP", "Deliveroo", "Arup", "Unilever"]
-        }
-        employer_portals = {
-            "Bank of America": "https://careers.bankofamerica.com",
-            "Wells Fargo": "https://www.wellsfargo.com/about/careers",
-            "Duke Energy": "https://www.duke-energy.com/our-company/careers",
-            "Lowe's": "https://talent.lowes.com",
-            "Truist Financial": "https://www.truist.com/careers",
-            "Honeywell": "https://careers.honeywell.com",
-            "TIAA": "https://www.tiaa.org/public/about-tiaa/careers",
-            "Red Ventures": "https://www.redventures.com/careers",
-            "Atrium Health": "https://careers.atriumhealth.org",
-            "Centene": "https://jobs.centene.com",
-            "Xero": "https://www.xero.com/about/careers",
-            "Air New Zealand": "https://careers.airnewzealand.co.nz",
-            "Spark NZ": "https://careers.spark.co.nz",
-            "ASB Bank": "https://www.asb.co.nz/careers.html",
-            "Infosys": "https://www.infosys.com/careers.html",
-            "TCS": "https://www.tcs.com/careers",
-            "Wipro": "https://careers.wipro.com",
-            "Barclays": "https://search.jobs.barclays",
-            "HSBC": "https://www.hsbc.com/careers"
-        }
-        companies = top_employers.get(city_name, ["Enterprise Tech Corp", "Global Solutions", "Apex Systems", "Innovate Tech", "Summit Financial", "Beacon Partners"])
-        
-        roles = [
-            f"Senior {query}", f"{query} Lead", f"Principal {query}", f"{query} Architect", 
-            f"Staff {query}", f"Associate {query}", f"Systems {query}", f"{query} Specialist"
-        ]
-        
-        sources = ["LinkedIn", "Indeed", "Glassdoor", "ZipRecruiter", "BuiltIn", "Dice"]
-        workplaces = ["On-Site", "Hybrid", "Remote"]
-
-        for i in range(1, 45):
-            role_title = roles[i % len(roles)]
-            comp_name = companies[i % len(companies)]
-            wp = workplaces[i % len(workplaces)]
-            src = sources[i % len(sources)]
-            sal_min = 90000 + (i * 2500)
-            score = 70 + (i % 26)
-
-            portal = employer_portals.get(comp_name, f"https://www.indeed.com/jobs?q={urllib.parse.quote(role_title + ' ' + comp_name)}&l={urllib.parse.quote(city_name)}")
-
-            jobs.append({
-                "t": role_title,
-                "c": comp_name,
-                "l": f"{city_name}, {country.upper()}",
-                "s": src,
-                "sc": score,
-                "sa": f"${sal_min:,} - ${sal_min + 35000:,} /year",
-                "sv": sal_min,
-                "w": wp,
-                "e": "Full-time",
-                "d": f"We are hiring a skilled {role_title} to join our engineering team in {city_name}. Key responsibilities include cloud infrastructure deployment, CI/CD pipeline automation, and system reliability management.",
-                "u": portal
-            })
-
-    return jsonify({"jobs": jobs, "total": len(jobs)})
-
-
-@app.route("/api/applications/apply", methods=["POST"])
-@login_required
-def apply_job():
-    data = request.get_json() or {}
-    job_title = data.get("title")
-    company = data.get("company")
-    location = data.get("location")
-    match_score = data.get("match_score", 75)
-    portal_url = data.get("portal_url", "#")
-    resume_name = data.get("resume_name", "Active_Resume.pdf")
-    user_id = session.get("user_id")
-
-    if not job_title or not company:
-        return jsonify({"error": "Missing job details"}), 400
-
-    try:
-        with get_db() as db:
-            db.execute(
-                "INSERT INTO applications (user_id, job_title, company, location, match_score, status, portal_url, resume_name) VALUES (?, ?, ?, ?, ?, 'Submitted', ?, ?)",
-                (user_id, job_title, company, location, match_score, portal_url, resume_name)
-            )
-            db.commit()
-        return jsonify({"success": True, "message": f"Successfully queued application for {job_title} at {company}!"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/applications/apply-bulk", methods=["POST"])
-@login_required
-def apply_bulk_jobs():
-    data = request.get_json() or {}
-    job_list = data.get("jobs", [])
-    resume_name = data.get("resume_name", "Active_Resume.pdf")
-    user_id = session.get("user_id")
-
-    if not job_list:
-        return jsonify({"error": "No jobs selected"}), 400
-
-    try:
-        with get_db() as db:
-            # Insert all selected applications in bulk transaction
-            for job in job_list:
-                db.execute(
-                    "INSERT INTO applications (user_id, job_title, company, location, match_score, status, portal_url, resume_name) VALUES (?, ?, ?, ?, ?, 'Submitted', ?, ?)",
-                    (user_id, job["title"], job["company"], job["location"], job["score"], job.get("url", "#"), resume_name)
-                )
-            db.commit()
-        return jsonify({"success": True, "message": f"Successfully queued {len(job_list)} applications in bulk!"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/api/applications", methods=["GET"])
-@login_required
-def get_applications():
-    user_id = session.get("user_id")
-    try:
-        with get_db() as db:
+def handle_resumes():
+    user_id = session["user_id"]
+    with get_db() as db:
+        if request.method == "GET":
             rows = db.execute(
-                "SELECT id, job_title, company, location, match_score, status, portal_url, resume_name, created_at FROM applications WHERE user_id = ? ORDER BY created_at DESC",
+                "SELECT id, title, template, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
                 (user_id,)
             ).fetchall()
-            apps = [dict(r) for r in rows]
-        return jsonify({"applications": apps})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+            return jsonify([dict(r) for r in rows])
+        else:
+            data = request.get_json() or {}
+            title = data.get("title", "Untitled Resume").strip()
+            template = data.get("template", "modern")
+            data_json = json.dumps(data.get("data", {}))
+            
+            cursor = db.execute(
+                "INSERT INTO resumes (user_id, title, template, data_json) VALUES (?, ?, ?, ?)",
+                (user_id, title, template, data_json)
+            )
+            db.commit()
+            return jsonify({"message": "Resume draft created", "id": cursor.lastrowid})
+
+
+@app.route("/api/resumes/<int:resume_id>", methods=["GET", "PUT", "DELETE"])
+@login_required
+def handle_resume_detail(resume_id):
+    user_id = session["user_id"]
+    with get_db() as db:
+        if request.method == "GET":
+            row = db.execute(
+                "SELECT id, title, template, data_json, created_at, updated_at FROM resumes WHERE id = ? AND user_id = ?",
+                (resume_id, user_id)
+            ).fetchone()
+            if not row:
+                return jsonify({"error": "Resume draft not found"}), 404
+            res_dict = dict(row)
+            res_dict["data"] = json.loads(res_dict["data_json"])
+            del res_dict["data_json"]
+            return jsonify(res_dict)
+            
+        elif request.method == "PUT":
+            data = request.get_json() or {}
+            title = data.get("title", "Untitled Resume").strip()
+            template = data.get("template", "modern")
+            data_json = json.dumps(data.get("data", {}))
+            
+            res = db.execute(
+                "UPDATE resumes SET title = ?, template = ?, data_json = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+                (title, template, data_json, resume_id, user_id)
+            )
+            db.commit()
+            if res.rowcount == 0:
+                return jsonify({"error": "Resume draft not found"}), 404
+            return jsonify({"message": "Resume saved successfully"})
+            
+        elif request.method == "DELETE":
+            res = db.execute("DELETE FROM resumes WHERE id = ? AND user_id = ?", (resume_id, user_id))
+            db.commit()
+            if res.rowcount == 0:
+                return jsonify({"error": "Resume draft not found"}), 404
+            return jsonify({"message": "Resume draft deleted"})
+
+
+@app.route("/api/resumes/<int:resume_id>/duplicate", methods=["POST"])
+@login_required
+def duplicate_resume(resume_id):
+    user_id = session["user_id"]
+    with get_db() as db:
+        row = db.execute(
+            "SELECT title, template, data_json FROM resumes WHERE id = ? AND user_id = ?",
+            (resume_id, user_id)
+        ).fetchone()
+        if not row:
+            return jsonify({"error": "Resume draft not found"}), 404
+            
+        new_title = f"Copy of {row['title']}"
+        cursor = db.execute(
+            "INSERT INTO resumes (user_id, title, template, data_json) VALUES (?, ?, ?, ?)",
+            (user_id, new_title, row["template"], row["data_json"])
+        )
+        db.commit()
+        return jsonify({"message": "Resume duplicated successfully", "id": cursor.lastrowid})
 
 
 @app.route("/api/analyses", methods=["GET"])

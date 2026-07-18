@@ -1069,17 +1069,13 @@
         <span class="tab-icon">🔍</span>
         Analyze
       </button>
-      <button class="tab-btn" id="tabGenerate" onclick="switchTab('generate')">
+      <button class="tab-btn" id="tabBuilder" onclick="switchTab('builder')">
         <span class="tab-icon">✏️</span>
-        Generate
+        Resume Builder
       </button>
       <button class="tab-btn" id="tabImprove" onclick="switchTab('improve')">
         <span class="tab-icon">✨</span>
-        Improve
-      </button>
-      <button class="tab-btn" id="tabAutoapply" onclick="switchTab('autoapply')">
-        <span class="tab-icon">🚀</span>
-        Auto-Apply
+        AI Rewrite
       </button>
     </div>
 
@@ -1439,287 +1435,154 @@
     </div><!-- /#improvePanel -->
 
     <!-- ══════════════════════════════════════════════ -->
-    <!--  PANEL 4: AUTO-APPLY                          -->
+    <!--  PANEL 3: AI RESUME BUILDER                    -->
     <!-- ══════════════════════════════════════════════ -->
-    <div class="panel" id="autoapplyPanel">
+    <div class="panel" id="builderPanel">
       <div class="panel-hero">
-        <div class="hero-eyebrow">🚀 Auto-Apply &amp; Job Board</div>
-        <h1>Maximize job search &amp; <span class="g">apply instantly</span></h1>
-        <p>Discover real-time listings matched to your resume, calculate ATS scores, and launch automated applications.</p>
+        <div class="hero-eyebrow">✏️ AI Resume Builder</div>
+        <h1>Build &amp; format <span class="g">executive ATS resumes</span></h1>
+        <p>Craft tailored, ATS-ready resumes with real-time preview, multi-template styling, and AI-powered bullet improvers.</p>
       </div>
 
       <div class="content-area">
-
-        <!-- Employer Account Connections Card (White Theme & Authentic Account Manager) -->
-        <div class="card" style="margin-bottom:24px; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:14px; padding:20px; box-shadow:0 4px 18px rgba(0,0,0,0.03);">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-            <div>
-              <h3 style="margin:0; font-size:1.1rem; font-weight:800; color:#0f172a !important;">🔗 Candidate Account Connections &amp; Integration Hub</h3>
-              <p style="margin:4px 0 0; font-size:0.82rem; color:#475569 !important;">Connect your authentic career accounts so JobSpike submits applications directly under your profile.</p>
-            </div>
-            <span id="integrationStatusBadge" style="font-size:0.75rem; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; padding:4px 10px; border-radius:6px; font-weight:700;">
-              ⚠️ Accounts Not Connected
-            </span>
-          </div>
-
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
+        
+        <!-- Toolbar & Draft Manager -->
+        <div class="card" style="margin-bottom:20px; padding:16px 20px; background:#ffffff; border:1px solid #cbd5e1; color:#0f172a; border-radius:14px; box-shadow:0 4px 18px rgba(0,0,0,0.03);">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             
-            <!-- LinkedIn Connection -->
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">👔 LinkedIn Account</div>
-                <span id="linkedinBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
-              </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="linkedinInfoText">Connect for LinkedIn Easy Apply.</div>
-              <button id="connectLinkedinBtn" onclick="connectLinkedInAccount()" style="width:100%; background:#0a66c2; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect LinkedIn</button>
-            </div>
-
-            <!-- Indeed Connection -->
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">💼 Indeed Account</div>
-                <span id="indeedBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
-              </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="indeedInfoText">Connect for Indeed Direct Apply.</div>
-              <button id="connectIndeedBtn" onclick="connectIndeedAccount()" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect Indeed</button>
-            </div>
-
-            <!-- Glassdoor Connection -->
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">💚 Glassdoor Account</div>
-                <span id="glassdoorBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
-              </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="glassdoorInfoText">Connect Glassdoor account.</div>
-              <button id="connectGlassdoorBtn" onclick="connectGlassdoorAccount()" style="width:100%; background:#00a264; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect Glassdoor</button>
-            </div>
-
-            <!-- ZipRecruiter Connection -->
-            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">🚀 ZipRecruiter Account</div>
-                <span id="zipBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
-              </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="zipInfoText">Connect ZipRecruiter account.</div>
-              <button id="connectZipBtn" onclick="connectZipAccount()" style="width:100%; background:#059669; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect ZipRecruiter</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Search & Filter controls -->
-        <div class="card" style="margin-bottom:30px">
-          <div class="card-title">Search &amp; Filter Opportunities</div>
-          
-          <div class="search-row">
-            <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Software Engineer)">
-            <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 140px; border-radius: 8px; padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
-              <option value="Worldwide" selected>Worldwide 🌍</option>
-              <option value="US">United States 🇺🇸</option>
-              <option value="NZ">New Zealand 🇳🇿</option>
-              <option value="India">India 🇮🇳</option>
-              <option value="UK">United Kingdom 🇬🇧</option>
-              <option value="Canada">Canada 🇨🇦</option>
-              <option value="Australia">Australia 🇦🇺</option>
-              <option value="Germany">Germany 🇩🇪</option>
-              <option value="France">France 🇫🇷</option>
-              <option value="Singapore">Singapore 🇸🇬</option>
-            </select>
-            <input type="text" id="jobLocation" placeholder="Location (e.g. Charlotte NC, Auckland, Remote)" list="locationList">
-            <button class="btn btn-primary" onclick="searchJobs()">🔍 Search 250+ Jobs</button>
-            <datalist id="locationList">
-              <!-- Dynamically populated worldwide cities -->
-            </datalist>
-          </div>
-
-          <!-- 10+ Advanced Filters Grid -->
-          <div style="border-top: 1px solid var(--border); padding-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
-            
-            <!-- 1. Workplace Type Filter -->
-            <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Workplace Mode</label>
-              <select id="filterWorkplace" onchange="filterJobs()" style="width:100%; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); padding:6px 10px; font-size:0.8rem;">
-                <option value="all">All Modes (Remote/Hybrid/Onsite)</option>
-                <option value="Remote">🏠 Remote Only</option>
-                <option value="Hybrid">🔀 Hybrid Only</option>
-                <option value="On-Site">🏢 On-Site Only</option>
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+              <select id="builderDraftSelect" onchange="loadSelectedDraft()" style="max-width:200px; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:600; background:#f8fafc; color:#0f172a;">
+                <option value="new">+ Create New Resume Draft</option>
               </select>
-            </div>
-
-            <!-- 2. Employment Type Filter -->
-            <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Employment Type</label>
-              <select id="filterEmpType" onchange="filterJobs()" style="width:100%; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); padding:6px 10px; font-size:0.8rem;">
-                <option value="all">All Employment Types</option>
-                <option value="Full-time">Full-Time</option>
-                <option value="Contract">Contract / Freelance</option>
-                <option value="Part-time">Part-Time</option>
-                <option value="Internship">Internship</option>
-              </select>
-            </div>
-
-            <!-- 3. Minimum Salary Slider Filter -->
-            <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">
-                Min Salary: <span id="salVal" style="color:var(--accent); font-weight:800">Any</span>
-              </label>
-              <input type="range" id="minSalarySlider" min="0" max="150000" step="10000" value="0" oninput="$('salVal').textContent = this.value > 0 ? '$' + (this.value/1000) + 'k+' : 'Any';" onchange="filterJobs()" style="width:100%; accent-color:var(--accent);">
-            </div>
-
-            <!-- 4. Target Resume Selector Filter -->
-            <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Target Resume</label>
-              <select id="jobResumeSelect" onchange="filterJobs()" style="width:100%; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); padding:6px 10px; font-size:0.8rem;">
-                <option value="default">Default Active Resume</option>
-              </select>
-            </div>
-
-            <!-- 5. Score Slider Filter -->
-            <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">
-                Min Match Score: <span id="scoreVal" style="color:var(--accent); font-weight:800">60%</span>
-              </label>
-              <input type="range" id="minScoreSlider" min="60" max="95" value="60" oninput="$('scoreVal').textContent = this.value + '%'; filterJobs();" style="width:100%; accent-color:var(--accent);">
-            </div>
-
-            <!-- 6. Job Sources Dynamic Checklist -->
-            <div style="grid-column: span 1; min-width: 200px;">
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Job Sources</label>
-              <div id="dynamicSourceFilters" style="display:grid; grid-template-columns: 1fr 1fr; gap:4px 8px; max-height:85px; overflow-y:auto; padding:6px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15); font-size:0.72rem;">
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="LinkedIn" class="src-filter" onchange="filterJobs()"> LinkedIn</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Indeed" class="src-filter" onchange="filterJobs()"> Indeed</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Glassdoor" class="src-filter" onchange="filterJobs()"> Glassdoor</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="ZipRecruiter" class="src-filter" onchange="filterJobs()"> ZipRecruiter</label>
-                <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Adzuna" class="src-filter" onchange="filterJobs()"> Adzuna</label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Matching results -->
-        <div class="card" style="margin-bottom:30px">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-            <div class="card-title" style="margin:0">Matching Opportunities (<span id="matchCount">0</span> found)</div>
-            <button class="btn btn-primary btn-sm hidden" id="applyAllBtn" onclick="applyAllMatched()">⚡ Apply to All Matches</button>
-          </div>
-          <div class="job-list" id="jobListings">
-            <div style="text-align:center; padding:30px 10px; color:var(--muted); font-size:0.9rem">
-              Enter search keywords above to scan and load matching roles.
-            </div>
-          </div>
-        </div>
-
-        <!-- Application Execution Modal Overlay -->
-        <div id="applyModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; padding:20px;">
-          <div style="background:#ffffff; color:#1e1e1e; width:100%; max-width:600px; border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,0.3); overflow:hidden;">
-            <div style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color:#ffffff; padding:20px 24px; display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:#ffffff;">🚀 Application Execution Assistant</h3>
-                <p style="margin:4px 0 0; font-size:0.78rem; color:#94a3b8;">Automated Candidate Package &amp; Form Auto-Fill</p>
-              </div>
-              <button onclick="$('applyModalOverlay').style.display='none'" style="background:none; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer;">✕</button>
-            </div>
-            <div style="padding:24px; max-height:75vh; overflow-y:auto;">
+              <input type="text" id="builderTitle" placeholder="Resume Title (e.g. Senior DevOps Resume)" value="My Master Resume" style="max-width:220px; border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:600; background:#f8fafc; color:#0f172a;">
               
-              <!-- Target Details -->
-              <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-bottom:18px;">
-                <div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:4px;">Target Position</div>
-                <div style="font-weight:700; font-size:1.05rem; color:#0f172a;" id="modalJobTitle">Software Engineer</div>
-                <div style="font-size:0.85rem; color:#475569; margin-top:2px;" id="modalJobCompany">🏢 Tech Company • 📍 Remote</div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:0.75rem; font-weight:700; color:#475569; text-transform:uppercase;">Template:</span>
+                <select id="builderTemplateSelect" onchange="renderLivePreview()" style="border:1px solid #cbd5e1; border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#f0f9ff; color:#0369a1;">
+                  <option value="modern">Modern Executive 👔</option>
+                  <option value="minimal">Clean Minimalist 📄</option>
+                  <option value="tech">Tech Specialist 💻</option>
+                  <option value="creative">Creative Elegant 🎨</option>
+                </select>
               </div>
+            </div>
 
-              <!-- Attached Package Info -->
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:18px;">
-                <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
-                  <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:#64748b;">Attached Resume</div>
-                  <div style="font-weight:600; font-size:0.85rem; color:#1e293b; margin-top:4px;" id="modalResumeName">📄 Default Active Resume</div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <button class="btn btn-sm" onclick="saveResumeDraft()" style="background:#0284c7; color:#ffffff; font-weight:700;">💾 Save Draft</button>
+              <button class="btn btn-sm btn-ghost" onclick="duplicateCurrentDraft()" style="border-color:#cbd5e1; color:#334155; font-weight:600;">📄 Duplicate</button>
+              <button class="btn btn-sm btn-ghost" onclick="deleteCurrentDraft()" style="border-color:#fca5a5; color:#dc2626; font-weight:600;">🗑️ Delete</button>
+              <button class="btn btn-sm btn-primary" onclick="exportBuilderPdf()" style="background:#059669; border:none; color:#ffffff; font-weight:700;">📥 Export PDF</button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Split Screen Workspace: Left Form / Right Live Preview -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;" id="builderSplitGrid">
+          
+          <!-- LEFT COLUMN: Form Accordions -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            
+            <!-- 1. Personal Info -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span>👤 1. Personal Information</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <input type="text" id="bFullName" placeholder="Full Name (e.g. Alex Morgan)" oninput="renderLivePreview()" style="grid-column:span 2;">
+                <input type="text" id="bTargetRole" placeholder="Target Job Title (e.g. Senior DevOps Engineer)" oninput="renderLivePreview()" style="grid-column:span 2;">
+                <input type="email" id="bEmail" placeholder="Email Address" oninput="renderLivePreview()">
+                <input type="tel" id="bPhone" placeholder="Phone Number" oninput="renderLivePreview()">
+                <input type="text" id="bLocation" placeholder="City, State / Country" oninput="renderLivePreview()">
+                <input type="text" id="bLinkedin" placeholder="LinkedIn Profile URL" oninput="renderLivePreview()">
+                <input type="text" id="bGithub" placeholder="GitHub / Portfolio URL" oninput="renderLivePreview()" style="grid-column:span 2;">
+              </div>
+            </div>
+
+            <!-- 2. Executive Summary -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span>📝 2. Professional Summary</span>
+                <button class="btn btn-sm btn-ghost" onclick="aiAssist('generate_summary', 'bSummary')" style="font-size:0.75rem; border-color:var(--primary); color:var(--primary);">🤖 AI Generate Summary</button>
+              </div>
+              <textarea id="bSummary" placeholder="Briefly describe your career experience, core competencies, and key achievements..." oninput="renderLivePreview()" style="width:100%; height:85px; font-family:inherit; font-size:0.85rem; padding:10px; border-radius:8px; background:var(--input-bg); border:1px solid var(--border); color:var(--text);"></textarea>
+            </div>
+
+            <!-- 3. Work Experience -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span>💼 3. Work Experience</span>
+                <button class="btn btn-sm btn-primary" onclick="addExperienceRow()" style="font-size:0.75rem;">+ Add Position</button>
+              </div>
+              <div id="experienceList" style="display:flex; flex-direction:column; gap:14px;">
+                <!-- Dynamically populated experience entries -->
+              </div>
+            </div>
+
+            <!-- 4. Education -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🎓 4. Education</span>
+                <button class="btn btn-sm btn-primary" onclick="addEducationRow()" style="font-size:0.75rem;">+ Add Education</button>
+              </div>
+              <div id="educationList" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Dynamically populated education entries -->
+              </div>
+            </div>
+
+            <!-- 5. Skills -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px;">🛠️ 5. Skills &amp; Core Competencies</div>
+              <textarea id="bSkills" placeholder="Enter skills separated by commas (e.g. Kubernetes, AWS, Terraform, Docker, Python, CI/CD, Linux, Go)" oninput="renderLivePreview()" style="width:100%; height:75px; font-family:inherit; font-size:0.85rem; padding:10px; border-radius:8px; background:var(--input-bg); border:1px solid var(--border); color:var(--text);"></textarea>
+            </div>
+
+            <!-- 6. Projects -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🚀 6. Key Projects</span>
+                <button class="btn btn-sm btn-primary" onclick="addProjectRow()" style="font-size:0.75rem;">+ Add Project</button>
+              </div>
+              <div id="projectsList" style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Dynamically populated project entries -->
+              </div>
+            </div>
+
+            <!-- 7. Certifications & Languages -->
+            <div class="card" style="padding:18px;">
+              <div class="card-title" style="margin-bottom:14px;">📜 7. Certifications &amp; Languages</div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                  <label style="font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Certifications</label>
+                  <textarea id="bCerts" placeholder="AWS Certified Solutions Architect, Certified Kubernetes Administrator (CKA)..." oninput="renderLivePreview()" style="width:100%; height:65px; font-size:0.8rem; padding:8px; border-radius:6px; background:var(--input-bg); border:1px solid var(--border); color:var(--text);"></textarea>
                 </div>
-                <div style="border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
-                  <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; color:#64748b;">ATS Match Score</div>
-                  <div style="font-weight:700; font-size:0.95rem; color:#059669; margin-top:4px;" id="modalMatchScore">85% High Match</div>
+                <div>
+                  <label style="font-size:0.72rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Languages</label>
+                  <textarea id="bLanguages" placeholder="English (Native), Spanish (Professional)..." oninput="renderLivePreview()" style="width:100%; height:65px; font-size:0.8rem; padding:8px; border-radius:6px; background:var(--input-bg); border:1px solid var(--border); color:var(--text);"></textarea>
                 </div>
               </div>
+            </div>
 
-              <!-- AI Tailored Pitch / Cover Letter Snippet -->
-              <div style="margin-bottom:18px;">
-                <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:#64748b; margin-bottom:6px;">AI Tailored Application Cover Pitch</label>
-                <textarea id="modalCoverPitch" style="width:100%; height:95px; border:1px solid #cbd5e1 !important; border-radius:8px; padding:12px; font-size:0.85rem; color:#0f172a !important; background:#f8fafc !important; font-weight:600; font-family:inherit; resize:none;" readonly></textarea>
+          </div>
+
+          <!-- RIGHT COLUMN: Real-Time Live Preview -->
+          <div style="position:sticky; top:20px; align-self:start;">
+            <div class="card" style="padding:0; overflow:hidden; background:#ffffff; color:#0f172a; border:1px solid #cbd5e1; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,0.12);">
+              <div style="background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.75rem; font-weight:700; color:#64748b; text-transform:uppercase;">👁️ Live Document Preview</span>
+                <span style="font-size:0.72rem; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; padding:2px 8px; border-radius:4px; font-weight:700;">● Synchronized</span>
               </div>
-
-              <!-- Form Auto-Fill Automation Checklist & Live Execution Terminal -->
-              <div id="modalTerminalBox" style="display:none; background:#0f172a; border-radius:10px; padding:14px 16px; margin-bottom:20px; font-family:'Courier New', monospace; font-size:0.78rem; color:#38bdf8; border:1px solid #1e293b;">
-                <div style="font-weight:700; color:#f8fafc; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                  <span>🤖 LIVE AI APPLICATION RUNNER</span>
-                  <span id="modalProgressPct" style="color:#4ade80;">0%</span>
-                </div>
-                <!-- Progress Bar -->
-                <div style="width:100%; height:6px; background:#1e293b; border-radius:4px; margin-bottom:10px; overflow:hidden;">
-                  <div id="modalProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #38bdf8, #4ade80); transition:width 0.4s linear;"></div>
-                </div>
-                <div id="modalTerminalLogs" style="max-height:110px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; line-height:1.4;">
-                  <div>⚡ Initializing JobFindYou Auto-Submit Engine...</div>
-                </div>
-              </div>
-
-              <!-- Default Form Checklist (Pre-launch) -->
-              <div id="modalChecklistBox" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:20px; font-size:0.8rem; color:#166534;">
-                <div style="font-weight:700; margin-bottom:4px;">⚡ Form Auto-Fill Script Checklist:</div>
-                <div>✓ Candidate Profile &amp; Contact Details Extracted</div>
-                <div>✓ Resume File Prepared for Upload</div>
-                <div>✓ Custom Cover Letter Generated</div>
-                <div>✓ Automated Application Tracker Logged</div>
-              </div>
-
-              <!-- Submit Actions -->
-              <div style="display:flex; gap:12px; justify-content:flex-end;" id="modalActionRow">
-                <button onclick="$('applyModalOverlay').style.display='none'" class="btn btn-ghost" style="color:#475569; border-color:#cbd5e1;">Cancel</button>
-                <button id="modalConfirmBtn" class="btn btn-primary" style="background:#2563eb; border:none; padding:10px 20px;">⚡ Launch &amp; Auto-Submit</button>
+              
+              <!-- Printable Resume Container -->
+              <div id="resumeDocumentPreview" style="padding:32px 36px; min-height:650px; max-height:800px; overflow-y:auto; font-family:'Inter', sans-serif;">
+                <!-- Dynamically rendered based on active template -->
               </div>
             </div>
           </div>
+
         </div>
 
-        <!-- Tracker table -->
-        <div class="tracker-section">
-          <div class="tracker-title">
-            <span>📋</span> My Automated Applications
-          </div>
-          <div class="table-container">
-            <table class="track-table">
-              <thead>
-                <tr>
-                  <th>Job Details</th>
-                  <th>Match Score</th>
-                  <th>Auto-Submit Status</th>
-                  <th>Submitted At</th>
-                </tr>
-              </thead>
-              <tbody id="appTrackerBody">
-                <tr>
-                  <td colspan="4" style="text-align:center; padding:30px 10px; color:var(--muted)">
-                    No job applications queued yet. Click "One-Click Apply" on any opportunity to begin.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Waitlist reminder card -->
-        <div class="card" style="margin-top:40px; text-align:center; padding:30px">
-          <h3>⚡ Need priority approval?</h3>
-          <p style="color:var(--text-soft); font-size:0.87rem; margin-top:6px; margin-bottom:16px">
-            Join the waitlist to receive immediate priority execution once your queued applications are processed by the runner.
-          </p>
-          <div id="waitlistContainer">
-            <button class="btn btn-outline" id="waitlistBtn" onclick="joinWaitlist()" style="max-width:260px; margin:0 auto; display:block">
-              Join Waitlist
-            </button>
-            <p id="waitlistMsg" style="margin-top: 12px; font-weight:600; font-size: 0.85rem;" class="hidden"></p>
-          </div>
-        </div>
       </div>
-    </div><!-- /#autoapplyPanel -->
+    </div><!-- /#builderPanel -->
 
   </main>
 </div>
@@ -2798,92 +2661,428 @@ function connectIndeedAccount() {
   updateAccountConnectionUI();
 }
 
-function connectGlassdoorAccount() {
-  const w = 620, h = 720;
-  const left = (window.screen.width - w) / 2;
-  const top = (window.screen.height - h) / 2;
-  window.open("https://www.glassdoor.com/profile/login_input.htm", "GlassdoorAuthWindow", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,status=yes,resizable=yes`);
-  localStorage.setItem('connected_glassdoor', 'active_browser_session');
-  updateAccountConnectionUI();
+// ── PHASE 2: AI RESUME BUILDER ENGINE ─────────────────────────────────────
+let currentDraftId = null;
+
+function addExperienceRow(data = {}) {
+  const container = $('experienceList');
+  const id = 'exp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const div = document.createElement('div');
+  div.className = 'builder-item-card';
+  div.id = id;
+  div.style.cssText = 'background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:8px; position:relative;';
+  div.innerHTML = `
+    <button onclick="this.parentElement.remove(); renderLivePreview();" style="position:absolute; top:10px; right:10px; background:none; border:none; color:var(--bad); font-size:1rem; cursor:pointer;">✕</button>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <input type="text" class="exp-title" placeholder="Job Title (e.g. Senior DevOps Lead)" value="${escHtml(data.title || '')}" oninput="renderLivePreview()">
+      <input type="text" class="exp-company" placeholder="Company Name (e.g. CloudTech Corp)" value="${escHtml(data.company || '')}" oninput="renderLivePreview()">
+      <input type="text" class="exp-dates" placeholder="Dates (e.g. 2021 – Present)" value="${escHtml(data.dates || '')}" oninput="renderLivePreview()">
+      <input type="text" class="exp-location" placeholder="Location (e.g. Charlotte, NC)" value="${escHtml(data.location || '')}" oninput="renderLivePreview()">
+    </div>
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <label style="font-size:0.7rem; font-weight:700; color:var(--muted); text-transform:uppercase;">Bullet Achievements</label>
+        <div style="display:flex; gap:6px;">
+          <button class="btn btn-sm btn-ghost" onclick="aiAssistItem('improve_bullet', '${id}', '.exp-bullets')" style="font-size:0.68rem; padding:2px 6px;">✨ AI Improve</button>
+          <button class="btn btn-sm btn-ghost" onclick="aiAssistItem('quantify_bullet', '${id}', '.exp-bullets')" style="font-size:0.68rem; padding:2px 6px;">📊 Quantify</button>
+        </div>
+      </div>
+      <textarea class="exp-bullets" placeholder="• Led migration of 40+ microservices to EKS...\n• Automated CI/CD pipelines..." oninput="renderLivePreview()" style="width:100%; height:75px; font-size:0.8rem; padding:8px; border-radius:6px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:var(--text);">${escHtml(data.bullets || '')}</textarea>
+    </div>
+  `;
+  container.appendChild(div);
+  renderLivePreview();
 }
 
-function connectZipAccount() {
-  const w = 620, h = 720;
-  const left = (window.screen.width - w) / 2;
-  const top = (window.screen.height - h) / 2;
-  window.open("https://www.ziprecruiter.com/login", "ZipAuthWindow", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,status=yes,resizable=yes`);
-  localStorage.setItem('connected_zip', 'active_browser_session');
-  updateAccountConnectionUI();
+function addEducationRow(data = {}) {
+  const container = $('educationList');
+  const id = 'edu_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const div = document.createElement('div');
+  div.className = 'builder-item-card';
+  div.id = id;
+  div.style.cssText = 'background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; position:relative;';
+  div.innerHTML = `
+    <button onclick="this.parentElement.remove(); renderLivePreview();" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--bad); cursor:pointer;">✕</button>
+    <input type="text" class="edu-degree" placeholder="Degree / Qualification (e.g. B.S. Computer Science)" value="${escHtml(data.degree || '')}" oninput="renderLivePreview()" style="grid-column:span 2;">
+    <input type="text" class="edu-school" placeholder="University / Institution" value="${escHtml(data.school || '')}" oninput="renderLivePreview()">
+    <input type="text" class="edu-year" placeholder="Graduation Year (e.g. 2020)" value="${escHtml(data.year || '')}" oninput="renderLivePreview()">
+  `;
+  container.appendChild(div);
+  renderLivePreview();
 }
 
-function updateAccountConnectionUI() {
-  const linkedin = localStorage.getItem('connected_linkedin');
-  const indeed = localStorage.getItem('connected_indeed');
-  const glassdoor = localStorage.getItem('connected_glassdoor');
-  const zip = localStorage.getItem('connected_zip');
+function addProjectRow(data = {}) {
+  const container = $('projectsList');
+  const id = 'proj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const div = document.createElement('div');
+  div.className = 'builder-item-card';
+  div.id = id;
+  div.style.cssText = 'background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:6px; position:relative;';
+  div.innerHTML = `
+    <button onclick="this.parentElement.remove(); renderLivePreview();" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--bad); cursor:pointer;">✕</button>
+    <input type="text" class="proj-title" placeholder="Project Name (e.g. Automated Multi-Region Kubernetes Failover)" value="${escHtml(data.title || '')}" oninput="renderLivePreview()">
+    <input type="text" class="proj-tech" placeholder="Tech Stack (e.g. Terraform, AWS, EKS, Helm, Go)" value="${escHtml(data.tech || '')}" oninput="renderLivePreview()">
+    <textarea class="proj-bullets" placeholder="• Designed high availability failover system reducing downtime..." oninput="renderLivePreview()" style="width:100%; height:55px; font-size:0.8rem; padding:6px; border-radius:6px; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:var(--text);">${escHtml(data.bullets || '')}</textarea>
+  `;
+  container.appendChild(div);
+  renderLivePreview();
+}
 
-  if (linkedin) {
-    if ($('linkedinBadge')) {
-      $('linkedinBadge').textContent = 'Connected ✓';
-      $('linkedinBadge').style.background = '#ecfdf5';
-      $('linkedinBadge').style.color = '#059669';
-    }
-    if ($('linkedinInfoText')) $('linkedinInfoText').textContent = '🟢 Connected Session';
-    if ($('connectLinkedinBtn')) {
-      $('connectLinkedinBtn').textContent = '⚙️ Change Connection';
-      $('connectLinkedinBtn').style.background = '#334155';
-    }
+async function aiAssist(action, elementId) {
+  const inputEl = $(elementId);
+  if (!inputEl) return;
+  const currentText = inputEl.value.trim();
+  const targetRole = ($('bTargetRole')?.value || '').trim();
+  
+  const origBtnText = event?.target ? event.target.textContent : '';
+  if (event?.target) { event.target.disabled = true; event.target.textContent = '⏳ AI Working...'; }
+
+  try {
+    const res = await fetch('/api/builder/ai-assist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, text: currentText, target_role: targetRole })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    inputEl.value = data.result;
+    renderLivePreview();
+  } catch (err) {
+    alert("AI Assistance Error: " + err.message);
+  } finally {
+    if (event?.target) { event.target.disabled = false; event.target.textContent = origBtnText; }
+  }
+}
+
+async function aiAssistItem(action, cardId, selector) {
+  const card = $(cardId);
+  if (!card) return;
+  const textarea = card.querySelector(selector);
+  if (!textarea) return;
+
+  const currentText = textarea.value.trim();
+  const origBtnText = event?.target ? event.target.textContent : '';
+  if (event?.target) { event.target.disabled = true; event.target.textContent = '⏳ AI...'; }
+
+  try {
+    const res = await fetch('/api/builder/ai-assist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, text: currentText, target_role: $('bTargetRole')?.value || '' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    textarea.value = data.result;
+    renderLivePreview();
+  } catch (err) {
+    alert("AI Improvement failed: " + err.message);
+  } finally {
+    if (event?.target) { event.target.disabled = false; event.target.textContent = origBtnText; }
+  }
+}
+
+function getFormData() {
+  const expItems = Array.from(document.querySelectorAll('#experienceList .builder-item-card')).map(card => ({
+    title: card.querySelector('.exp-title')?.value || '',
+    company: card.querySelector('.exp-company')?.value || '',
+    dates: card.querySelector('.exp-dates')?.value || '',
+    location: card.querySelector('.exp-location')?.value || '',
+    bullets: card.querySelector('.exp-bullets')?.value || ''
+  }));
+
+  const eduItems = Array.from(document.querySelectorAll('#educationList .builder-item-card')).map(card => ({
+    degree: card.querySelector('.edu-degree')?.value || '',
+    school: card.querySelector('.edu-school')?.value || '',
+    year: card.querySelector('.edu-year')?.value || ''
+  }));
+
+  const projItems = Array.from(document.querySelectorAll('#projectsList .builder-item-card')).map(card => ({
+    title: card.querySelector('.proj-title')?.value || '',
+    tech: card.querySelector('.proj-tech')?.value || '',
+    bullets: card.querySelector('.proj-bullets')?.value || ''
+  }));
+
+  return {
+    fullName: $('bFullName')?.value || '',
+    targetRole: $('bTargetRole')?.value || '',
+    email: $('bEmail')?.value || '',
+    phone: $('bPhone')?.value || '',
+    location: $('bLocation')?.value || '',
+    linkedin: $('bLinkedin')?.value || '',
+    github: $('bGithub')?.value || '',
+    summary: $('bSummary')?.value || '',
+    skills: $('bSkills')?.value || '',
+    certs: $('bCerts')?.value || '',
+    languages: $('bLanguages')?.value || '',
+    experience: expItems,
+    education: eduItems,
+    projects: projItems
+  };
+}
+
+function renderLivePreview() {
+  const d = getFormData();
+  const template = $('builderTemplateSelect')?.value || 'modern';
+  const container = $('resumeDocumentPreview');
+  if (!container) return;
+
+  const contactLine = [d.email, d.phone, d.location, d.linkedin, d.github].filter(Boolean).join(' | ');
+
+  if (template === 'modern') {
+    container.innerHTML = `
+      <div style="color:#0f172a; font-family:'Inter', sans-serif;">
+        <div style="border-bottom:2px solid #0284c7; padding-bottom:12px; margin-bottom:16px;">
+          <h1 style="margin:0; font-size:24px; font-weight:800; color:#0f172a; text-transform:uppercase; letter-spacing:-0.5px;">${escHtml(d.fullName || 'YOUR FULL NAME')}</h1>
+          <div style="font-size:14px; font-weight:700; color:#0284c7; margin-top:2px;">${escHtml(d.targetRole || 'Target Professional Title')}</div>
+          <div style="font-size:11px; color:#64748b; margin-top:4px;">${escHtml(contactLine)}</div>
+        </div>
+
+        ${d.summary ? `<div style="margin-bottom:16px;"><h3 style="font-size:12px; font-weight:800; color:#0284c7; text-transform:uppercase; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:6px;">Executive Summary</h3><p style="font-size:12px; color:#334155; margin:0; line-height:1.5;">${escHtml(d.summary)}</p></div>` : ''}
+
+        ${d.experience.length ? `<div style="margin-bottom:16px;"><h3 style="font-size:12px; font-weight:800; color:#0284c7; text-transform:uppercase; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:8px;">Professional Experience</h3>
+          ${d.experience.map(e => `
+            <div style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#0f172a;">
+                <span>${escHtml(e.title)} — ${escHtml(e.company)}</span>
+                <span style="font-size:11px; color:#64748b;">${escHtml(e.dates)}</span>
+              </div>
+              ${e.bullets ? `<div style="font-size:11.5px; color:#334155; margin-top:4px; white-space:pre-line;">${escHtml(e.bullets)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>` : ''}
+
+        ${d.skills ? `<div style="margin-bottom:16px;"><h3 style="font-size:12px; font-weight:800; color:#0284c7; text-transform:uppercase; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:6px;">Skills &amp; Competencies</h3><p style="font-size:11.5px; color:#334155; margin:0;">${escHtml(d.skills)}</p></div>` : ''}
+
+        ${d.education.length ? `<div style="margin-bottom:16px;"><h3 style="font-size:12px; font-weight:800; color:#0284c7; text-transform:uppercase; border-bottom:1px solid #e2e8f0; padding-bottom:3px; margin-bottom:6px;">Education</h3>
+          ${d.education.map(ed => `<div style="font-size:12px; color:#334155; margin-bottom:4px;"><strong>${escHtml(ed.degree)}</strong> — ${escHtml(ed.school)} (${escHtml(ed.year)})</div>`).join('')}
+        </div>` : ''}
+      </div>
+    `;
+  } else if (template === 'minimal') {
+    container.innerHTML = `
+      <div style="color:#111111; font-family:Georgia, serif;">
+        <div style="text-align:center; margin-bottom:20px; border-bottom:1px solid #111; padding-bottom:12px;">
+          <h1 style="margin:0; font-size:26px; font-weight:normal; letter-spacing:1px;">${escHtml(d.fullName || 'YOUR FULL NAME')}</h1>
+          <div style="font-size:13px; font-style:italic; color:#444; margin-top:4px;">${escHtml(d.targetRole)}</div>
+          <div style="font-size:11px; color:#666; margin-top:6px;">${escHtml(contactLine)}</div>
+        </div>
+
+        ${d.summary ? `<div style="margin-bottom:16px;"><h2 style="font-size:11px; text-transform:uppercase; letter-spacing:1.5px; border-bottom:1px solid #ccc; padding-bottom:2px;">Summary</h2><p style="font-size:11.5px; line-height:1.6; color:#222;">${escHtml(d.summary)}</p></div>` : ''}
+
+        ${d.experience.length ? `<div style="margin-bottom:16px;"><h2 style="font-size:11px; text-transform:uppercase; letter-spacing:1.5px; border-bottom:1px solid #ccc; padding-bottom:2px;">Experience</h2>
+          ${d.experience.map(e => `
+            <div style="margin-bottom:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px;">
+                <strong>${escHtml(e.title)}, ${escHtml(e.company)}</strong>
+                <span>${escHtml(e.dates)}</span>
+              </div>
+              <div style="font-size:11px; color:#333; margin-top:4px; white-space:pre-line;">${escHtml(e.bullets)}</div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+
+        ${d.skills ? `<div style="margin-bottom:16px;"><h2 style="font-size:11px; text-transform:uppercase; letter-spacing:1.5px; border-bottom:1px solid #ccc; padding-bottom:2px;">Skills</h2><p style="font-size:11px; color:#222;">${escHtml(d.skills)}</p></div>` : ''}
+      </div>
+    `;
+  } else {
+    // Tech & Creative templates
+    container.innerHTML = `
+      <div style="color:#0f172a; font-family:'Inter', sans-serif;">
+        <div style="background:#0f172a; color:#ffffff; padding:20px; border-radius:10px; margin-bottom:16px;">
+          <h1 style="margin:0; font-size:22px; font-weight:800; color:#38bdf8;">${escHtml(d.fullName || 'YOUR FULL NAME')}</h1>
+          <div style="font-size:13px; font-weight:700; color:#f8fafc; margin-top:2px;">${escHtml(d.targetRole)}</div>
+          <div style="font-size:11px; color:#94a3b8; margin-top:6px;">${escHtml(contactLine)}</div>
+        </div>
+
+        ${d.summary ? `<div style="margin-bottom:14px;"><h3 style="font-size:12px; font-weight:800; color:#0f172a; text-transform:uppercase;">Summary</h3><p style="font-size:11.5px; color:#334155; line-height:1.5;">${escHtml(d.summary)}</p></div>` : ''}
+
+        ${d.experience.length ? `<div style="margin-bottom:14px;"><h3 style="font-size:12px; font-weight:800; color:#0f172a; text-transform:uppercase;">Experience</h3>
+          ${d.experience.map(e => `
+            <div style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
+                <span>${escHtml(e.title)} — ${escHtml(e.company)}</span>
+                <span style="font-size:11px; color:#64748b;">${escHtml(e.dates)}</span>
+              </div>
+              <div style="font-size:11px; color:#334155; margin-top:4px; white-space:pre-line;">${escHtml(e.bullets)}</div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+
+        ${d.skills ? `<div><h3 style="font-size:12px; font-weight:800; color:#0f172a; text-transform:uppercase;">Tech Stack &amp; Skills</h3><p style="font-size:11px; color:#334155;">${escHtml(d.skills)}</p></div>` : ''}
+      </div>
+    `;
+  }
+}
+
+async function loadResumeDrafts() {
+  try {
+    const res = await fetch('/api/resumes');
+    const drafts = await res.json();
+    if (!res.ok) return;
+
+    const select = $('builderDraftSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="new">+ Create New Resume Draft</option>';
+
+    drafts.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = `📄 ${d.title} (${fmtDate(d.updated_at)})`;
+      select.appendChild(opt);
+    });
+
+    if (currentDraftId) select.value = currentDraftId;
+  } catch (e) { console.warn("Could not load drafts", e); }
+}
+
+async function loadSelectedDraft() {
+  const select = $('builderDraftSelect');
+  const id = select.value;
+  if (id === 'new') {
+    currentDraftId = null;
+    $('builderTitle').value = 'My Master Resume';
+    $('bFullName').value = '';
+    $('bTargetRole').value = '';
+    $('bEmail').value = '';
+    $('bPhone').value = '';
+    $('bLocation').value = '';
+    $('bLinkedin').value = '';
+    $('bGithub').value = '';
+    $('bSummary').value = '';
+    $('bSkills').value = '';
+    $('bCerts').value = '';
+    $('bLanguages').value = '';
+    $('experienceList').innerHTML = '';
+    $('educationList').innerHTML = '';
+    $('projectsList').innerHTML = '';
+    addExperienceRow({ title: 'Senior Engineer', company: 'CloudTech Corp', dates: '2021 – Present', bullets: '• Led architecture migration to Kubernetes...' });
+    renderLivePreview();
+    return;
   }
 
-  if (indeed) {
-    if ($('indeedBadge')) {
-      $('indeedBadge').textContent = 'Connected ✓';
-      $('indeedBadge').style.background = '#ecfdf5';
-      $('indeedBadge').style.color = '#059669';
-    }
-    if ($('indeedInfoText')) $('indeedInfoText').textContent = '🟢 Connected Session';
-    if ($('connectIndeedBtn')) {
-      $('connectIndeedBtn').textContent = '⚙️ Change Connection';
-      $('connectIndeedBtn').style.background = '#334155';
-    }
-  }
+  try {
+    const res = await fetch(`/api/resumes/${id}`);
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error);
 
-  if (glassdoor) {
-    if ($('glassdoorBadge')) {
-      $('glassdoorBadge').textContent = 'Connected ✓';
-      $('glassdoorBadge').style.background = '#ecfdf5';
-      $('glassdoorBadge').style.color = '#059669';
-    }
-    if ($('glassdoorInfoText')) $('glassdoorInfoText').textContent = '🟢 Connected Session';
-    if ($('connectGlassdoorBtn')) {
-      $('connectGlassdoorBtn').textContent = '⚙️ Change Connection';
-      $('connectGlassdoorBtn').style.background = '#334155';
-    }
-  }
+    currentDraftId = resData.id;
+    $('builderTitle').value = resData.title || 'Untitled Resume';
+    $('builderTemplateSelect').value = resData.template || 'modern';
 
-  if (zip) {
-    if ($('zipBadge')) {
-      $('zipBadge').textContent = 'Connected ✓';
-      $('zipBadge').style.background = '#ecfdf5';
-      $('zipBadge').style.color = '#059669';
-    }
-    if ($('zipInfoText')) $('zipInfoText').textContent = '🟢 Connected Session';
-    if ($('connectZipBtn')) {
-      $('connectZipBtn').textContent = '⚙️ Change Connection';
-      $('connectZipBtn').style.background = '#334155';
-    }
-  }
+    const p = resData.data || {};
+    $('bFullName').value = p.fullName || '';
+    $('bTargetRole').value = p.targetRole || '';
+    $('bEmail').value = p.email || '';
+    $('bPhone').value = p.phone || '';
+    $('bLocation').value = p.location || '';
+    $('bLinkedin').value = p.linkedin || '';
+    $('bGithub').value = p.github || '';
+    $('bSummary').value = p.summary || '';
+    $('bSkills').value = p.skills || '';
+    $('bCerts').value = p.certs || '';
+    $('bLanguages').value = p.languages || '';
 
-  if ((linkedin || indeed || glassdoor || zip) && $('integrationStatusBadge')) {
-    $('integrationStatusBadge').textContent = '● Verified Accounts Synced';
-    $('integrationStatusBadge').style.background = '#ecfdf5';
-    $('integrationStatusBadge').style.color = '#059669';
-    $('integrationStatusBadge').style.borderColor = '#6ee7b7';
+    $('experienceList').innerHTML = '';
+    (p.experience || []).forEach(e => addExperienceRow(e));
+    if (!p.experience || !p.experience.length) addExperienceRow();
+
+    $('educationList').innerHTML = '';
+    (p.education || []).forEach(ed => addEducationRow(ed));
+
+    $('projectsList').innerHTML = '';
+    (p.projects || []).forEach(proj => addProjectRow(proj));
+
+    renderLivePreview();
+  } catch (err) {
+    alert("Draft load error: " + err.message);
   }
+}
+
+async function saveResumeDraft() {
+  const title = ($('builderTitle')?.value || '').trim() || 'My Master Resume';
+  const template = $('builderTemplateSelect')?.value || 'modern';
+  const payload = { title, template, data: getFormData() };
+
+  try {
+    let url = '/api/resumes';
+    let method = 'POST';
+    if (currentDraftId) {
+      url = `/api/resumes/${currentDraftId}`;
+      method = 'PUT';
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const resData = await res.json();
+    if (!res.ok) throw new Error(resData.error);
+
+    if (!currentDraftId && resData.id) currentDraftId = resData.id;
+    alert("✅ Resume draft saved successfully!");
+    loadResumeDrafts();
+  } catch (err) {
+    alert("Save draft error: " + err.message);
+  }
+}
+
+async function duplicateCurrentDraft() {
+  if (!currentDraftId) {
+    alert("Please save your draft first before duplicating.");
+    return;
+  }
+  try {
+    const res = await fetch(`/api/resumes/${currentDraftId}/duplicate`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    alert("✅ Resume duplicated!");
+    currentDraftId = data.id;
+    loadResumeDrafts();
+  } catch (err) {
+    alert("Duplicate failed: " + err.message);
+  }
+}
+
+async function deleteCurrentDraft() {
+  if (!currentDraftId) {
+    alert("No saved draft selected.");
+    return;
+  }
+  if (!confirm("Are you sure you want to delete this resume draft?")) return;
+
+  try {
+    const res = await fetch(`/api/resumes/${currentDraftId}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    currentDraftId = null;
+    loadResumeDrafts();
+    loadSelectedDraft();
+  } catch (err) {
+    alert("Delete failed: " + err.message);
+  }
+}
+
+function exportBuilderPdf() {
+  const content = $('resumeDocumentPreview')?.innerHTML;
+  if (!content) return;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Resume</title><style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 820px; margin: 30px auto; padding: 0 40px; color: #0f172a; line-height: 1.5; }
+    @media print { @page { margin: 15mm; } }
+  </style></head><body>${content}<script>setTimeout(()=>{ window.print(); }, 400);<\/script></body></html>`);
+  win.document.close();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  updateAccountConnectionUI();
+  loadResumeDrafts();
+  // Populate initial default experience row if empty
+  if ($('experienceList') && !$('experienceList').children.length) {
+    addExperienceRow({ title: 'Senior DevOps Lead', company: 'CloudTech Corp', dates: '2021 – Present', bullets: '• Led migration of 40+ microservices to AWS EKS, reducing deployment cycle times by 65%\n• Implemented automated CI/CD pipelines with Terraform and GitHub Actions' });
+    addEducationRow({ degree: 'B.S. Computer Science', school: 'University of North Carolina', year: '2020' });
+  }
 });
 </script>
 </body>
