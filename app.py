@@ -710,6 +710,27 @@ def search_jobs():
             "Bengaluru": ["Infosys", "Wipro", "TCS", "Flipkart", "Razorpay", "Swiggy", "Ola", "Accenture", "Google India"],
             "London": ["Barclays", "Revolut", "Monzo", "HSBC", "BP", "Deliveroo", "Arup", "Unilever"]
         }
+        employer_portals = {
+            "Bank of America": "https://careers.bankofamerica.com",
+            "Wells Fargo": "https://www.wellsfargo.com/about/careers",
+            "Duke Energy": "https://www.duke-energy.com/our-company/careers",
+            "Lowe's": "https://talent.lowes.com",
+            "Truist Financial": "https://www.truist.com/careers",
+            "Honeywell": "https://careers.honeywell.com",
+            "TIAA": "https://www.tiaa.org/public/about-tiaa/careers",
+            "Red Ventures": "https://www.redventures.com/careers",
+            "Atrium Health": "https://careers.atriumhealth.org",
+            "Centene": "https://jobs.centene.com",
+            "Xero": "https://www.xero.com/about/careers",
+            "Air New Zealand": "https://careers.airnewzealand.co.nz",
+            "Spark NZ": "https://careers.spark.co.nz",
+            "ASB Bank": "https://www.asb.co.nz/careers.html",
+            "Infosys": "https://www.infosys.com/careers.html",
+            "TCS": "https://www.tcs.com/careers",
+            "Wipro": "https://careers.wipro.com",
+            "Barclays": "https://search.jobs.barclays",
+            "HSBC": "https://www.hsbc.com/careers"
+        }
         companies = top_employers.get(city_name, ["Enterprise Tech Corp", "Global Solutions", "Apex Systems", "Innovate Tech", "Summit Financial", "Beacon Partners"])
         
         roles = [
@@ -726,8 +747,9 @@ def search_jobs():
             wp = workplaces[i % len(workplaces)]
             src = sources[i % len(sources)]
             sal_min = 90000 + (i * 2500)
-            sal_max = sal_min + 35000
             score = 70 + (i % 26)
+
+            portal = employer_portals.get(comp_name, f"https://www.indeed.com/jobs?q={urllib.parse.quote(role_title + ' ' + comp_name)}&l={urllib.parse.quote(city_name)}")
 
             jobs.append({
                 "t": role_title,
@@ -735,12 +757,12 @@ def search_jobs():
                 "l": f"{city_name}, {country.upper()}",
                 "s": src,
                 "sc": score,
-                "sa": f"${sal_min:,} - ${sal_max:,} /year",
+                "sa": f"${sal_min:,} - ${sal_min + 35000:,} /year",
                 "sv": sal_min,
                 "w": wp,
                 "e": "Full-time",
                 "d": f"We are hiring a skilled {role_title} to join our engineering team in {city_name}. Key responsibilities include cloud infrastructure deployment, CI/CD pipeline automation, and system reliability management.",
-                "u": f"https://www.google.com/search?q={urllib.parse.quote(role_title + ' ' + comp_name + ' ' + city_name + ' jobs')}"
+                "u": portal
             })
 
     return jsonify({"jobs": jobs, "total": len(jobs)})
