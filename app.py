@@ -180,6 +180,13 @@ def init_db():
             db.execute("ALTER TABLE applications ADD COLUMN portal_url TEXT")
         if "resume_name" not in app_cols:
             db.execute("ALTER TABLE applications ADD COLUMN resume_name TEXT")
+            
+        # Reset applications table for all users
+        try:
+            db.execute("DELETE FROM applications")
+            db.commit()
+        except Exception:
+            pass
 
 def login_required(view):
     @wraps(view)

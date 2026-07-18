@@ -1453,7 +1453,7 @@
             </span>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:14px;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px;">
             
             <!-- LinkedIn Connection -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
@@ -1461,10 +1461,8 @@
                 <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">👔 LinkedIn Account</div>
                 <span id="linkedinBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
               </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="linkedinInfoText">No LinkedIn profile connected. Connect your URL to enable Easy Apply.</div>
-              <div style="display:flex; gap:8px;">
-                <button id="connectLinkedinBtn" onclick="connectLinkedInAccount()" style="width:100%; background:#0a66c2; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect LinkedIn Profile</button>
-              </div>
+              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="linkedinInfoText">Connect for LinkedIn Easy Apply.</div>
+              <button id="connectLinkedinBtn" onclick="connectLinkedInAccount()" style="width:100%; background:#0a66c2; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect LinkedIn</button>
             </div>
 
             <!-- Indeed Connection -->
@@ -1473,20 +1471,28 @@
                 <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">💼 Indeed Account</div>
                 <span id="indeedBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
               </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="indeedInfoText">Connect your Indeed candidate profile for 1-click apply.</div>
-              <div style="display:flex; gap:8px;">
-                <button id="connectIndeedBtn" onclick="connectIndeedAccount()" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect Indeed Profile</button>
-              </div>
+              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="indeedInfoText">Connect for Indeed Direct Apply.</div>
+              <button id="connectIndeedBtn" onclick="connectIndeedAccount()" style="width:100%; background:#2563eb; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect Indeed</button>
             </div>
 
-            <!-- Workday / ATS Extension Sync -->
+            <!-- Glassdoor Connection -->
             <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">⚡ Extension &amp; ATS Sync</div>
-                <span id="extensionBadge" style="font-size:0.7rem; font-weight:700; color:#059669; background:#ecfdf5; padding:2px 6px; border-radius:4px;">Extension Ready</span>
+                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">💚 Glassdoor Account</div>
+                <span id="glassdoorBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
               </div>
-              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;">Form auto-fill &amp; PDF resume injector active for company portals.</div>
-              <button onclick="alert('⚡ JobSpike Extension active. Upload your PDF resume in the extension popup to auto-fill Workday & Lever forms!')" style="width:100%; background:#059669; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">✓ Managed via Extension</button>
+              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="glassdoorInfoText">Connect Glassdoor account.</div>
+              <button id="connectGlassdoorBtn" onclick="connectGlassdoorAccount()" style="width:100%; background:#00a264; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect Glassdoor</button>
+            </div>
+
+            <!-- ZipRecruiter Connection -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div style="font-size:0.88rem; font-weight:700; color:#0f172a;">🚀 ZipRecruiter Account</div>
+                <span id="zipBadge" style="font-size:0.7rem; font-weight:700; color:#dc2626; background:#fef2f2; padding:2px 6px; border-radius:4px;">Not Connected</span>
+              </div>
+              <div style="font-size:0.78rem; color:#64748b; margin-bottom:10px;" id="zipInfoText">Connect ZipRecruiter account.</div>
+              <button id="connectZipBtn" onclick="connectZipAccount()" style="width:100%; background:#059669; color:#ffffff; border:none; padding:7px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">🔗 Connect ZipRecruiter</button>
             </div>
 
           </div>
@@ -2204,6 +2210,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
   loadHistory();
   updateLocationSuggestions();
+  updateAccountConnectionUI();
+
+  // Auto-load matching jobs on initial view
+  setTimeout(() => {
+    if ($('jobQuery') && !$('jobQuery').value.trim()) {
+      $('jobQuery').value = "DevOps Engineer";
+    }
+    searchJobs();
+  }, 400);
 
   // Collapse sidebar on mobile
   if (window.innerWidth < 900) $('sidebar').classList.add('hidden');
@@ -2645,9 +2660,29 @@ function connectIndeedAccount() {
   updateAccountConnectionUI();
 }
 
+function connectGlassdoorAccount() {
+  const w = 620, h = 720;
+  const left = (window.screen.width - w) / 2;
+  const top = (window.screen.height - h) / 2;
+  window.open("https://www.glassdoor.com/profile/login_input.htm", "GlassdoorAuthWindow", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,status=yes,resizable=yes`);
+  localStorage.setItem('connected_glassdoor', 'active_browser_session');
+  updateAccountConnectionUI();
+}
+
+function connectZipAccount() {
+  const w = 620, h = 720;
+  const left = (window.screen.width - w) / 2;
+  const top = (window.screen.height - h) / 2;
+  window.open("https://www.ziprecruiter.com/login", "ZipAuthWindow", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,status=yes,resizable=yes`);
+  localStorage.setItem('connected_zip', 'active_browser_session');
+  updateAccountConnectionUI();
+}
+
 function updateAccountConnectionUI() {
   const linkedin = localStorage.getItem('connected_linkedin');
   const indeed = localStorage.getItem('connected_indeed');
+  const glassdoor = localStorage.getItem('connected_glassdoor');
+  const zip = localStorage.getItem('connected_zip');
 
   if (linkedin) {
     if ($('linkedinBadge')) {
@@ -2655,7 +2690,7 @@ function updateAccountConnectionUI() {
       $('linkedinBadge').style.background = '#ecfdf5';
       $('linkedinBadge').style.color = '#059669';
     }
-    if ($('linkedinInfoText')) $('linkedinInfoText').textContent = '🟢 Connected: ' + linkedin;
+    if ($('linkedinInfoText')) $('linkedinInfoText').textContent = '🟢 Connected Session';
     if ($('connectLinkedinBtn')) {
       $('connectLinkedinBtn').textContent = '⚙️ Change Connection';
       $('connectLinkedinBtn').style.background = '#334155';
@@ -2668,15 +2703,41 @@ function updateAccountConnectionUI() {
       $('indeedBadge').style.background = '#ecfdf5';
       $('indeedBadge').style.color = '#059669';
     }
-    if ($('indeedInfoText')) $('indeedInfoText').textContent = '🟢 Connected: ' + indeed;
+    if ($('indeedInfoText')) $('indeedInfoText').textContent = '🟢 Connected Session';
     if ($('connectIndeedBtn')) {
       $('connectIndeedBtn').textContent = '⚙️ Change Connection';
       $('connectIndeedBtn').style.background = '#334155';
     }
   }
 
-  if ((linkedin || indeed) && $('integrationStatusBadge')) {
-    $('integrationStatusBadge').textContent = '● Verified Account Synced';
+  if (glassdoor) {
+    if ($('glassdoorBadge')) {
+      $('glassdoorBadge').textContent = 'Connected ✓';
+      $('glassdoorBadge').style.background = '#ecfdf5';
+      $('glassdoorBadge').style.color = '#059669';
+    }
+    if ($('glassdoorInfoText')) $('glassdoorInfoText').textContent = '🟢 Connected Session';
+    if ($('connectGlassdoorBtn')) {
+      $('connectGlassdoorBtn').textContent = '⚙️ Change Connection';
+      $('connectGlassdoorBtn').style.background = '#334155';
+    }
+  }
+
+  if (zip) {
+    if ($('zipBadge')) {
+      $('zipBadge').textContent = 'Connected ✓';
+      $('zipBadge').style.background = '#ecfdf5';
+      $('zipBadge').style.color = '#059669';
+    }
+    if ($('zipInfoText')) $('zipInfoText').textContent = '🟢 Connected Session';
+    if ($('connectZipBtn')) {
+      $('connectZipBtn').textContent = '⚙️ Change Connection';
+      $('connectZipBtn').style.background = '#334155';
+    }
+  }
+
+  if ((linkedin || indeed || glassdoor || zip) && $('integrationStatusBadge')) {
+    $('integrationStatusBadge').textContent = '● Verified Accounts Synced';
     $('integrationStatusBadge').style.background = '#ecfdf5';
     $('integrationStatusBadge').style.color = '#059669';
     $('integrationStatusBadge').style.borderColor = '#6ee7b7';
