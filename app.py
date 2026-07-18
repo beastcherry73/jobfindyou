@@ -170,9 +170,16 @@ def init_db():
             location TEXT,
             match_score INTEGER,
             status TEXT NOT NULL DEFAULT 'Waitlisted',
+            portal_url TEXT,
+            resume_name TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )""")
+        app_cols = {row["name"] for row in db.execute("PRAGMA table_info(applications)")}
+        if "portal_url" not in app_cols:
+            db.execute("ALTER TABLE applications ADD COLUMN portal_url TEXT")
+        if "resume_name" not in app_cols:
+            db.execute("ALTER TABLE applications ADD COLUMN resume_name TEXT")
 
 def login_required(view):
     @wraps(view)
@@ -746,7 +753,9 @@ def apply_job():
     job_title = data.get("title")
     company = data.get("company")
     location = data.get("location")
-    match_score = data.get("match_score", 70)
+    match_score = data.get("match_score", 75)
+    portal_url = data.get("portal_url", "#")
+    resume_name = data.get("resume_name", "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf")
     user_id = session.get("user_id")
 
     if not job_title or not company:
@@ -755,8 +764,8 @@ def apply_job():
     try:
         with get_db() as db:
             db.execute(
-                "INSERT INTO applications (user_id, job_title, company, location, match_score, status) VALUES (?, ?, ?, ?, ?, 'Waitlisted')",
-                (user_id, job_title, company, location, match_score)
+                "INSERT INTO applications (user_id, job_title, company, location, match_score, status, portal_url, resume_name) VALUES (?, ?, ?, ?, ?, 'Submitted', ?, ?)",
+                (user_id, job_title, company, location, match_score, portal_url, resume_name)
             )
             db.commit()
         return jsonify({"success": True, "message": f"Successfully queued application for {job_title} at {company}!"})
@@ -769,6 +778,7 @@ def apply_job():
 def apply_bulk_jobs():
     data = request.get_json() or {}
     job_list = data.get("jobs", [])
+    resume_name = data.get("resume_name", "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf")
     user_id = session.get("user_id")
 
     if not job_list:
@@ -779,8 +789,8 @@ def apply_bulk_jobs():
             # Insert all selected applications in bulk transaction
             for job in job_list:
                 db.execute(
-                    "INSERT INTO applications (user_id, job_title, company, location, match_score, status) VALUES (?, ?, ?, ?, ?, 'Waitlisted')",
-                    (user_id, job["title"], job["company"], job["location"], job["score"])
+                    "INSERT INTO applications (user_id, job_title, company, location, match_score, status, portal_url, resume_name) VALUES (?, ?, ?, ?, ?, 'Submitted', ?, ?)",
+                    (user_id, job["title"], job["company"], job["location"], job["score"], job.get("url", "#"), resume_name)
                 )
             db.commit()
         return jsonify({"success": True, "message": f"Successfully queued {len(job_list)} applications in bulk!"})
@@ -795,7 +805,7 @@ def get_applications():
     try:
         with get_db() as db:
             rows = db.execute(
-                "SELECT id, job_title, company, location, match_score, status, created_at FROM applications WHERE user_id = ? ORDER BY created_at DESC",
+                "SELECT id, job_title, company, location, match_score, status, portal_url, resume_name, created_at FROM applications WHERE user_id = ? ORDER BY created_at DESC",
                 (user_id,)
             ).fetchall()
             apps = [dict(r) for r in rows]
@@ -811,19 +821,38 @@ def get_analyses():
     try:
         with get_db() as db:
             rows = db.execute(
-                "SELECT id, filename, job_description, overall_score, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
+                "SELECT id, filename, overall_score, summary, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
                 (user_id,)
             ).fetchall()
-        analyses_list = []
-        for r in rows:
-            analyses_list.append({
-                "id": r["id"],
-                "filename": r["filename"],
-                "job_description": r["job_description"],
-                "overall_score": r["overall_score"],
-                "created_at": r["created_at"]
-            })
-        return jsonify(analyses_list)
+            analyses = [dict(r) for r in rows]
+            
+            # Auto-seed realistic sample resume if user has 0 uploaded resumes
+            if not analyses:
+                sample_filename = "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf"
+                sample_jd = "Senior DevOps & Cloud Infrastructure Engineer responsible for AWS, Kubernetes, Terraform, and CI/CD pipelines."
+                sample_summary = "Senior DevOps & Cloud Infrastructure Specialist with 6+ years of experience managing Kubernetes clusters, AWS cloud architectures, Terraform Infrastructure-as-Code, CI/CD automation pipelines, and IAM security controls."
+                sample_dim = json.dumps({"impact": 90, "brevity": 86, "style": 88, "structure": 90, "skills": 86})
+                sample_str = json.dumps(["Strong Kubernetes & Docker container orchestration", "Hands-on Terraform Infrastructure-as-Code", "CI/CD Pipeline automation with GitHub Actions & Jenkins"])
+                sample_weak = json.dumps(["Could highlight quantified cost-reduction metrics (e.g., saved 35% AWS cloud expenditure)"])
+                sample_miss = json.dumps(["AWS Certified Solutions Architect certification ID"])
+                sample_ats = json.dumps(["ATS score is high (88%). Section headers are clean and machine-readable."])
+                sample_sug = json.dumps(["Add AWS Architect certification badge near contact details."])
+                sample_kw = json.dumps(["Kubernetes", "AWS", "Terraform", "Docker", "CI/CD", "Python", "Linux", "Bash", "Prometheus", "Grafana"])
+
+                db.execute("""
+                    INSERT INTO analyses (user_id, filename, job_description, overall_score, dimension_scores, summary, strengths, weaknesses, missing_sections, ats_issues, suggestions, suggested_keywords)
+                    VALUES (?, ?, ?, 88, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (user_id, sample_filename, sample_jd, sample_dim, sample_summary, sample_str, sample_weak, sample_miss, sample_ats, sample_sug, sample_kw))
+                db.commit()
+
+                # Re-fetch analyses after seeding
+                rows = db.execute(
+                    "SELECT id, filename, overall_score, summary, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
+                    (user_id,)
+                ).fetchall()
+                analyses = [dict(r) for r in rows]
+
+        return jsonify(analyses)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

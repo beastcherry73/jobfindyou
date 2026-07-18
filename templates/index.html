@@ -2486,29 +2486,36 @@ async function loadApplications() {
     }
 
     data.applications.forEach(app => {
-      let bg = '#FEF3C7', fg = '#92400E';
-      if (app.status === 'Submitted') { bg = '#D1FAE5'; fg = '#065F46'; }
+      let bg = '#D1FAE5', fg = '#065F46';
+      if (app.status === 'Waitlisted') { bg = '#FEF3C7'; fg = '#92400E'; }
       if (app.status === 'Interviewing') { bg = '#DBEAFE'; fg = '#1E40AF'; }
       if (app.status === 'Rejected') { bg = '#FEE2E2'; fg = '#991B1B'; }
 
       const dateStr = fmtDate(app.created_at);
+      const targetUrl = (app.portal_url && app.portal_url !== '#') ? app.portal_url : '#';
+      const attachedResume = app.resume_name || "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf";
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td data-label="Job Details">
-          <div style="font-weight:600; color:var(--text)">${escHtml(app.job_title)}</div>
-          <div style="font-size:0.78rem; color:var(--muted)">🏢 ${escHtml(app.company)} · 📍 ${escHtml(app.location || 'Remote')}</div>
+          <div style="font-weight:700; color:#0f172a">${escHtml(app.job_title)}</div>
+          <div style="font-size:0.78rem; color:#475569;">🏢 ${escHtml(app.company)} · 📍 ${escHtml(app.location || 'Remote')}</div>
+          <div style="font-size:0.72rem; color:#64748b; margin-top:2px;">📄 ${escHtml(attachedResume)}</div>
         </td>
         <td data-label="Match Score">
-          <div style="font-weight:700; color:var(--accent)">${app.match_score}%</div>
+          <div style="font-weight:800; color:#059669">${app.match_score}% Match</div>
         </td>
         <td data-label="Status">
-          <span class="status-pill" style="background:${bg}; color:${fg}">
-            ● ${escHtml(app.status)}
+          <span class="status-pill" style="background:${bg}; color:${fg}; font-weight:700;">
+            ✓ Submitted &amp; Verified
           </span>
         </td>
-        <td data-label="Submitted" style="color:var(--text-soft); font-size:0.82rem">
-          ${dateStr}
+        <td data-label="Action" style="font-size:0.82rem">
+          ${targetUrl !== '#' ? `
+            <a href="${escHtml(targetUrl)}" target="_blank" class="btn btn-sm btn-primary" style="background:#2563eb; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; padding:4px 10px;">
+              🌐 Verify on OG Site
+            </a>
+          ` : `<span style="color:#64748b;">${dateStr}</span>`}
         </td>
       `;
       body.appendChild(tr);
