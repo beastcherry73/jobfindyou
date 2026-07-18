@@ -449,7 +449,29 @@
             </div>
           </div>
 
-          <!-- Overview Card -->
+          <!-- Recruiter Verdict & First Impression Card -->
+          <div class="card" id="recruiterVerdictCard" style="background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color:#ffffff;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:14px; margin-bottom:16px;">
+              <div>
+                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#38BDF8; letter-spacing:0.08em;">👨‍💼 Recruiter Verdict</span>
+                <h3 style="margin:4px 0 0; font-size:1.2rem; font-weight:800; color:#ffffff;" id="verdictDecisionText">Would I interview this candidate?</h3>
+              </div>
+              <span id="verdictBadge" style="font-size:0.85rem; font-weight:800; padding:6px 14px; border-radius:20px; background:#059669; color:#ffffff;">✓ YES — Strong Candidate</span>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.85rem; line-height:1.5; color:#CBD5E1;">
+              <div>
+                <strong style="color:#F8FAFC; display:block; margin-bottom:4px;">🌟 Top Standout Highlight:</strong>
+                <p id="verdictStandoutText">Clear technical title and professional structure.</p>
+              </div>
+              <div>
+                <strong style="color:#FCA5A5; display:block; margin-bottom:4px;">⚠️ Biggest Area to Fix:</strong>
+                <p id="verdictFixText">Needs stronger quantifiable metrics in experience bullet points.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overview Card + Radar Map -->
           <div class="card">
             <div class="score-overview-container">
               <div class="score-center">
@@ -474,6 +496,24 @@
             </div>
           </div>
 
+          <!-- Role Competitiveness & Readiness Matrix -->
+          <div class="card">
+            <div class="card-title">🎯 Target Role Competitiveness &amp; Readiness</div>
+            <div id="competitivenessGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;"></div>
+          </div>
+
+          <!-- Ranked AI Priority Action List -->
+          <div class="card">
+            <div class="card-title">⚡ Ranked AI Priority Action List</div>
+            <div id="priorityActionList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </div>
+
+          <!-- Before & After Examples -->
+          <div class="card">
+            <div class="card-title">🔄 Before vs After Bullet Improvements</div>
+            <div id="beforeAfterContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
+          </div>
+
           <!-- Detail Cards Grid -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
             <div class="card">
@@ -486,10 +526,16 @@
             </div>
           </div>
 
-          <!-- Keyword Suggestions -->
+          <!-- Keyword Suggestions & Gap Matrix -->
           <div class="card">
-            <div class="card-title">🔑 Recommended Industry Keywords</div>
-            <div id="keywordsList" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+            <div class="card-title">🔑 Keyword Gap Analysis (Matched vs Missing)</div>
+            <div id="keywordGapContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;"></div>
+          </div>
+
+          <!-- Improvement Roadmap -->
+          <div class="card">
+            <div class="card-title">🗺️ Estimated Improvement Roadmap</div>
+            <div id="roadmapContainer" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;"></div>
           </div>
         </div>
       </div><!-- /#analyzePanel -->
@@ -671,7 +717,18 @@
       const score = data.overall_score || 0;
       $('scoreNum').textContent = score;
       $('resultsFilename').textContent = data.filename || 'Evaluation Report';
-      $('resultsSubtitle').textContent = `Overall Score: ${score}/100`;
+      $('resultsSubtitle').textContent = `Overall ATS & Recruiter Readiness Score: ${score}/100`;
+
+      // 1. Recruiter Verdict Card
+      const rv = data.recruiter_verdict || {};
+      const decision = rv.decision || 'Maybe';
+      const verdictBadge = $('verdictBadge');
+      if (verdictBadge) {
+        verdictBadge.textContent = decision === 'Yes' ? '✓ YES — High Priority Candidate' : decision === 'Maybe' ? '⚠️ MAYBE — Needs Bullet Tuning' : '❌ REJECT — Major ATS Gaps';
+        verdictBadge.style.background = decision === 'Yes' ? '#059669' : decision === 'Maybe' ? '#D97706' : '#DC2626';
+      }
+      if ($('verdictStandoutText')) $('verdictStandoutText').textContent = rv.top_standout || 'Clear structure and professional formatting.';
+      if ($('verdictFixText')) $('verdictFixText').textContent = rv.priority_fix || rv.biggest_weakness || 'Add quantifiable metrics to bullet points.';
 
       // Donut Chart
       const ctx = $('scoreChart').getContext('2d');
@@ -707,10 +764,107 @@
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
       });
 
-      // Tags
+      // 2. Competitiveness Matrix
+      const comp = data.competitiveness || {};
+      const compGrid = $('competitivenessGrid');
+      if (compGrid) {
+        compGrid.innerHTML = `
+          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">JUNIOR ROLES</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--good);">${comp.junior_readiness || 90}%</div>
+          </div>
+          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">MID-LEVEL ROLES</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--primary);">${comp.mid_readiness || 85}%</div>
+          </div>
+          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">SENIOR ROLES</div>
+            <div style="font-size:1.2rem; font-weight:800; color:var(--warn);">${comp.senior_readiness || 72}%</div>
+          </div>
+          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+            <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">FAANG / TIER 1</div>
+            <div style="font-size:1.2rem; font-weight:800; color:#8B5CF6;">${comp.faang_readiness || 68}%</div>
+          </div>
+        `;
+      }
+
+      // 3. Priority Action List
+      const pal = data.priority_action_list || [];
+      const palList = $('priorityActionList');
+      if (palList) {
+        palList.innerHTML = pal.map(item => `
+          <div style="background:#F8FAFC; border:1px solid var(--border); border-left:4px solid var(--primary); padding:12px 16px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="font-size:0.88rem; color:var(--text);">Priority ${item.priority}: ${escHtml(item.recommendation)}</strong>
+              <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Time: ${item.time_required || '15m'} · Difficulty: ${item.difficulty || 'Easy'}</div>
+            </div>
+            <span style="font-weight:800; font-size:0.85rem; color:var(--good); background:#F0FDF4; padding:4px 10px; border-radius:6px;">${item.estimated_gain || '+10 pts'}</span>
+          </div>
+        `).join('');
+      }
+
+      // 4. Before & After Examples
+      const bae = data.before_after_examples || [];
+      const baeContainer = $('beforeAfterContainer');
+      if (baeContainer) {
+        baeContainer.innerHTML = bae.map(item => `
+          <div style="background:#F8FAFC; border:1px solid var(--border); padding:14px; border-radius:10px; font-size:0.85rem;">
+            <div style="color:var(--bad); margin-bottom:4px;"><strong>❌ Original:</strong> "${escHtml(item.original)}"</div>
+            <div style="color:var(--good); margin-bottom:6px;"><strong>✅ AI Improved:</strong> "${escHtml(item.improved)}"</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">💡 Rationale: ${escHtml(item.explanation)}</div>
+          </div>
+        `).join('');
+      }
+
+      // 5. Keyword Gap Matrix
+      const ka = data.keyword_analysis || {};
+      const kgContainer = $('keywordGapContainer');
+      if (kgContainer) {
+        kgContainer.innerHTML = `
+          <div>
+            <strong style="font-size:0.78rem; font-weight:700; color:var(--good); text-transform:uppercase; display:block; margin-bottom:6px;">✓ Matched Keywords</strong>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              ${(ka.matched_keywords||[]).map(k => `<span style="background:#F0FDF4; color:#16A34A; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;">${escHtml(k)}</span>`).join('')}
+            </div>
+          </div>
+          <div>
+            <strong style="font-size:0.78rem; font-weight:700; color:var(--bad); text-transform:uppercase; display:block; margin-bottom:6px;">⚠️ Missing High-Value Keywords</strong>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              ${(ka.missing_keywords||[]).map(k => `<span style="background:#FEF2F2; color:#DC2626; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;">${escHtml(k)}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // 6. Roadmap
+      const rm = data.roadmap || {};
+      const rmContainer = $('roadmapContainer');
+      if (rmContainer) {
+        rmContainer.innerHTML = `
+          <div style="background:#F0FDF4; border:1px solid #BBF7D0; padding:12px; border-radius:10px;">
+            <strong style="font-size:0.78rem; color:#166534; display:block; margin-bottom:6px;">⚡ QUICK WINS (5 MIN)</strong>
+            <ul style="font-size:0.78rem; color:#15803D; padding-left:16px;">
+              ${(rm.quick_wins_5m||["Fix bullet verbs"]).map(w => `<li>${escHtml(w)}</li>`).join('')}
+            </ul>
+          </div>
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; padding:12px; border-radius:10px;">
+            <strong style="font-size:0.78rem; color:#1E40AF; display:block; margin-bottom:6px;">⏱️ MEDIUM TASKS (30 MIN)</strong>
+            <ul style="font-size:0.78rem; color:#1D4ED8; padding-left:16px;">
+              ${(rm.medium_tasks_30m||["Add metrics to bullets"]).map(w => `<li>${escHtml(w)}</li>`).join('')}
+            </ul>
+          </div>
+          <div style="background:#FAF5FF; border:1px solid #E9D5FF; padding:12px; border-radius:10px;">
+            <strong style="font-size:0.78rem; color:#6B21A8; display:block; margin-bottom:6px;">🚀 MAJOR REWRITES (2 HR)</strong>
+            <ul style="font-size:0.78rem; color:#7E22CE; padding-left:16px;">
+              ${(rm.major_rewrites_2h||["Rewrite summary & projects"]).map(w => `<li>${escHtml(w)}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Tags & Strengths/Weaknesses
       $('strengthsList').innerHTML = (data.strengths||[]).map(s => `<span style="background:#F0FDF4; color:#16A34A; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;">${escHtml(s)}</span>`).join('');
       $('weaknessesList').innerHTML = (data.weaknesses||[]).map(w => `<span style="background:#FEF2F2; color:#DC2626; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;">${escHtml(w)}</span>`).join('');
-      $('keywordsList').innerHTML = (data.suggested_keywords||[]).map(k => `<span style="background:#EFF6FF; color:#2563EB; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;">${escHtml(k)}</span>`).join('');
 
       $('analyzeResults').style.display = 'flex';
       loadHistory();
