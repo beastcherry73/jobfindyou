@@ -544,25 +544,67 @@
       <!-- ══════════════════════════════════════════════ -->
       <!--  MODULE 3: SIDE-BY-SIDE REWRITE                -->
       <!-- ══════════════════════════════════════════════ -->
+      <!-- ══════════════════════════════════════════════ -->
+      <!--  MODULE 3: SIDE-BY-SIDE REWRITE                -->
+      <!-- ══════════════════════════════════════════════ -->
       <div class="panel" id="improvePanel">
-        <div class="card">
-          <div class="card-title">✨ Side-by-Side AI Rewrite</div>
-          <div class="tone-bar">
-            <button class="tone-btn active">Executive Tone</button>
-            <button class="tone-btn">Technical &amp; Engineering</button>
-            <button class="tone-btn">ATS Heavy Optimization</button>
-            <button class="tone-btn">Student / Early Career</button>
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title">✨ Side-by-Side AI Rewrite Workspace</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">1. Select Resume File to Rewrite</label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="file" id="rewriteFileInput" accept=".pdf,.txt" style="display:none" onchange="handleRewriteFileSelect()">
+                <button class="btn btn-sm btn-ghost" onclick="$('rewriteFileInput').click()">📤 Upload Resume File</button>
+                <span id="rewriteFileName" style="font-size:0.82rem; font-weight:600; color:var(--primary);">No file selected</span>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Target Job Title / Instructions (Optional)</label>
+              <input type="text" id="rewriteJobDesc" placeholder="e.g. Senior DevOps Lead, AWS, Kubernetes..." style="width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; background:#F8FAFC;">
+            </div>
           </div>
 
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+            <div>
+              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">2. Choose Executive Writing Tone</label>
+              <div class="tone-bar" style="margin-bottom:0;">
+                <button class="tone-btn active" onclick="selectTone(this, 'Executive Tone')">Executive Tone 👔</button>
+                <button class="tone-btn" onclick="selectTone(this, 'Technical Engineering')">Technical Engineering 💻</button>
+                <button class="tone-btn" onclick="selectTone(this, 'ATS Heavy Optimization')">ATS Heavy 🎯</button>
+                <button class="tone-btn" onclick="selectTone(this, 'Student Early Career')">Student / Early Career 🎓</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="runRewriteBtn" onclick="executeAiRewrite()">✨ Run AI Rewrite</button>
+          </div>
+        </div>
+
+        <div id="rewriteLoading" style="display:none; text-align:center; padding:30px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:16px;">
+          <div style="font-size:2rem; margin-bottom:8px;">🤖</div>
+          <strong style="color:var(--text);">AI Writer is enhancing your bullet points with strong action verbs &amp; metrics…</strong>
+        </div>
+
+        <div class="card">
           <div class="rewrite-grid">
             <div>
-              <div style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Original Resume</div>
-              <div class="editor-box" id="originalPreview">Upload a resume to view side-by-side comparison...</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Original Resume Content</span>
+              </div>
+              <textarea class="editor-box" id="originalPreview" placeholder="Upload a resume file above or paste original resume content here..." style="width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:inherit; resize:vertical;"></textarea>
             </div>
             <div>
-              <div style="font-size:0.78rem; font-weight:700; color:var(--primary); text-transform:uppercase; margin-bottom:6px;">AI Enhanced Version</div>
-              <div class="editor-box" id="improvedPreview">Rewritten version will appear here...</div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:0.78rem; font-weight:700; color:var(--primary); text-transform:uppercase;">AI Enhanced Version</span>
+                <button class="btn btn-sm btn-ghost" onclick="copyRewrittenText()">📋 Copy Text</button>
+              </div>
+              <div class="editor-box" id="improvedPreview" style="border:1px solid var(--border); border-radius:8px; padding:12px; background:#F8FAFC; overflow-y:auto; font-family:inherit;">Rewritten AI version will appear here...</div>
             </div>
+          </div>
+
+          <!-- Rationale Card -->
+          <div id="rewriteRationaleCard" style="display:none; margin-top:20px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:16px;">
+            <strong style="font-size:0.88rem; color:#166534; display:block; margin-bottom:8px;">💡 AI Improvement Rationale ("Why these changes were made")</strong>
+            <ul id="rewriteRationaleList" style="font-size:0.82rem; color:#15803D; padding-left:18px; line-height:1.6;"></ul>
           </div>
         </div>
       </div><!-- /#improvePanel -->
@@ -900,6 +942,89 @@
 
     function startFixWithAI() {
       switchTab('improve');
+      if (lastResumeFile && $('rewriteFileName')) {
+        $('rewriteFileName').textContent = '📎 ' + lastResumeFile.name;
+        executeAiRewrite();
+      }
+    }
+
+    // ── AI REWRITE ENGINE ─────────────────────────────────────
+    let selectedTone = 'Executive Tone';
+    let rewriteFileObj = null;
+
+    function handleRewriteFileSelect() {
+      const input = $('rewriteFileInput');
+      if (input.files && input.files[0]) {
+        rewriteFileObj = input.files[0];
+        $('rewriteFileName').textContent = '📎 ' + rewriteFileObj.name;
+        if (rewriteFileObj.name.endsWith('.txt')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            $('originalPreview').value = e.target.result;
+          };
+          reader.readAsText(rewriteFileObj);
+        } else {
+          $('originalPreview').value = `[Uploaded PDF: ${rewriteFileObj.name}]\n\nReady for AI Rewrite...`;
+        }
+      }
+    }
+
+    function selectTone(btn, tone) {
+      document.querySelectorAll('#improvePanel .tone-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedTone = tone;
+    }
+
+    async function executeAiRewrite() {
+      const file = $('rewriteFileInput').files[0] || lastResumeFile;
+      const text = $('originalPreview').value.trim();
+
+      $('rewriteLoading').style.display = 'block';
+      $('improvedPreview').innerHTML = '<span style="color:var(--text-muted);">Rewriting in progress...</span>';
+      $('rewriteRationaleCard').style.display = 'none';
+
+      try {
+        const fd = new FormData();
+        if (file) {
+          fd.append('resume', file);
+        } else if (text && !text.startsWith('[Uploaded PDF')) {
+          const blob = new Blob([text], { type: 'text/plain' });
+          fd.append('resume', blob, 'my_resume.txt');
+        } else {
+          alert('Please upload a resume file or paste your resume content into the left box.');
+          $('rewriteLoading').style.display = 'none';
+          return;
+        }
+
+        fd.append('instructions', `Rewrite in a ${selectedTone} style. ${$('rewriteJobDesc').value}`);
+        fd.append('job_description', $('rewriteJobDesc').value);
+
+        const res = await fetch('/api/generate/improve-with-diff', { method: 'POST', body: fd });
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'AI Rewrite failed');
+
+        const html = typeof marked !== 'undefined' ? marked.parse(data.resume || 'Rewritten text') : escHtml(data.resume);
+        $('improvedPreview').innerHTML = html;
+
+        // Render Diff Rationale List
+        const diffs = data.diff || [];
+        if (diffs.length) {
+          const list = $('rewriteRationaleList');
+          list.innerHTML = diffs.map(d => `<li>${escHtml(d)}</li>`).join('');
+          $('rewriteRationaleCard').style.display = 'block';
+        }
+      } catch (err) {
+        $('improvedPreview').innerHTML = `<span style="color:var(--bad);">⚠️ Rewrite failed: ${escHtml(err.message)}</span>`;
+      } finally {
+        $('rewriteLoading').style.display = 'none';
+      }
+    }
+
+    function copyRewrittenText() {
+      const text = $('improvedPreview').innerText;
+      navigator.clipboard.writeText(text);
+      alert("AI Enhanced Resume copied to clipboard!");
     }
 
     // ── RESUME BUILDER ENGINE ────────────────────────────────
