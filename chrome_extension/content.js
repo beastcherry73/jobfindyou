@@ -1,5 +1,5 @@
-// JobSpike AI Auto-Apply Content Script v1.0.1 (LinkedIn Easy Apply Optimized)
-console.log("⚡ JobSpike Extension Content Script Ready.");
+// JobSpike AI Auto-Apply Content Script v1.0.2 (With PDF Attachment Support & Auth Detection)
+console.log("⚡ JobSpike Extension Content Script V1.0.2 Active.");
 
 let candidateProfile = {
   fullName: "Alex Morgan",
@@ -14,36 +14,67 @@ let candidateProfile = {
   summary: "Senior DevOps & Cloud Infrastructure Specialist with 6+ years of experience managing production Kubernetes (EKS), AWS cloud architectures, Terraform IaC, and CI/CD automation."
 };
 
-// Listen for popup trigger
+let storedResumePdf = null;
+
+// Load profile & stored PDF file from storage
+function refreshStorageData() {
+  if (chrome.storage && chrome.storage.local) {
+    chrome.storage.local.get(["candidateProfile", "resumePdf"], (res) => {
+      if (res.candidateProfile) {
+        candidateProfile = { ...candidateProfile, ...res.candidateProfile };
+      }
+      if (res.resumePdf) {
+        storedResumePdf = res.resumePdf;
+      }
+    });
+  }
+}
+refreshStorageData();
+
+// Listen for popup auto-fill requests
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "AUTO_FILL") {
+    refreshStorageData();
     const filled = runAutoFillPipeline();
     sendResponse({ success: true, count: filled });
   }
 });
 
-function runAutoFillPipeline() {
-  let filledCount = 0;
-  console.log("🚀 Running JobSpike Auto-Fill Pipeline...");
+function isLinkedInLoggedIn() {
+  // Check if on LinkedIn domain and if user is logged out
+  if (window.location.hostname.includes('linkedin.com')) {
+    const loginForm = document.querySelector('form.login__form, form[action*="login"], .nav__button-secondary');
+    const userChip = document.querySelector('.global-nav__me, #global-nav, .feed-identity-module');
+    if (loginForm && !userChip) return false;
+  }
+  return true;
+}
 
-  // Select all input elements across the page and frames
+function runAutoFillPipeline() {
+  // Check LinkedIn auth status
+  if (!isLinkedInLoggedIn()) {
+    showFloatingBanner("⚠️ Please log in to your LinkedIn account first!", "#ef4444");
+    return 0;
+  }
+
+  let filledCount = 0;
+  console.log("🚀 Executing JobSpike Form Auto-Fill & PDF Attachment...");
+
+  // 1. Text Inputs, Email, Phone, Location
   const allInputs = document.querySelectorAll('input, textarea, select');
   
   allInputs.forEach(el => {
-    // Find associated label text or attributes
     const id = (el.id || '').toLowerCase();
     const name = (el.name || '').toLowerCase();
     const placeholder = (el.placeholder || '').toLowerCase();
     const ariaLabel = (el.getAttribute('aria-label') || '').toLowerCase();
     
-    // Find parent label text
     let labelText = '';
-    const labelEl = document.querySelector(`label[for="${el.id}"]`) || el.closest('label') || el.parentElement.querySelector('label');
+    const labelEl = document.querySelector(`label[for="${el.id}"]`) || el.closest('label') || (el.parentElement ? el.parentElement.querySelector('label') : null);
     if (labelEl) labelText = labelEl.textContent.toLowerCase();
 
     const combinedStr = `${id} ${name} ${placeholder} ${ariaLabel} ${labelText}`;
 
-    // Fill field based on match
     if (combinedStr.includes('first name') || combinedStr.includes('given name')) {
       fillNativeInput(el, candidateProfile.firstName);
       filledCount++;
@@ -66,10 +97,10 @@ function runAutoFillPipeline() {
       fillNativeInput(el, candidateProfile.linkedin);
       filledCount++;
     } else if (combinedStr.includes('website') || combinedStr.includes('portfolio') || combinedStr.includes('github')) {
-      fillNativeInput(el, candidateProfile.website);
+      fillNativeInput(el, candidateProfile.website || candidateProfile.github);
       filledCount++;
     } else if (el.tagName.toLowerCase() === 'textarea' && (!el.value || el.value.trim() === '')) {
-      fillNativeInput(el, `Dear Hiring Manager,\n\nI am thrilled to apply for this position. ${candidateProfile.summary}\n\nSincerely,\n${candidateProfile.fullName}`);
+      fillNativeInput(el, `Dear Hiring Team,\n\nI am thrilled to submit my candidate package. ${candidateProfile.summary}\n\nSincerely,\n${candidateProfile.fullName}`);
       filledCount++;
     } else if (combinedStr.includes('years') || combinedStr.includes('experience')) {
       fillNativeInput(el, "5");
@@ -77,16 +108,43 @@ function runAutoFillPipeline() {
     }
   });
 
-  showFloatingBanner(`⚡ JobSpike Auto-Filled ${filledCount} LinkedIn & ATS Fields!`);
+  // 2. Attach PDF Resume File to <input type="file">
+  const fileInputs = document.querySelectorAll('input[type="file"]');
+  if (fileInputs.length > 0 && storedResumePdf && storedResumePdf.dataUrl) {
+    fileInputs.forEach(fileInput => {
+      try {
+        const file = dataURLtoFile(storedResumePdf.dataUrl, storedResumePdf.name || "Candidate_Resume.pdf");
+        const container = new DataTransfer();
+        container.items.add(file);
+        fileInput.files = container.files;
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+        fileInput.style.border = "2px solid #10b981";
+        filledCount++;
+        console.log("✓ Successfully attached PDF resume to form field.");
+      } catch (e) {
+        console.warn("Could not attach file to input:", e);
+      }
+    });
+  }
+
+  showFloatingBanner(`⚡ JobSpike Auto-Filled ${filledCount} Fields & Resume Attached!`, "#059669");
   return filledCount;
 }
 
-// React / Angular / LinkedIn Native Event Trigger
+// Convert Base64 DataURL back to File object
+function dataURLtoFile(dataurl, filename) {
+  let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+      bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+  while(n--){
+      u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, {type:mime});
+}
+
 function fillNativeInput(element, value) {
   if (!element) return;
   element.focus();
   
-  // Set value prototype setter for React inputs
   const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
   const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set;
 
@@ -105,19 +163,19 @@ function fillNativeInput(element, value) {
   element.style.background = "#f0f9ff";
 }
 
-function showFloatingBanner(msg) {
+function showFloatingBanner(msg, color = "#0f172a") {
   let banner = document.getElementById('jobspike-banner');
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'jobspike-banner';
-    banner.style.cssText = 'position:fixed; top:15px; right:15px; background:#0f172a; color:#38bdf8; border:2px solid #38bdf8; padding:12px 18px; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-family:sans-serif; font-weight:700; font-size:13px; z-index:9999999;';
+    banner.style.cssText = `position:fixed; top:15px; right:15px; background:${color}; color:#ffffff; border:2px solid #38bdf8; padding:12px 18px; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.5); font-family:sans-serif; font-weight:700; font-size:13px; z-index:9999999;`;
     document.body.appendChild(banner);
   }
   banner.textContent = msg;
   setTimeout(() => { if (banner) banner.remove(); }, 3500);
 }
 
-// Auto-run when LinkedIn Easy Apply modal appears
+// Auto-detect LinkedIn Easy Apply Modal open events
 setInterval(() => {
   const modal = document.querySelector('.jobs-easy-apply-content, .jobs-easy-apply-modal, [role="dialog"]');
   if (modal && !modal.getAttribute('data-jspike-done')) {
