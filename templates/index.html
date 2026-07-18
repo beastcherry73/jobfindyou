@@ -1148,16 +1148,19 @@
               <div class="results-title">Evaluation Report</div>
               <div class="results-sub" id="resultsSubtitle">Analyzed successfully</div>
             </div>
-            <div class="fix-btn-wrap">
+            <div class="fix-btn-wrap" style="display:flex; gap:10px;">
+              <button class="btn btn-ghost" id="downloadPdfBtn" onclick="downloadPdfReport()" style="border-color:var(--primary); color:var(--primary);">
+                <span>📥</span> Download PDF Report
+              </button>
               <button class="btn btn-primary" id="fixWithAiBtn" onclick="startFixWithAI()">
                 <span>✨</span> Fix with AI
               </button>
             </div>
           </div>
 
-          <!-- Score + Dimensions -->
+          <!-- Score + Dimensions + Radar Chart -->
           <div class="card">
-            <div class="overview-grid">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px; align-items:center;">
               <div class="score-center">
                 <div class="pie-wrap">
                   <canvas id="scoreChart"></canvas>
@@ -1169,6 +1172,12 @@
               <div>
                 <div class="card-title">Core Dimensions</div>
                 <div class="dim-list" id="dimList"></div>
+              </div>
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
+                <div class="card-title" style="margin-bottom:10px;">📊 Dimension Radar Map</div>
+                <div style="max-height:220px; position:relative; display:flex; justify-content:center;">
+                  <canvas id="radarChart" style="max-height:210px;"></canvas>
+                </div>
               </div>
             </div>
           </div>
@@ -1878,6 +1887,57 @@ function renderAnalysis(data) {
   $('summaryText').textContent = data.summary || '';
   $('resultsSubtitle').textContent = `Analyzed "${data.filename || 'your resume'}" · Score: ${score}/100`;
 
+  // Radar Chart Rendering
+  try {
+    const radarCtx = document.getElementById('radarChart')?.getContext('2d');
+    if (radarCtx) {
+      if (window.radarChartInstance) window.radarChartInstance.destroy();
+      window.radarChartInstance = new Chart(radarCtx, {
+        type: 'radar',
+        data: {
+          labels: ['Clarity', 'Experience', 'Skills', 'ATS Ready', 'Impact', 'Completeness'],
+          datasets: [
+            {
+              label: 'Your Resume',
+              data: [
+                ds.clarity || 70, ds.experience || 70, ds.skills || 70,
+                ds.ats_readiness || 70, ds.impact || 70, ds.completeness || 70
+              ],
+              backgroundColor: 'rgba(56, 189, 248, 0.25)',
+              borderColor: '#38bdf8',
+              borderWidth: 2,
+              pointBackgroundColor: '#38bdf8'
+            },
+            {
+              label: 'Benchmark',
+              data: [85, 85, 90, 88, 85, 90],
+              backgroundColor: 'rgba(148, 163, 184, 0.1)',
+              borderColor: '#94a3b8',
+              borderWidth: 1,
+              borderDash: [4, 4],
+              pointBackgroundColor: '#94a3b8'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            r: {
+              angleLines: { color: 'rgba(255,255,255,0.1)' },
+              grid: { color: 'rgba(255,255,255,0.1)' },
+              pointLabels: { color: '#94a3b8', font: { size: 9 } },
+              ticks: { display: false, min: 0, max: 100 }
+            }
+          },
+          plugins: { legend: { display: true, labels: { color: '#cbd5e1', font: { size: 9 } } } }
+        }
+      });
+    }
+  } catch (err) {
+    console.warn("Could not render radar chart:", err);
+  }
+
   // Tags
   renderTags('strengthsList', data.strengths, 'tag-good');
   renderTags('weaknessesList', data.weaknesses, 'tag-bad');
@@ -1890,6 +1950,63 @@ function renderAnalysis(data) {
 
   $('analyzeResults').style.display = 'flex';
   $('analyzeResults').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function downloadPdfReport() {
+  if (!lastAnalysis) {
+    alert("No analysis loaded to download.");
+    return;
+  }
+  const printWin = window.open('', '_blank');
+  const score = lastAnalysis.overall_score || 0;
+  const summary = lastAnalysis.summary || '';
+  const strengths = (lastAnalysis.strengths || []).map(s => `<li>${escHtml(s)}</li>`).join('');
+  const weaknesses = (lastAnalysis.weaknesses || []).map(w => `<li>${escHtml(w)}</li>`).join('');
+  const keywords = (lastAnalysis.suggested_keywords || []).map(k => `<span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:4px; font-size:12px; margin:2px; display:inline-block;">${escHtml(k)}</span>`).join(' ');
+
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Resume Analysis Report — JobSpike AI</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; color: #0f172a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+        h1 { font-size: 24px; color: #0284c7; margin-bottom: 6px; }
+        .score-box { background: #f0f9ff; border: 2px solid #38bdf8; border-radius: 12px; padding: 20px; text-align: center; margin: 20px 0; }
+        .score-num { font-size: 48px; font-weight: 800; color: #0284c7; }
+        h3 { color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 24px; font-size: 16px; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 6px; font-size: 14px; }
+      </style>
+    </head>
+    <body>
+      <h1>⚡ JobSpike AI Resume Analysis Report</h1>
+      <p>Report for: <strong>${escHtml(lastAnalysis.filename || 'Candidate Resume')}</strong></p>
+
+      <div class="score-box">
+        <div class="score-num">${score} / 100</div>
+        <div style="font-weight: 700; font-size: 14px;">Overall ATS &amp; Recruitment Readiness Score</div>
+      </div>
+
+      <h3>Executive Summary</h3>
+      <p style="font-size: 14px;">${escHtml(summary)}</p>
+
+      <h3>What's Working Well (Strengths)</h3>
+      <ul>${strengths}</ul>
+
+      <h3>Needs Improvement (Weaknesses)</h3>
+      <ul>${weaknesses}</ul>
+
+      <h3>Recommended Keywords</h3>
+      <div style="margin-top: 8px;">${keywords}</div>
+
+      <script>
+        setTimeout(() => { window.print(); }, 500);
+      <\/script>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
 }
 
 function renderTags(id, items, cls) {
@@ -2149,6 +2266,7 @@ async function loadHistory() {
           <div class="history-name">${escHtml(item.filename)}</div>
           <div class="history-meta">${fmtDate(item.created_at)}${item.job_description ? ' · Targeted' : ''}</div>
         </div>
+        <button class="history-del" onclick="renameHistoryItem(${item.id}, '${escHtml(item.filename).replace(/'/g, "\\'")}', event)" title="Rename" style="margin-right:4px;">✏️</button>
         <button class="history-del" onclick="deleteHistoryItem(${item.id}, event)" title="Delete">✕</button>
       `;
       list.appendChild(el);
@@ -2156,6 +2274,24 @@ async function loadHistory() {
   } catch (e) {
     console.error('History load error:', e);
     $('historyList').innerHTML = `<div class="history-empty" style="color:#EF4444; font-size:0.75rem; padding:15px 8px;">⚠️ Load failed: ${e.message}</div>`;
+  }
+}
+
+async function renameHistoryItem(id, currentName, e) {
+  e.stopPropagation();
+  const newName = prompt("Rename Analysis Report:", currentName);
+  if (!newName || newName.trim() === '' || newName === currentName) return;
+  try {
+    const res = await fetch(`/api/analyses/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: newName.trim() })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadHistory();
+  } catch (err) {
+    alert('Rename failed: ' + err.message);
   }
 }
 
