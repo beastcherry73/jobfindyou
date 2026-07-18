@@ -84,10 +84,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Trigger Auto-Fill
   autofillBtn.addEventListener('click', () => {
-    autofillBtn.disabled = true;
-    autofillBtn.textContent = '⚡ Auto-Filling Fields...';
+    chrome.storage.local.get(["resumePdf"], (res) => {
+      if (!res.resumePdf || !res.resumePdf.dataUrl) {
+        alert("📄 Candidate Resume PDF Required!\n\nPlease click 'Select Candidate Resume PDF' above and attach your resume PDF file before running Auto-Fill.");
+        const dropzone = document.getElementById('uploadDropzone');
+        if (dropzone) {
+          dropzone.style.border = '2px solid #ef4444';
+          dropzone.style.background = 'rgba(239, 68, 68, 0.1)';
+        }
+        return;
+      }
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      autofillBtn.disabled = true;
+      autofillBtn.textContent = '⚡ Auto-Filling Fields...';
+
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && tabs[0].id) {
         chrome.tabs.sendMessage(tabs[0].id, { action: 'AUTO_FILL' }, (res) => {
           if (chrome.runtime.lastError) {
@@ -108,6 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }, 600);
         });
       }
+    });
     });
   });
 });

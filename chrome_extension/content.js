@@ -55,6 +55,12 @@ function runAutoFillPipeline() {
     return 0;
   }
 
+  // Strict Resume PDF File Attachment Check
+  if (!storedResumePdf || !storedResumePdf.dataUrl) {
+    showFloatingBanner("📄 Resume PDF Required! Please click JobSpike extension icon & attach your PDF resume file first.", "#f59e0b");
+    return 0;
+  }
+
   let filledCount = 0;
   console.log("🚀 Executing JobSpike Multi-Step Auto-Fill Pipeline...");
 
