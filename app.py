@@ -755,7 +755,7 @@ def apply_job():
     location = data.get("location")
     match_score = data.get("match_score", 75)
     portal_url = data.get("portal_url", "#")
-    resume_name = data.get("resume_name", "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf")
+    resume_name = data.get("resume_name", "Active_Resume.pdf")
     user_id = session.get("user_id")
 
     if not job_title or not company:
@@ -778,7 +778,7 @@ def apply_job():
 def apply_bulk_jobs():
     data = request.get_json() or {}
     job_list = data.get("jobs", [])
-    resume_name = data.get("resume_name", "Venu_Babu_Senior_DevOps_Engineer_Resume.pdf")
+    resume_name = data.get("resume_name", "Active_Resume.pdf")
     user_id = session.get("user_id")
 
     if not job_list:
