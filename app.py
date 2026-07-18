@@ -581,7 +581,7 @@ def join_waitlist():
 @login_required
 def search_jobs():
     query = request.args.get("query", "").strip() or "DevOps Engineer"
-    location = request.args.get("location", "").strip() or "Charlotte, NC"
+    location = request.args.get("location", "").strip() or "Worldwide"
     country_input = request.args.get("country", "us").strip().lower()
 
     jobs = []

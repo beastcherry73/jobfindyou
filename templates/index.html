@@ -1505,6 +1505,7 @@
           <div class="search-row">
             <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Software Engineer)">
             <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 140px; border-radius: 8px; padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
+              <option value="Worldwide" selected>Worldwide 🌍</option>
               <option value="US">United States 🇺🇸</option>
               <option value="NZ">New Zealand 🇳🇿</option>
               <option value="India">India 🇮🇳</option>
@@ -1514,7 +1515,6 @@
               <option value="Germany">Germany 🇩🇪</option>
               <option value="France">France 🇫🇷</option>
               <option value="Singapore">Singapore 🇸🇬</option>
-              <option value="Worldwide">Worldwide 🌍</option>
             </select>
             <input type="text" id="jobLocation" placeholder="Location (e.g. Charlotte NC, Auckland, Remote)" list="locationList">
             <button class="btn btn-primary" onclick="searchJobs()">🔍 Search 250+ Jobs</button>
@@ -2257,7 +2257,7 @@ async function searchJobs() {
   let q = ($('jobQuery').value || "").trim();
   let loc = ($('jobLocation').value || "").trim();
   if (!q) { q = "DevOps Engineer"; $('jobQuery').value = q; }
-  if (!loc) { loc = "Charlotte, NC"; $('jobLocation').value = loc; }
+  if (!loc) { loc = "Worldwide"; $('jobLocation').value = loc; }
   const country = $('jobRegionSelect').value;
   const list = $('jobListings');
   
