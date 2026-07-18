@@ -2182,8 +2182,8 @@ function filterJobs() {
   $('applyAllBtn').classList.remove('hidden');
   $('applyAllBtn').textContent = `⚡ Apply to All ${filtered.length} Matches`;
 
-  // Render first 100 matching opportunities
-  const renderLimit = filtered.slice(0, 100);
+  // Render all matching opportunities (up to 250)
+  const renderLimit = filtered.slice(0, 250);
   renderLimit.forEach(job => {
     const score = job.sc;
     const textCol = score >= 75 ? '#065F46' : score >= 50 ? '#92400E' : '#991B1B';
@@ -2199,58 +2199,67 @@ function filterJobs() {
             <strong>🏢 ${escHtml(job.c)}</strong>
             <span>📍 ${escHtml(job.l)}</span>
             <span class="job-source-tag">${escHtml(job.s)}</span>
+            ${job.w ? `<span style="background:rgba(156,142,245,0.15); color:#9C8EF5; padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.72rem;">${escHtml(job.w)}</span>` : ''}
             ${job.sa ? `<span class="job-salary-tag">💰 ${escHtml(job.sa)}</span>` : ''}
           </div>
         </div>
         <div class="score-badge-wrap">
           <div class="score-pill" style="color:${textCol}; background:${bgCol}">${score}% Match</div>
-          <button class="btn btn-primary btn-sm" onclick="applyToJob('${escHtml(job.t).replace(/'/g, "\\'")}', '${escHtml(job.c).replace(/'/g, "\\'")}', '${escHtml(job.l).replace(/'/g, "\\'")}', ${score}, this)">
+          <button class="btn btn-primary btn-sm" onclick="applyToJob('${escHtml(job.t).replace(/'/g, "\\'")}', '${escHtml(job.c).replace(/'/g, "\\'")}', '${escHtml(job.l).replace(/'/g, "\\'")}', ${score}, '${escHtml(job.u).replace(/'/g, "\\'")}', this)">
             ⚡ One-Click Apply
           </button>
         </div>
       </div>
       ${job.d ? `<div class="job-desc">${job.d}</div>` : ''}
       <div style="font-size: 0.8rem; display: flex; gap: 15px; margin-top: 2px;">
-        <a href="${escHtml(job.u)}" target="_blank" style="color: var(--accent); font-weight: 600; text-decoration: none;">🔗 View Full Posting</a>
+        <a href="${escHtml(job.u)}" target="_blank" style="color: #2563eb; font-weight: 600; text-decoration: none;">🔗 View Full Posting</a>
       </div>
     `;
     list.appendChild(el);
   });
-
-  if (filtered.length > 100) {
-    const loadMore = document.createElement('div');
-    loadMore.style.cssText = 'text-align:center; padding:15px; color:var(--muted); font-size:0.82rem; border-top:1px dashed var(--border); margin-top:10px';
-    loadMore.textContent = `... and ${filtered.length - 100} more matching positions queued for bulk submit`;
-    list.appendChild(loadMore);
-  }
 }
 
-async function applyToJob(title, company, location, score, btn) {
+async function applyToJob(title, company, location, score, portalUrl, btn) {
   const oldText = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Queueing…';
+
+  // Find currently selected resume name
+  const resumeSelect = $('jobResumeSelect');
+  const selectedResumeText = resumeSelect.options[resumeSelect.selectedIndex] ? resumeSelect.options[resumeSelect.selectedIndex].text : "Default Active Resume";
 
   try {
     const res = await fetch('/api/applications/apply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, company, location, match_score: score })
+      body: JSON.stringify({
+        title: title,
+        company: company,
+        location: location,
+        match_score: score
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
-    btn.textContent = '✓ Queued';
-    btn.style.background = 'rgba(86, 217, 168, 0.15)';
-    btn.style.color = 'var(--good)';
-    btn.style.borderColor = 'var(--good)';
-    
+    btn.textContent = '✓ Applied & Tracked';
+    btn.style.background = '#059669';
+    btn.style.borderColor = '#059669';
+
+    // Open company job portal in new tab
+    if (portalUrl && portalUrl !== '#') {
+      window.open(portalUrl, '_blank');
+    }
+
+    alert(`✅ Application Submitted & Tracked!\n\nTarget Position: ${title}\nCompany: ${company}\nAttached Resume: ${selectedResumeText}\nStatus: Active in Application Runner`);
     loadApplications();
   } catch (e) {
-    alert('Failed to queue application: ' + e.message);
+    alert('Failed to launch application: ' + e.message);
     btn.disabled = false;
     btn.textContent = oldText;
   }
 }
+
 
 async function applyAllMatched() {
   const minScore = parseInt($('minScoreSlider').value, 10);

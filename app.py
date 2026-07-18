@@ -666,74 +666,72 @@ def search_jobs():
             break
 
     # ── 2. Remotive API Supplemental Load ────────────────────────────
-    if len(jobs) < 100:
-        try:
-            url = f"https://remotive.com/api/remote-jobs?search={encoded_q}&limit=50"
-            resp = requests.get(url, headers=req_headers, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                results = data.get("jobs", [])
-                for idx, item in enumerate(results):
-                    title = clean_html(item.get("title", ""))
-                    company = item.get("company_name", "Remotive Partner")
-                    loc_name = item.get("candidate_required_location", location or "Remote")
-                    sal_str = item.get("salary", "")
-                    desc = clean_html(item.get("description", ""))
-                    link = item.get("url", "#")
-                    job_type = item.get("job_type", "Full-time").capitalize()
-                    score = 72 + (idx % 27)
+    try:
+        url = f"https://remotive.com/api/remote-jobs?search={encoded_q}&limit=50"
+        resp = requests.get(url, headers=req_headers, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            results = data.get("jobs", [])
+            for idx, item in enumerate(results):
+                title = clean_html(item.get("title", ""))
+                company = item.get("company_name", "Remotive Partner")
+                loc_name = item.get("candidate_required_location", location or "Remote")
+                sal_str = item.get("salary", "")
+                desc = clean_html(item.get("description", ""))
+                link = item.get("url", "#")
+                job_type = item.get("job_type", "Full-time").capitalize()
+                score = 72 + (idx % 27)
 
+                jobs.append({
+                    "t": title,
+                    "c": company,
+                    "l": loc_name,
+                    "s": "Remotive",
+                    "sc": score,
+                    "sa": sal_str,
+                    "sv": 0,
+                    "w": "Remote",
+                    "e": job_type if job_type else "Full-time",
+                    "d": desc[:220] + "..." if len(desc) > 220 else desc,
+                    "u": link
+                })
+    except Exception as e:
+        print(f"[Remotive Load Error]: {e}")
+
+    # ── 3. Arbeitnow API Supplemental Load ───────────────────────────
+    try:
+        url = "https://www.arbeitnow.com/api/job-board-api"
+        resp = requests.get(url, headers=req_headers, timeout=5)
+        if resp.status_code == 200:
+            data = resp.json()
+            results = data.get("data", [])
+            query_lower = query.lower()
+            for idx, item in enumerate(results):
+                title = clean_html(item.get("title", ""))
+                company = item.get("company_name", "Global Partner")
+                loc_name = item.get("location", location or "Remote")
+                desc = clean_html(item.get("description", ""))
+                link = item.get("url", "#")
+                is_remote = item.get("remote", False)
+                workplace = "Remote" if is_remote else "On-Site"
+                score = 74 + (idx % 25)
+
+                if query_lower in title.lower() or query_lower in desc.lower() or len(jobs) < 100:
                     jobs.append({
                         "t": title,
                         "c": company,
                         "l": loc_name,
-                        "s": "Remotive",
+                        "s": "Arbeitnow",
                         "sc": score,
-                        "sa": sal_str,
+                        "sa": "",
                         "sv": 0,
-                        "w": "Remote",
-                        "e": job_type if job_type else "Full-time",
+                        "w": workplace,
+                        "e": "Full-time",
                         "d": desc[:220] + "..." if len(desc) > 220 else desc,
                         "u": link
                     })
-        except Exception as e:
-            print(f"[Remotive Load Error]: {e}")
-
-    # ── 3. Arbeitnow API Supplemental Load ───────────────────────────
-    if len(jobs) < 100:
-        try:
-            url = "https://www.arbeitnow.com/api/job-board-api"
-            resp = requests.get(url, headers=req_headers, timeout=5)
-            if resp.status_code == 200:
-                data = resp.json()
-                results = data.get("data", [])
-                query_lower = query.lower()
-                for idx, item in enumerate(results):
-                    title = clean_html(item.get("title", ""))
-                    company = item.get("company_name", "Global Partner")
-                    loc_name = item.get("location", location or "Remote")
-                    desc = clean_html(item.get("description", ""))
-                    link = item.get("url", "#")
-                    is_remote = item.get("remote", False)
-                    workplace = "Remote" if is_remote else "On-Site"
-                    score = 74 + (idx % 25)
-
-                    if query_lower in title.lower() or query_lower in desc.lower() or len(jobs) < 30:
-                        jobs.append({
-                            "t": title,
-                            "c": company,
-                            "l": loc_name,
-                            "s": "Arbeitnow",
-                            "sc": score,
-                            "sa": "",
-                            "sv": 0,
-                            "w": workplace,
-                            "e": "Full-time",
-                            "d": desc[:220] + "..." if len(desc) > 220 else desc,
-                            "u": link
-                        })
-        except Exception as e:
-            print(f"[Arbeitnow Load Error]: {e}")
+    except Exception as e:
+        print(f"[Arbeitnow Load Error]: {e}")
 
     return jsonify({"jobs": jobs, "total": len(jobs)})
 
