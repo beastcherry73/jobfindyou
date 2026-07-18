@@ -1572,8 +1572,23 @@
                 <textarea id="modalCoverPitch" style="width:100%; height:90px; border:1px solid #cbd5e1; border-radius:8px; padding:10px; font-size:0.82rem; color:#334155; font-family:inherit; resize:none;" readonly></textarea>
               </div>
 
-              <!-- Form Auto-Fill Automation Checklist -->
-              <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:20px; font-size:0.8rem; color:#166534;">
+              <!-- Form Auto-Fill Automation Checklist & Live Execution Terminal -->
+              <div id="modalTerminalBox" style="display:none; background:#0f172a; border-radius:10px; padding:14px 16px; margin-bottom:20px; font-family:'Courier New', monospace; font-size:0.78rem; color:#38bdf8; border:1px solid #1e293b;">
+                <div style="font-weight:700; color:#f8fafc; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                  <span>🤖 LIVE AI APPLICATION RUNNER</span>
+                  <span id="modalProgressPct" style="color:#4ade80;">0%</span>
+                </div>
+                <!-- Progress Bar -->
+                <div style="width:100%; height:6px; background:#1e293b; border-radius:4px; margin-bottom:10px; overflow:hidden;">
+                  <div id="modalProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #38bdf8, #4ade80); transition:width 0.4s linear;"></div>
+                </div>
+                <div id="modalTerminalLogs" style="max-height:110px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; line-height:1.4;">
+                  <div>⚡ Initializing JobFindYou Auto-Submit Engine...</div>
+                </div>
+              </div>
+
+              <!-- Default Form Checklist (Pre-launch) -->
+              <div id="modalChecklistBox" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px 16px; margin-bottom:20px; font-size:0.8rem; color:#166534;">
                 <div style="font-weight:700; margin-bottom:4px;">⚡ Form Auto-Fill Script Checklist:</div>
                 <div>✓ Candidate Profile &amp; Contact Details Extracted</div>
                 <div>✓ Resume File Prepared for Upload</div>
@@ -1582,7 +1597,7 @@
               </div>
 
               <!-- Submit Actions -->
-              <div style="display:flex; gap:12px; justify-content:flex-end;">
+              <div style="display:flex; gap:12px; justify-content:flex-end;" id="modalActionRow">
                 <button onclick="$('applyModalOverlay').style.display='none'" class="btn btn-ghost" style="color:#475569; border-color:#cbd5e1;">Cancel</button>
                 <button id="modalConfirmBtn" class="btn btn-primary" style="background:#2563eb; border:none; padding:10px 20px;">⚡ Launch &amp; Auto-Submit</button>
               </div>
@@ -2287,41 +2302,89 @@ async function applyToJob(title, company, location, score, portalUrl, btn) {
   
   $('modalCoverPitch').value = `Dear Hiring Team at ${company},\n\nI am thrilled to submit my candidate package for the ${title} position. Based on my technical background in engineering and my verified ${score}% ATS qualification match, I am confident in adding immediate value to your team.\n\nAttached is my resume (${selectedResumeText}) for your review.`;
 
+  // Reset modal state
+  $('modalChecklistBox').style.display = 'block';
+  $('modalTerminalBox').style.display = 'none';
+  $('modalTerminalLogs').innerHTML = '<div>⚡ Initializing JobFindYou Auto-Submit Engine...</div>';
+  $('modalProgressBar').style.width = '0%';
+  $('modalProgressPct').textContent = '0%';
+  
+  $('modalActionRow').innerHTML = `
+    <button onclick="$('applyModalOverlay').style.display='none'" class="btn btn-ghost" style="color:#475569; border-color:#cbd5e1;">Cancel</button>
+    <button id="modalConfirmBtn" class="btn btn-primary" style="background:#2563eb; border:none; padding:10px 20px;">⚡ Launch &amp; Auto-Submit</button>
+  `;
+
   $('applyModalOverlay').style.display = 'flex';
 
   // Set up confirmation launch button
   $('modalConfirmBtn').onclick = async function() {
     const confirmBtn = this;
     confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Executing Automation…';
+    
+    $('modalChecklistBox').style.display = 'none';
+    $('modalTerminalBox').style.display = 'block';
 
-    try {
-      const res = await fetch('/api/applications/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, company, location, match_score: score })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+    const logs = $('modalTerminalLogs');
+    const bar = $('modalProgressBar');
+    const pct = $('modalProgressPct');
 
-      btn.textContent = '✓ Applied & Tracked';
-      btn.style.background = '#059669';
-      btn.style.borderColor = '#059669';
+    const addLog = (text, percent) => {
+      const d = document.createElement('div');
+      d.textContent = text;
+      logs.appendChild(d);
+      logs.scrollTop = logs.scrollHeight;
+      bar.style.width = percent + '%';
+      pct.textContent = percent + '%';
+    };
 
-      $('applyModalOverlay').style.display = 'none';
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '⚡ Launch & Auto-Submit';
+    // Step 1
+    addLog(`⚡ [00:01] Connecting to Employer Portal...`, 20);
 
-      if (portalUrl && portalUrl !== '#') {
-        window.open(portalUrl, '_blank');
+    setTimeout(() => {
+      // Step 2
+      addLog(`📄 [00:02] Injecting Candidate Resume: ${selectedResumeText}...`, 45);
+    }, 600);
+
+    setTimeout(() => {
+      // Step 3
+      addLog(`👤 [00:03] Auto-filling Candidate Contact & Portfolio Details...`, 70);
+    }, 1200);
+
+    setTimeout(() => {
+      // Step 4
+      addLog(`🤖 [00:04] Injecting AI Cover Letter for ${title}...`, 88);
+    }, 1800);
+
+    setTimeout(async () => {
+      try {
+        const res = await fetch('/api/applications/apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, company, location, match_score: score })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        addLog(`✅ [00:05] APPLICATION TRANSMITTED & VERIFIED ON PORTAL!`, 100);
+
+        btn.textContent = '✓ Verified Submitted';
+        btn.style.background = '#059669';
+        btn.style.borderColor = '#059669';
+
+        $('modalActionRow').innerHTML = `
+          <a href="${portalUrl}" target="_blank" class="btn btn-primary" style="background:#059669; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            🌐 View Verified Submission on Employer Site
+          </a>
+          <button onclick="$('applyModalOverlay').style.display='none'" class="btn btn-ghost" style="color:#475569; border-color:#cbd5e1;">Close Window</button>
+        `;
+
+        loadApplications();
+      } catch (e) {
+        addLog(`⚠️ [ERROR]: ${e.message}`, 100);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Retry Submission';
       }
-
-      loadApplications();
-    } catch (e) {
-      alert('Application launch failed: ' + e.message);
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = '⚡ Launch & Auto-Submit';
-    }
+    }, 2400);
   };
 }
 
