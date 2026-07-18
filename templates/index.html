@@ -350,14 +350,16 @@
       border: 1px solid rgba(0,0,0,0.06);
       box-shadow: 0 4px 18px rgba(0,0,0,0.03);
     }
-    #autoapplyPanel select, #autoapplyPanel input[type="text"] {
-      background: #ffffff;
-      border-color: rgba(0,0,0,0.12);
-      color: #1e1e1e;
+    #autoapplyPanel select, #autoapplyPanel input[type="text"], #autoapplyPanel option {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+      font-weight: 600 !important;
     }
     #autoapplyPanel select:focus, #autoapplyPanel input[type="text"]:focus {
-      border-color: var(--accent);
+      border-color: #2563eb !important;
       outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
     #autoapplyPanel .tracker-title {
       color: #1a1a2e !important;
@@ -1437,7 +1439,7 @@
           
           <div class="search-row">
             <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Software Engineer)">
-            <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 140px; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); color: var(--text); padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
+            <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 140px; border-radius: 8px; padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
               <option value="US">United States 🇺🇸</option>
               <option value="NZ">New Zealand 🇳🇿</option>
               <option value="India">India 🇮🇳</option>
