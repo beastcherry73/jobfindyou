@@ -2384,10 +2384,13 @@ async function applyToJob(title, company, location, score, portalUrl, btn) {
         btn.style.borderColor = '#059669';
 
         $('modalActionRow').innerHTML = `
-          <a href="${portalUrl}" target="_blank" class="btn btn-primary" style="background:#059669; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-            🌐 View Verified Submission on Employer Site
+          <a href="https://www.linkedin.com/jobs/tracker/applied/" target="_blank" class="btn btn-primary" style="background:#0a66c2; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            👔 View on LinkedIn Applied Jobs
           </a>
-          <button onclick="$('applyModalOverlay').style.display='none'" class="btn btn-ghost" style="color:#475569; border-color:#cbd5e1;">Close Window</button>
+          <a href="${portalUrl}" target="_blank" class="btn btn-primary" style="background:#059669; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            🌐 View Employer Portal
+          </a>
+          <button onclick="$('applyModalOverlay').style.display='none'" class="btn btn-ghost" style="color:#475569; border-color:#cbd5e1;">Close</button>
         `;
 
         loadApplications();
@@ -2518,11 +2521,16 @@ async function loadApplications() {
           </span>
         </td>
         <td data-label="Action" style="font-size:0.82rem">
-          ${targetUrl !== '#' ? `
-            <a href="${escHtml(targetUrl)}" target="_blank" class="btn btn-sm btn-primary" style="background:#2563eb; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; padding:4px 10px;">
-              🌐 Verify on OG Site
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <a href="https://www.linkedin.com/jobs/tracker/applied/" target="_blank" class="btn btn-sm btn-primary" style="background:#0a66c2; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; padding:4px 8px;">
+              👔 LinkedIn My Jobs
             </a>
-          ` : `<span style="color:#64748b;">${dateStr}</span>`}
+            ${targetUrl !== '#' ? `
+              <a href="${escHtml(targetUrl)}" target="_blank" class="btn btn-sm btn-primary" style="background:#2563eb; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; padding:4px 8px;">
+                🌐 Employer Portal
+              </a>
+            ` : ''}
+          </div>
         </td>
       `;
       body.appendChild(tr);
