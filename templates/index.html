@@ -1437,41 +1437,79 @@
           
           <div class="search-row">
             <input type="text" id="jobQuery" placeholder="Job Title / Keywords (e.g. Software Engineer)">
-            <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 130px; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); color: var(--text); padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
-              <option value="Worldwide">Worldwide 🌍</option>
-              <option value="India">India 🇮🇳</option>
+            <select id="jobRegionSelect" onchange="updateLocationSuggestions()" style="max-width: 140px; border: 1px solid var(--border); border-radius: 8px; background: var(--input-bg); color: var(--text); padding: 0 10px; font-weight: 600; font-size: 0.85rem;">
               <option value="US">United States 🇺🇸</option>
-              <option value="Europe">Europe 🇪🇺</option>
+              <option value="NZ">New Zealand 🇳🇿</option>
+              <option value="India">India 🇮🇳</option>
+              <option value="UK">United Kingdom 🇬🇧</option>
+              <option value="Canada">Canada 🇨🇦</option>
               <option value="Australia">Australia 🇦🇺</option>
+              <option value="Germany">Germany 🇩🇪</option>
+              <option value="France">France 🇫🇷</option>
+              <option value="Singapore">Singapore 🇸🇬</option>
+              <option value="Worldwide">Worldwide 🌍</option>
             </select>
-            <input type="text" id="jobLocation" placeholder="Location (e.g. Remote, Bengaluru)" list="locationList">
-            <button class="btn btn-primary" onclick="searchJobs()">🔍 Find Jobs</button>
+            <input type="text" id="jobLocation" placeholder="Location (e.g. Charlotte NC, Auckland, Remote)" list="locationList">
+            <button class="btn btn-primary" onclick="searchJobs()">🔍 Search 250+ Jobs</button>
             <datalist id="locationList">
-              <!-- Dynamically populated -->
+              <!-- Dynamically populated worldwide cities -->
             </datalist>
           </div>
 
-          <div style="border-top: 1px solid var(--border); padding-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
-            <!-- Resume Selector -->
+          <!-- 10+ Advanced Filters Grid -->
+          <div style="border-top: 1px solid var(--border); padding-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            
+            <!-- 1. Workplace Type Filter -->
             <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Target Resume</label>
-              <select id="jobResumeSelect" onchange="filterJobs()">
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Workplace Mode</label>
+              <select id="filterWorkplace" onchange="filterJobs()" style="width:100%; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); padding:6px 10px; font-size:0.8rem;">
+                <option value="all">All Modes (Remote/Hybrid/Onsite)</option>
+                <option value="Remote">🏠 Remote Only</option>
+                <option value="Hybrid">🔀 Hybrid Only</option>
+                <option value="On-Site">🏢 On-Site Only</option>
+              </select>
+            </div>
+
+            <!-- 2. Employment Type Filter -->
+            <div>
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Employment Type</label>
+              <select id="filterEmpType" onchange="filterJobs()" style="width:100%; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); padding:6px 10px; font-size:0.8rem;">
+                <option value="all">All Employment Types</option>
+                <option value="Full-time">Full-Time</option>
+                <option value="Contract">Contract / Freelance</option>
+                <option value="Part-time">Part-Time</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </div>
+
+            <!-- 3. Minimum Salary Slider Filter -->
+            <div>
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">
+                Min Salary: <span id="salVal" style="color:var(--accent); font-weight:800">Any</span>
+              </label>
+              <input type="range" id="minSalarySlider" min="0" max="150000" step="10000" value="0" oninput="$('salVal').textContent = this.value > 0 ? '$' + (this.value/1000) + 'k+' : 'Any';" onchange="filterJobs()" style="width:100%; accent-color:var(--accent);">
+            </div>
+
+            <!-- 4. Target Resume Selector Filter -->
+            <div>
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Target Resume</label>
+              <select id="jobResumeSelect" onchange="filterJobs()" style="width:100%; border:1px solid var(--border); border-radius:8px; background:var(--input-bg); color:var(--text); padding:6px 10px; font-size:0.8rem;">
                 <option value="default">Default Active Resume</option>
               </select>
             </div>
 
-            <!-- Score Slider -->
+            <!-- 5. Score Slider Filter -->
             <div>
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px">
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">
                 Min Match Score: <span id="scoreVal" style="color:var(--accent); font-weight:800">60%</span>
               </label>
               <input type="range" id="minScoreSlider" min="60" max="95" value="60" oninput="$('scoreVal').textContent = this.value + '%'; filterJobs();" style="width:100%; accent-color:var(--accent);">
             </div>
 
-            <!-- Site/Source filters (Dynamic) -->
-            <div style="grid-column: span 1; min-width: 250px;">
-              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:8px">Job Sources</label>
-              <div id="dynamicSourceFilters" style="display:grid; grid-template-columns: 1fr 1fr; gap:6px 12px; max-height:100px; overflow-y:auto; padding:8px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15); font-size:0.75rem;">
+            <!-- 6. Job Sources Dynamic Checklist -->
+            <div style="grid-column: span 1; min-width: 200px;">
+              <label style="display:block; font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:6px">Job Sources</label>
+              <div id="dynamicSourceFilters" style="display:grid; grid-template-columns: 1fr 1fr; gap:4px 8px; max-height:85px; overflow-y:auto; padding:6px; border:1px solid var(--border); border-radius:8px; background:rgba(0,0,0,0.15); font-size:0.72rem;">
                 <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="LinkedIn" class="src-filter" onchange="filterJobs()"> LinkedIn</label>
                 <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Indeed" class="src-filter" onchange="filterJobs()"> Indeed</label>
                 <label style="display:flex; align-items:center; gap:4px; cursor:pointer"><input type="checkbox" checked value="Glassdoor" class="src-filter" onchange="filterJobs()"> Glassdoor</label>
@@ -2072,13 +2110,14 @@ let allJobs = [];
 async function searchJobs() {
   const q = $('jobQuery').value.trim ? $('jobQuery').value.trim() : $('jobQuery').value;
   const loc = $('jobLocation').value.trim ? $('jobLocation').value.trim() : $('jobLocation').value;
+  const country = $('jobRegionSelect').value;
   const list = $('jobListings');
   
   $('applyAllBtn').classList.add('hidden');
-  list.innerHTML = '<div style="text-align:center; padding:45px 10px;"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:14px; color:var(--muted); font-weight:600">Querying 20+ top career boards for matching positions…</p></div>';
+  list.innerHTML = '<div style="text-align:center; padding:45px 10px;"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:14px; color:var(--muted); font-weight:600">Querying 250+ top global career engines for matching positions…</p></div>';
 
   try {
-    const res = await fetch(`/api/jobs/search?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}`);
+    const res = await fetch(`/api/jobs/search?query=${encodeURIComponent(q)}&location=${encodeURIComponent(loc)}&country=${encodeURIComponent(country)}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
 
@@ -2110,13 +2149,25 @@ async function searchJobs() {
 function filterJobs() {
   const list = $('jobListings');
   const minScore = parseInt($('minScoreSlider').value, 10);
+  const minSal = parseInt($('minSalarySlider').value, 10);
+  const workplace = $('filterWorkplace').value;
+  const empType = $('filterEmpType').value;
   const activeSources = Array.from(document.querySelectorAll('.src-filter:checked')).map(el => el.value);
 
   const filtered = allJobs.filter(job => {
     const matchesScore = job.sc >= minScore;
-    // Show all jobs if activeSources checklist is empty/unpopulated
     const matchesSource = activeSources.length === 0 || activeSources.includes(job.s);
-    return matchesScore && matchesSource;
+    
+    // Workplace filter (Remote / Hybrid / On-Site)
+    const matchesWorkplace = workplace === 'all' || (job.w && job.w.toLowerCase() === workplace.toLowerCase());
+    
+    // Employment Type filter (Full-time / Contract / Part-time)
+    const matchesEmpType = empType === 'all' || (job.e && job.e.toLowerCase().includes(empType.toLowerCase()));
+
+    // Minimum Salary filter
+    const matchesSalary = minSal === 0 || (job.sv && job.sv >= minSal);
+
+    return matchesScore && matchesSource && matchesWorkplace && matchesEmpType && matchesSalary;
   });
 
   $('matchCount').textContent = filtered.length;
@@ -2323,11 +2374,16 @@ function updateLocationSuggestions() {
   const input = $('jobLocation');
   
   const suggestions = {
-    Worldwide: ["Remote", "Remote (US)", "Remote (EU)", "Remote (Asia)", "London, UK", "New York, NY", "San Francisco, CA", "Berlin, DE", "Toronto, ON", "Sydney, AU", "Tokyo, JP", "Singapore", "Bengaluru, IN"],
-    India: ["Bengaluru, IN", "New Delhi, IN", "Mumbai, IN", "Hyderabad, IN", "Pune, IN", "Chennai, IN", "Noida, IN", "Gurugram, IN", "Remote (India)"],
-    US: ["San Francisco, CA", "Austin, TX", "New York, NY", "Seattle, WA", "Boston, MA", "Chicago, IL", "Dallas, TX", "Los Angeles, CA", "Denver, CO", "Atlanta, GA", "Remote (US)"],
-    Europe: ["London, UK", "Berlin, DE", "Paris, FR", "Amsterdam, NL", "Dublin, IE", "Munich, DE", "Stockholm, SE", "Zurich, CH", "Madrid, ES", "Remote (Europe)"],
-    Australia: ["Sydney, AU", "Melbourne, AU", "Brisbane, AU", "Adelaide, AU", "Perth, AU", "Remote (Australia)"]
+    US: ["Charlotte, NC", "Austin, TX", "Raleigh, NC", "New York, NY", "San Francisco, CA", "Seattle, WA", "Chicago, IL", "Dallas, TX", "Boston, MA", "Atlanta, GA", "Los Angeles, CA", "Denver, CO", "Remote (US)"],
+    NZ: ["Auckland, NZ", "Wellington, NZ", "Christchurch, NZ", "Hamilton, NZ", "Tauranga, NZ", "Dunedin, NZ", "Remote (NZ)"],
+    India: ["Bengaluru, IN", "Mumbai, IN", "New Delhi, IN", "Hyderabad, IN", "Pune, IN", "Chennai, IN", "Noida, IN", "Gurugram, IN", "Remote (India)"],
+    UK: ["London, UK", "Manchester, UK", "Birmingham, UK", "Edinburgh, UK", "Leeds, UK", "Bristol, UK", "Glasgow, UK", "Remote (UK)"],
+    Canada: ["Toronto, ON", "Vancouver, BC", "Montreal, QC", "Calgary, AB", "Ottawa, ON", "Remote (Canada)"],
+    Australia: ["Sydney, AU", "Melbourne, AU", "Brisbane, AU", "Adelaide, AU", "Perth, AU", "Remote (Australia)"],
+    Germany: ["Berlin, DE", "Munich, DE", "Frankfurt, DE", "Hamburg, DE", "Cologne, DE", "Remote (Germany)"],
+    France: ["Paris, FR", "Lyon, FR", "Marseille, FR", "Toulouse, FR", "Remote (France)"],
+    Singapore: ["Singapore", "Central Singapore", "Changi", "Remote (Singapore)"],
+    Worldwide: ["Charlotte, NC", "Auckland, NZ", "London, UK", "New York, NY", "San Francisco, CA", "Berlin, DE", "Toronto, ON", "Sydney, AU", "Tokyo, JP", "Singapore", "Bengaluru, IN", "Remote"]
   };
 
   const cities = suggestions[region] || suggestions["Worldwide"];

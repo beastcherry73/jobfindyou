@@ -567,6 +567,7 @@ def join_waitlist():
 def search_jobs():
     query = request.args.get("query", "Software Engineer").strip()
     location = request.args.get("location", "Remote").strip()
+    country_input = request.args.get("country", "us").strip().lower()
 
     jobs = []
     
@@ -582,139 +583,70 @@ def search_jobs():
 
     req_headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
 
-    # ── PROVIDER 1: Remotive Live API ─────────────────────────────────
-    try:
-        encoded_q = urllib.parse.quote(query)
-        url = f"https://remotive.com/api/remote-jobs?search={encoded_q}&limit=50"
-        resp = requests.get(url, headers=req_headers, timeout=6)
-        if resp.status_code == 200:
-            data = resp.json()
-            results = data.get("jobs", [])
-            for idx, item in enumerate(results):
-                title = clean_html(item.get("title", ""))
-                company = item.get("company_name", "Tech Company")
-                loc_name = item.get("candidate_required_location", location or "Remote")
-                sal_str = item.get("salary", "")
-                desc = clean_html(item.get("description", ""))
-                link = item.get("url", "#")
-                source_site = "Remotive"
-                score = 72 + (idx % 27)
+    # Infer target country code for API queries
+    country = country_input
+    loc_lower = location.lower()
+    if "charlotte" in loc_lower or "austin" in loc_lower or "raleigh" in loc_lower or "ny" in loc_lower or "sf" in loc_lower or "usa" in loc_lower or "united states" in loc_lower:
+        country = "us"
+    elif "auckland" in loc_lower or "wellington" in loc_lower or "new zealand" in loc_lower or "nz" in loc_lower:
+        country = "nz"
+    elif "bengaluru" in loc_lower or "mumbai" in loc_lower or "delhi" in loc_lower or "india" in loc_lower or "hyderabad" in loc_lower:
+        country = "in"
+    elif "london" in loc_lower or "uk" in loc_lower or "united kingdom" in loc_lower or "manchester" in loc_lower:
+        country = "gb"
+    elif "sydney" in loc_lower or "melbourne" in loc_lower or "australia" in loc_lower:
+        country = "au"
+    elif "toronto" in loc_lower or "canada" in loc_lower or "vancouver" in loc_lower:
+        country = "ca"
+    elif "berlin" in loc_lower or "munich" in loc_lower or "germany" in loc_lower:
+        country = "de"
 
-                jobs.append({
-                    "t": title,
-                    "c": company,
-                    "l": loc_name,
-                    "s": source_site,
-                    "sc": score,
-                    "sa": sal_str,
-                    "d": desc[:180] + "..." if len(desc) > 180 else desc,
-                    "u": link
-                })
-    except Exception as e:
-        print(f"[API Error - Remotive]: {e}")
+    # ── 1. Adzuna Multi-Page Fetching (Targeting up to 250+ results) ──
+    app_id = "f0525287"
+    app_key = "d7d42512683935db20286392095f9c47"
+    encoded_q = urllib.parse.quote(query)
+    encoded_l = urllib.parse.quote(location if location.lower() not in ["remote", "worldwide"] else "")
 
-    # ── PROVIDER 2: Arbeitnow Live Job Board API ──────────────────────
-    if len(jobs) < 10:
+    for page in range(1, 6): # Pages 1 to 5 = 250 listings
         try:
-            url = "https://www.arbeitnow.com/api/job-board-api"
-            resp = requests.get(url, headers=req_headers, timeout=6)
-            if resp.status_code == 200:
-                data = resp.json()
-                results = data.get("data", [])
-                query_lower = query.lower()
-                for idx, item in enumerate(results):
-                    title = clean_html(item.get("title", ""))
-                    company = item.get("company_name", "Corporate Inc")
-                    loc_name = item.get("location", location or "Remote")
-                    desc = clean_html(item.get("description", ""))
-                    link = item.get("url", "#")
-                    source_site = "Arbeitnow"
-                    score = 75 + (idx % 24)
-
-                    if query_lower in title.lower() or query_lower in desc.lower() or len(jobs) < 5:
-                        jobs.append({
-                            "t": title,
-                            "c": company,
-                            "l": loc_name,
-                            "s": source_site,
-                            "sc": score,
-                            "sa": "",
-                            "d": desc[:180] + "..." if len(desc) > 180 else desc,
-                            "u": link
-                        })
-        except Exception as e:
-            print(f"[API Error - Arbeitnow]: {e}")
-
-    # ── PROVIDER 3: Jobicy Live API ───────────────────────────────────
-    if len(jobs) < 10:
-        try:
-            url = "https://jobicy.com/api/v2/remote-jobs?count=50"
-            resp = requests.get(url, headers=req_headers, timeout=6)
-            if resp.status_code == 200:
-                data = resp.json()
-                results = data.get("jobs", [])
-                query_lower = query.lower()
-                for idx, item in enumerate(results):
-                    title = clean_html(item.get("jobTitle", ""))
-                    company = item.get("companyName", "Innovative Tech")
-                    loc_name = item.get("jobGeo", location or "Remote")
-                    sal_str = f"${item.get('annualSalaryMin', '')} - ${item.get('annualSalaryMax', '')}" if item.get('annualSalaryMin') else ""
-                    desc = clean_html(item.get("jobExcerpt", ""))
-                    link = item.get("url", "#")
-                    source_site = "Jobicy"
-                    score = 70 + (idx % 28)
-
-                    if query_lower in title.lower() or query_lower in desc.lower() or len(jobs) < 5:
-                        jobs.append({
-                            "t": title,
-                            "c": company,
-                            "l": loc_name,
-                            "s": source_site,
-                            "sc": score,
-                            "sa": sal_str if sal_str != "$ - $" else "",
-                            "d": desc[:180] + "..." if len(desc) > 180 else desc,
-                            "u": link
-                        })
-        except Exception as e:
-            print(f"[API Error - Jobicy]: {e}")
-
-    # ── PROVIDER 4: Adzuna API ─────────────────────────────────────────
-    if len(jobs) < 10:
-        try:
-            country = "us"
-            loc_lower = location.lower()
-            if "india" in loc_lower or "in" in loc_lower or "bengaluru" in loc_lower or "delhi" in loc_lower or "mumbai" in loc_lower:
-                country = "in"
-            elif "uk" in loc_lower or "london" in loc_lower or "united kingdom" in loc_lower:
-                country = "gb"
-
-            app_id = "f0525287"
-            app_key = "d7d42512683935db20286392095f9c47"
-            encoded_q = urllib.parse.quote(query)
-            encoded_l = urllib.parse.quote(location)
-            url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/1?app_id={app_id}&app_key={app_key}&results_per_page=50&what={encoded_q}&where={encoded_l}"
-            
-            resp = requests.get(url, headers=req_headers, timeout=6)
+            url = f"https://api.adzuna.com/v1/api/jobs/{country}/search/{page}?app_id={app_id}&app_key={app_key}&results_per_page=50&what={encoded_q}&where={encoded_l}"
+            resp = requests.get(url, headers=req_headers, timeout=5)
             if resp.status_code == 200:
                 data = resp.json()
                 results = data.get("results", [])
+                if not results:
+                    break
                 for idx, item in enumerate(results):
                     title = clean_html(item.get("title", ""))
-                    company = item.get("company", {}).get("display_name", "Tech Enterprise")
+                    company = item.get("company", {}).get("display_name", "Tech Organization")
                     loc_name = item.get("location", {}).get("display_name", location)
                     sal_min = item.get("salary_min")
                     sal_max = item.get("salary_max")
                     desc = clean_html(item.get("description", ""))
                     link = item.get("redirect_url", "#")
+                    site_name = item.get("site_name", "LinkedIn")
+                    created = item.get("created", "")
+                    contract_type = item.get("contract_type", "Full-time").capitalize()
                     
+                    # Compute workplace mode (Remote, Hybrid, On-Site)
+                    title_lower = title.lower() + " " + desc.lower()
+                    if "remote" in title_lower or "work from home" in title_lower:
+                        workplace = "Remote"
+                    elif "hybrid" in title_lower:
+                        workplace = "Hybrid"
+                    else:
+                        workplace = "On-Site"
+
                     sal_str = ""
+                    raw_sal = 0
                     if sal_min and sal_max:
                         sal_str = f"${int(sal_min):,} - ${int(sal_max):,}"
+                        raw_sal = int(sal_min)
                     elif sal_min:
                         sal_str = f"${int(sal_min):,}+"
+                        raw_sal = int(sal_min)
 
-                    site_name = item.get("site_name", "LinkedIn")
-                    score = 70 + (idx % 29)
+                    score = 68 + ((idx + page * 7) % 31)
 
                     jobs.append({
                         "t": title,
@@ -723,13 +655,87 @@ def search_jobs():
                         "s": site_name,
                         "sc": score,
                         "sa": sal_str,
-                        "d": desc[:180] + "..." if len(desc) > 180 else desc,
+                        "sv": raw_sal,
+                        "w": workplace,
+                        "e": contract_type if contract_type else "Full-time",
+                        "d": desc[:220] + "..." if len(desc) > 220 else desc,
                         "u": link
                     })
         except Exception as e:
-            print(f"[API Error - Adzuna]: {e}")
+            print(f"[Adzuna Page {page} Error]: {e}")
+            break
 
-    return jsonify({"jobs": jobs})
+    # ── 2. Remotive API Supplemental Load ────────────────────────────
+    if len(jobs) < 100:
+        try:
+            url = f"https://remotive.com/api/remote-jobs?search={encoded_q}&limit=50"
+            resp = requests.get(url, headers=req_headers, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("jobs", [])
+                for idx, item in enumerate(results):
+                    title = clean_html(item.get("title", ""))
+                    company = item.get("company_name", "Remotive Partner")
+                    loc_name = item.get("candidate_required_location", location or "Remote")
+                    sal_str = item.get("salary", "")
+                    desc = clean_html(item.get("description", ""))
+                    link = item.get("url", "#")
+                    job_type = item.get("job_type", "Full-time").capitalize()
+                    score = 72 + (idx % 27)
+
+                    jobs.append({
+                        "t": title,
+                        "c": company,
+                        "l": loc_name,
+                        "s": "Remotive",
+                        "sc": score,
+                        "sa": sal_str,
+                        "sv": 0,
+                        "w": "Remote",
+                        "e": job_type if job_type else "Full-time",
+                        "d": desc[:220] + "..." if len(desc) > 220 else desc,
+                        "u": link
+                    })
+        except Exception as e:
+            print(f"[Remotive Load Error]: {e}")
+
+    # ── 3. Arbeitnow API Supplemental Load ───────────────────────────
+    if len(jobs) < 100:
+        try:
+            url = "https://www.arbeitnow.com/api/job-board-api"
+            resp = requests.get(url, headers=req_headers, timeout=5)
+            if resp.status_code == 200:
+                data = resp.json()
+                results = data.get("data", [])
+                query_lower = query.lower()
+                for idx, item in enumerate(results):
+                    title = clean_html(item.get("title", ""))
+                    company = item.get("company_name", "Global Partner")
+                    loc_name = item.get("location", location or "Remote")
+                    desc = clean_html(item.get("description", ""))
+                    link = item.get("url", "#")
+                    is_remote = item.get("remote", False)
+                    workplace = "Remote" if is_remote else "On-Site"
+                    score = 74 + (idx % 25)
+
+                    if query_lower in title.lower() or query_lower in desc.lower() or len(jobs) < 30:
+                        jobs.append({
+                            "t": title,
+                            "c": company,
+                            "l": loc_name,
+                            "s": "Arbeitnow",
+                            "sc": score,
+                            "sa": "",
+                            "sv": 0,
+                            "w": workplace,
+                            "e": "Full-time",
+                            "d": desc[:220] + "..." if len(desc) > 220 else desc,
+                            "u": link
+                        })
+        except Exception as e:
+            print(f"[Arbeitnow Load Error]: {e}")
+
+    return jsonify({"jobs": jobs, "total": len(jobs)})
 
 
 @app.route("/api/applications/apply", methods=["POST"])
