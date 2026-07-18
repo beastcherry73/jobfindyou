@@ -2384,7 +2384,7 @@ async function applyToJob(title, company, location, score, portalUrl, btn) {
         btn.style.borderColor = '#059669';
 
         $('modalActionRow').innerHTML = `
-          <a href="https://www.linkedin.com/jobs/tracker/applied/" target="_blank" class="btn btn-primary" style="background:#0a66c2; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+          <a href="https://www.linkedin.com/my-items/saved-jobs/" target="_blank" class="btn btn-primary" style="background:#0a66c2; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
             👔 View on LinkedIn Applied Jobs
           </a>
           <a href="${portalUrl}" target="_blank" class="btn btn-primary" style="background:#059669; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
@@ -2522,7 +2522,7 @@ async function loadApplications() {
         </td>
         <td data-label="Action" style="font-size:0.82rem">
           <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <a href="https://www.linkedin.com/jobs/tracker/applied/" target="_blank" class="btn btn-sm btn-primary" style="background:#0a66c2; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; padding:4px 8px;">
+            <a href="https://www.linkedin.com/my-items/saved-jobs/" target="_blank" class="btn btn-sm btn-primary" style="background:#0a66c2; border:none; text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-size:0.72rem; padding:4px 8px;">
               👔 LinkedIn My Jobs
             </a>
             ${targetUrl !== '#' ? `
