@@ -2628,15 +2628,19 @@ function updateLocationSuggestions() {
 }
 
 function connectLinkedInAccount() {
-  alert("🔒 Secure LinkedIn Session Handshake:\n\nFor security & privacy protection, JobSpike NEVER asks for your raw password directly.\n\nClick OK to open linkedin.com/login and log into your official LinkedIn account. The JobSpike Chrome Extension will detect your active logged-in session to submit Easy Apply applications under your profile!");
-  window.open("https://www.linkedin.com/login", "_blank");
+  const w = 620, h = 720;
+  const left = (window.screen.width - w) / 2;
+  const top = (window.screen.height - h) / 2;
+  window.open("https://www.linkedin.com/login", "LinkedInAuthWindow", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,status=yes,resizable=yes`);
   localStorage.setItem('connected_linkedin', 'active_browser_session');
   updateAccountConnectionUI();
 }
 
 function connectIndeedAccount() {
-  alert("🔒 Secure Indeed Session Handshake:\n\nFor security, JobSpike NEVER asks for your raw password.\n\nClick OK to open indeed.com/account/login. Once logged in, JobSpike Chrome Extension will use your active session for 1-click apply!");
-  window.open("https://www.indeed.com/account/login", "_blank");
+  const w = 620, h = 720;
+  const left = (window.screen.width - w) / 2;
+  const top = (window.screen.height - h) / 2;
+  window.open("https://www.indeed.com/account/login", "IndeedAuthWindow", `width=${w},height=${h},top=${top},left=${left},scrollbars=yes,status=yes,resizable=yes`);
   localStorage.setItem('connected_indeed', 'active_browser_session');
   updateAccountConnectionUI();
 }
