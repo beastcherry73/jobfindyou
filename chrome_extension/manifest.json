@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "JobSpike - AI Auto-Apply Assistant",
+  "version": "1.0.0",
+  "description": "Automated candidate form filler & AI cover pitch injector for LinkedIn Easy Apply, Lever, Greenhouse, Workday & Indeed.",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.linkedin.com/*",
+    "https://*.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://*.workday.com/*",
+    "https://*.indeed.com/*",
+    "https://*.glassdoor.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.linkedin.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.workday.com/*",
+        "https://*.indeed.com/*",
+        "https://*.glassdoor.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
