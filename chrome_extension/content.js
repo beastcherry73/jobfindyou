@@ -1,5 +1,5 @@
-// JobSpike AI Auto-Apply Content Script v1.0.2 (With PDF Attachment Support & Auth Detection)
-console.log("⚡ JobSpike Extension Content Script V1.0.2 Active.");
+// JobSpike AI Auto-Apply Content Script v1.0.3 (Full Multi-Step Auto-Advancer & Screening Question Engine)
+console.log("⚡ JobSpike Extension Content Script V1.0.3 Active.");
 
 let candidateProfile = {
   fullName: "Alex Morgan",
@@ -41,7 +41,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 function isLinkedInLoggedIn() {
-  // Check if on LinkedIn domain and if user is logged out
   if (window.location.hostname.includes('linkedin.com')) {
     const loginForm = document.querySelector('form.login__form, form[action*="login"], .nav__button-secondary');
     const userChip = document.querySelector('.global-nav__me, #global-nav, .feed-identity-module');
@@ -51,14 +50,13 @@ function isLinkedInLoggedIn() {
 }
 
 function runAutoFillPipeline() {
-  // Check LinkedIn auth status
   if (!isLinkedInLoggedIn()) {
     showFloatingBanner("⚠️ Please log in to your LinkedIn account first!", "#ef4444");
     return 0;
   }
 
   let filledCount = 0;
-  console.log("🚀 Executing JobSpike Form Auto-Fill & PDF Attachment...");
+  console.log("🚀 Executing JobSpike Multi-Step Auto-Fill Pipeline...");
 
   // 1. Text Inputs, Email, Phone, Location
   const allInputs = document.querySelectorAll('input, textarea, select');
@@ -75,6 +73,7 @@ function runAutoFillPipeline() {
 
     const combinedStr = `${id} ${name} ${placeholder} ${ariaLabel} ${labelText}`;
 
+    // Fill field based on match
     if (combinedStr.includes('first name') || combinedStr.includes('given name')) {
       fillNativeInput(el, candidateProfile.firstName);
       filledCount++;
@@ -106,6 +105,19 @@ function runAutoFillPipeline() {
       fillNativeInput(el, "5");
       filledCount++;
     }
+
+    // Handle Radio Buttons (Yes / No screening questions)
+    if (el.type === 'radio') {
+      const radioVal = (el.value || '').toLowerCase();
+      const radioLabel = labelText || combinedStr;
+      if (radioVal === 'yes' || radioLabel.includes('yes') || radioLabel.includes('authorized') || radioLabel.includes('sponsorship')) {
+        if (!el.checked) {
+          el.checked = true;
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+          filledCount++;
+        }
+      }
+    }
   });
 
   // 2. Attach PDF Resume File to <input type="file">
@@ -128,7 +140,28 @@ function runAutoFillPipeline() {
   }
 
   showFloatingBanner(`⚡ JobSpike Auto-Filled ${filledCount} Fields & Resume Attached!`, "#059669");
+
+  // 3. Auto-Advance Multi-Step Modal (Click "Next" / "Continue" / "Review")
+  setTimeout(() => {
+    autoAdvanceStep();
+  }, 1200);
+
   return filledCount;
+}
+
+function autoAdvanceStep() {
+  const buttons = document.querySelectorAll('button');
+  for (let btn of buttons) {
+    const text = (btn.textContent || '').trim().toLowerCase();
+    const aria = (btn.getAttribute('aria-label') || '').toLowerCase();
+    const combined = `${text} ${aria}`;
+
+    if (combined.includes('next') || combined.includes('continue') || combined.includes('review your application')) {
+      console.log("⚡ Auto-Advancing to Next Step:", combined);
+      btn.click();
+      break;
+    }
+  }
 }
 
 // Convert Base64 DataURL back to File object
@@ -178,8 +211,7 @@ function showFloatingBanner(msg, color = "#0f172a") {
 // Auto-detect LinkedIn Easy Apply Modal open events
 setInterval(() => {
   const modal = document.querySelector('.jobs-easy-apply-content, .jobs-easy-apply-modal, [role="dialog"]');
-  if (modal && !modal.getAttribute('data-jspike-done')) {
-    modal.setAttribute('data-jspike-done', 'true');
+  if (modal) {
     runAutoFillPipeline();
   }
-}, 800);
+}, 1200);
