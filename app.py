@@ -27,7 +27,8 @@ else:
 app.config["GOOGLE_CLIENT_ID"] = os.environ.get("GOOGLE_CLIENT_ID")
 app.config["GOOGLE_CLIENT_SECRET"] = os.environ.get("GOOGLE_CLIENT_SECRET")
 app.config["GOOGLE_REDIRECT_URI"] = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback")
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+groq_key = os.environ.get("GROQ_API_KEY", "")
+client = Groq(api_key=groq_key) if groq_key else None
 
 @app.route("/favicon.ico")
 def favicon():
@@ -302,10 +303,12 @@ def normalize_analysis_dict(data):
 
 def call_groq(prompt, max_tokens=3000):
     try:
-        if not os.environ.get("GROQ_API_KEY"):
+        api_key = os.environ.get("GROQ_API_KEY")
+        if not api_key:
             app.logger.warning("GROQ_API_KEY is not set.")
             return "{}"
-        response = client.chat.completions.create(
+        groq_client = client or Groq(api_key=api_key)
+        response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.4,
