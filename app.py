@@ -286,12 +286,22 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             title TEXT NOT NULL,
+            filename TEXT,
             template TEXT NOT NULL DEFAULT 'modern',
+            overall_score INTEGER DEFAULT 0,
+            analysis_json TEXT,
             data_json TEXT NOT NULL,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
         )""")
+        r_cols = {row["name"] for row in db.execute("PRAGMA table_info(resumes)")}
+        if "filename" not in r_cols:
+            db.execute("ALTER TABLE resumes ADD COLUMN filename TEXT")
+        if "overall_score" not in r_cols:
+            db.execute("ALTER TABLE resumes ADD COLUMN overall_score INTEGER DEFAULT 0")
+        if "analysis_json" not in r_cols:
+            db.execute("ALTER TABLE resumes ADD COLUMN analysis_json TEXT")
 
 def login_required(view):
     @wraps(view)
@@ -545,7 +555,46 @@ def analyze():
                             json.dumps(result["suggested_keywords"])
                         )
                     )
-                    result["id"] = cursor.lastrowid
+                    analysis_id = cursor.lastrowid
+                    result["id"] = analysis_id
+
+                    # Single Source of Truth: Save or Update in resumes table
+                    existing = db.execute(
+                        "SELECT id FROM resumes WHERE user_id = ? AND filename = ?",
+                        (user_id, file.filename)
+                    ).fetchone()
+
+                    data_payload = json.dumps({
+                        "fullName": file.filename.rsplit('.', 1)[0],
+                        "summary": result.get("summary", ""),
+                        "skills": ", ".join(result.get("suggested_keywords", []))
+                    })
+
+                    if existing:
+                        db.execute(
+                            """UPDATE resumes SET 
+                                title = ?, overall_score = ?, analysis_json = ?, data_json = ?, updated_at = CURRENT_TIMESTAMP 
+                                WHERE id = ? AND user_id = ?""",
+                            (file.filename, result["overall_score"], json.dumps(result), data_payload, existing["id"], user_id)
+                        )
+                        result["resume_id"] = existing["id"]
+                    else:
+                        res_cur = db.execute(
+                            """INSERT INTO resumes (
+                                user_id, title, filename, template, overall_score, analysis_json, data_json
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                            (
+                                user_id,
+                                file.filename,
+                                file.filename,
+                                'modern',
+                                result["overall_score"],
+                                json.dumps(result),
+                                data_payload
+                            )
+                        )
+                        result["resume_id"] = res_cur.lastrowid
+                    db.commit()
             except Exception as db_err:
                 app.logger.error(f"Failed to save analysis to DB: {db_err}")
 
@@ -795,11 +844,15 @@ def handle_resume_detail(resume_id):
             return jsonify({"message": "Resume saved successfully"})
             
         elif request.method == "DELETE":
+            row = db.execute("SELECT filename, title FROM resumes WHERE id = ? AND user_id = ?", (resume_id, user_id)).fetchone()
+            if row:
+                fname = row["filename"] or row["title"]
+                db.execute("DELETE FROM analyses WHERE user_id = ? AND filename = ?", (user_id, fname))
             res = db.execute("DELETE FROM resumes WHERE id = ? AND user_id = ?", (resume_id, user_id))
             db.commit()
             if res.rowcount == 0:
-                return jsonify({"error": "Resume draft not found"}), 404
-            return jsonify({"message": "Resume draft deleted"})
+                return jsonify({"error": "Resume not found"}), 404
+            return jsonify({"message": "Resume deleted successfully"})
 
 
 @app.route("/api/resumes/<int:resume_id>/duplicate", methods=["POST"])
@@ -808,16 +861,16 @@ def duplicate_resume(resume_id):
     user_id = session["user_id"]
     with get_db() as db:
         row = db.execute(
-            "SELECT title, template, data_json FROM resumes WHERE id = ? AND user_id = ?",
+            "SELECT title, filename, template, data_json, overall_score, analysis_json FROM resumes WHERE id = ? AND user_id = ?",
             (resume_id, user_id)
         ).fetchone()
         if not row:
-            return jsonify({"error": "Resume draft not found"}), 404
+            return jsonify({"error": "Resume not found"}), 404
             
         new_title = f"Copy of {row['title']}"
         cursor = db.execute(
-            "INSERT INTO resumes (user_id, title, template, data_json) VALUES (?, ?, ?, ?)",
-            (user_id, new_title, row["template"], row["data_json"])
+            "INSERT INTO resumes (user_id, title, filename, template, data_json, overall_score, analysis_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (user_id, new_title, row["filename"], row["template"], row["data_json"], row["overall_score"], row["analysis_json"])
         )
         db.commit()
         return jsonify({"message": "Resume duplicated successfully", "id": cursor.lastrowid})
@@ -881,10 +934,11 @@ def delete_analysis(analysis_id):
     user_id = session["user_id"]
     try:
         with get_db() as db:
-            cursor = db.execute(
-                "DELETE FROM analyses WHERE id = ? AND user_id = ?",
-                (analysis_id, user_id)
-            )
+            row = db.execute("SELECT filename FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, user_id)).fetchone()
+            if row and row["filename"]:
+                db.execute("DELETE FROM resumes WHERE user_id = ? AND (filename = ? OR title = ?)", (user_id, row["filename"], row["filename"]))
+            cursor = db.execute("DELETE FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, user_id))
+            db.commit()
             if cursor.rowcount == 0:
                 return jsonify({"error": "Analysis not found or unauthorized"}), 404
         return jsonify({"success": True})

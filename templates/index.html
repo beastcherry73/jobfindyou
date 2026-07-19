@@ -1033,69 +1033,115 @@
       $('weaknessesList').innerHTML = (data.weaknesses||[]).map(w => `<span style="background:#FEF2F2; color:#DC2626; padding:4px 8px; border-radius:6px; font-size:0.78rem; font-weight:600;">${escHtml(w)}</span>`).join('');
 
       $('analyzeResults').style.display = 'flex';
-      loadHistory();
+      refreshGlobalResumeLibrary();
     }
 
-    async function loadHistory() {
-      try {
-        const res = await fetch('/api/analyses');
-        const data = await res.json();
-        if (!res.ok) return;
+    // ── UNIFIED SINGLE SOURCE OF TRUTH RESUME LIBRARY ────────────────────────
+    let globalResumes = [];
+    let activeResumeId = null;
 
-        const list = $('historyList');
-        if (!list) return;
-        list.innerHTML = '';
-        if (data.length === 0) {
-          list.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">No saved analyses yet</div>';
-          return;
+    async function refreshGlobalResumeLibrary() {
+      try {
+        const res = await fetch('/api/resumes');
+        if (!res.ok) return;
+        globalResumes = await res.json();
+
+        // 1. Sidebar History List
+        const sidebarList = $('historyList');
+        if (sidebarList) {
+          sidebarList.innerHTML = '';
+          if (globalResumes.length === 0) {
+            sidebarList.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">No saved resumes yet</div>';
+          } else {
+            globalResumes.forEach(item => {
+              const div = document.createElement('div');
+              div.className = 'history-item' + (item.id === activeResumeId ? ' active' : '');
+              div.setAttribute('onclick', `selectGlobalResume(${item.id})`);
+              div.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; transition:background 0.15s;';
+              const score = item.overall_score || (item.analysis ? item.analysis.overall_score : 80);
+              div.innerHTML = `
+                <div class="history-score-badge" style="background:#EFF6FF; color:#2563EB; width:26px; height:26px; border-radius:6px; display:grid; place-items:center; font-weight:800; font-size:0.72rem; flex-shrink:0;">${score}</div>
+                <div class="history-info" style="flex:1; min-width:0;">
+                  <div class="history-name" style="font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(item.title || item.filename)}</div>
+                  <div class="history-meta" style="font-size:0.7rem; color:var(--text-muted);">${fmtDate(item.updated_at || item.created_at)}</div>
+                </div>
+                <button class="history-action-btn" onclick="deleteGlobalResume(event, ${item.id})" title="Delete saved resume" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px 6px; border-radius:4px; font-size:0.85rem;">🗑️</button>
+              `;
+              sidebarList.appendChild(div);
+            });
+          }
         }
 
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'history-item';
-          div.setAttribute('onclick', `viewSavedAnalysis(${item.id})`);
-          div.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; transition:background 0.15s;';
-          div.innerHTML = `
-            <div class="history-score-badge" style="background:#EFF6FF; color:#2563EB; width:26px; height:26px; border-radius:6px; display:grid; place-items:center; font-weight:800; font-size:0.72rem; flex-shrink:0;">${item.overall_score}</div>
-            <div class="history-info" style="flex:1; min-width:0;">
-              <div class="history-name" style="font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(item.filename)}</div>
-              <div class="history-meta" style="font-size:0.7rem; color:var(--text-muted);">${fmtDate(item.created_at)}</div>
-            </div>
-            <button class="history-action-btn" onclick="deleteSavedAnalysis(event, ${item.id})" title="Delete saved report" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px 6px; border-radius:4px; font-size:0.85rem;">🗑️</button>
-          `;
-          list.appendChild(div);
-        });
+        // 2. Resume Builder Dropdown
+        const builderSelect = $('builderDraftSelect');
+        if (builderSelect) {
+          builderSelect.innerHTML = '<option value="new">+ Create New Resume</option>';
+          globalResumes.forEach(d => {
+            const opt = document.createElement('option');
+            opt.value = d.id;
+            opt.textContent = `📄 ${d.title || d.filename}`;
+            builderSelect.appendChild(opt);
+          });
+          if (activeResumeId) builderSelect.value = activeResumeId;
+        }
+
+        // 3. AI Rewrite Source Dropdown
+        const rewriteSelect = $('rewriteDraftSelect');
+        if (rewriteSelect) {
+          rewriteSelect.innerHTML = '';
+          if (lastResumeFile) {
+            rewriteSelect.innerHTML += `<option value="current">📄 Active Resume (${escHtml(lastResumeFile.name)})</option>`;
+          }
+          rewriteSelect.innerHTML += `<option value="upload">📤 Upload New Resume File...</option>`;
+          globalResumes.forEach(d => {
+            rewriteSelect.innerHTML += `<option value="${d.id}">📄 Saved Resume: ${escHtml(d.title || d.filename)} (${d.overall_score || 80} pts)</option>`;
+          });
+          if (activeResumeId) rewriteSelect.value = activeResumeId;
+        }
+
+        // 4. Update Dashboard Metrics
+        const dashCount = $('dashAuditCount');
+        if (dashCount) dashCount.textContent = globalResumes.length;
+
       } catch (e) {}
     }
 
-    async function viewSavedAnalysis(analysisId) {
+    async function selectGlobalResume(resumeId) {
+      activeResumeId = resumeId;
       try {
-        const res = await fetch(`/api/analyses/${analysisId}`);
-        const data = await res.json();
-        if (!res.ok) {
-          alert(data.error || "Could not load analysis detail.");
-          return;
+        const res = await fetch(`/api/resumes/${resumeId}`);
+        const item = await res.json();
+        if (!res.ok) return;
+
+        if (item.analysis) {
+          lastAnalysis = item.analysis;
+          switchTab('analyze');
+          renderAnalysis(item.analysis);
+        } else if (item.data) {
+          switchTab('builder');
+          restoreFormStatePayload(item.data);
+          if ($('builderTitle')) $('builderTitle').value = item.title;
         }
-        lastAnalysis = data;
-        switchTab('analyze');
-        renderAnalysis(data);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } catch (err) {
-        alert("Failed to load saved report: " + err.message);
-      }
+        refreshGlobalResumeLibrary();
+      } catch (e) {}
     }
 
-    async function deleteSavedAnalysis(event, analysisId) {
-      event.stopPropagation();
-      if (!confirm("Are you sure you want to delete this saved analysis report?")) return;
+    async function deleteGlobalResume(event, resumeId) {
+      if (event) event.stopPropagation();
+      if (!confirm("Are you sure you want to permanently delete this resume from your account?")) return;
 
       try {
-        const res = await fetch(`/api/analyses/${analysisId}`, { method: 'DELETE' });
+        const res = await fetch(`/api/resumes/${resumeId}`, { method: 'DELETE' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Delete failed");
-        loadHistory();
+        
+        if (activeResumeId === resumeId) activeResumeId = null;
+        if (typeof currentDraftId !== 'undefined' && currentDraftId === resumeId) currentDraftId = null;
+        
+        await refreshGlobalResumeLibrary();
+        alert("Resume permanently deleted.");
       } catch (err) {
-        alert("Could not delete report: " + err.message);
+        alert("Delete error: " + err.message);
       }
     }
 
@@ -1106,13 +1152,13 @@
 
     function startFixWithAI() {
       switchTab('improve');
-      loadRewriteDraftOptions();
       if (lastResumeFile && $('rewriteFileName')) {
         $('rewriteFileName').textContent = '📎 ' + lastResumeFile.name;
         if ($('rewriteDraftSelect')) $('rewriteDraftSelect').value = 'current';
         executeAiRewrite();
       }
     }
+
 
     // ── AI REWRITE ENGINE ─────────────────────────────────────
     let selectedTone = 'Executive Tone';
@@ -1815,7 +1861,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-      loadHistory();
+      refreshGlobalResumeLibrary();
       addExperienceRow({ title: 'Senior Software Engineer', company: 'Tech Corp', dates: '2021 – Present', bullets: '• Spearheaded zero-downtime migration of microservices to AWS.\n• Improved API response speeds by 38%.' });
       addEducationRow({ degree: 'B.S. Computer Science', school: 'University of Engineering', dates: '2017 – 2021' });
       const name = $('userGreet')?.textContent.replace('Hi, ', '').trim();
