@@ -782,14 +782,16 @@ def handle_resumes():
     user_id = session["user_id"]
     with get_db() as db:
         if request.method == "GET":
-            # Deduplicate all untitled/default "My Master Resume" drafts, keeping only the single latest
+            # Purge all legacy fake/dummy "My Master Resume" and "John Doe" rows completely
             db.execute("""
                 DELETE FROM resumes 
-                WHERE user_id = ? AND (TRIM(title) LIKE 'My Master Resume%' OR TRIM(title) LIKE 'Untitled%')
-                AND id NOT IN (
-                    SELECT max(id) FROM resumes WHERE user_id = ? AND (TRIM(title) LIKE 'My Master Resume%' OR TRIM(title) LIKE 'Untitled%')
+                WHERE user_id = ? AND (
+                    TRIM(title) LIKE 'My Master Resume%' 
+                    OR data_json LIKE '%John Doe%'
+                    OR (data_json = '{}' OR data_json IS NULL OR data_json = '')
                 )
-            """, (user_id, user_id))
+            """, (user_id,))
+            db.execute("DELETE FROM analyses WHERE user_id = ? AND filename LIKE 'My Master Resume%'", (user_id,))
             db.commit()
 
             rows = db.execute(

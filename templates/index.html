@@ -1779,8 +1779,9 @@
       if (!select) return;
       if (select.value === 'new') {
         currentDraftId = null;
-        if ($('builderTitle')) $('builderTitle').value = 'My Master Resume';
-        restoreFormStatePayload({ fullName: 'John Doe', targetRole: 'Senior Software Engineer' });
+        const uName = $('userGreet')?.textContent.replace('Hi, ', '').trim() || '';
+        if ($('builderTitle')) $('builderTitle').value = uName ? `${uName}'s Resume` : 'Untitled Resume';
+        restoreFormStatePayload({ fullName: uName, targetRole: '' });
         return;
       }
       try {
@@ -1795,7 +1796,8 @@
     }
 
     async function saveResumeDraft(silent = false) {
-      const title = $('builderTitle')?.value || 'My Master Resume';
+      const uName = $('userGreet')?.textContent.replace('Hi, ', '').trim() || '';
+      const title = $('builderTitle')?.value || (uName ? `${uName}'s Resume` : 'Untitled Resume');
       const payload = {
         title,
         template: activeTemplate,
