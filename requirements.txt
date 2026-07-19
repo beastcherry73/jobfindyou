@@ -5,3 +5,4 @@ pypdf
 groq
 requests
 gunicorn
+python-docx
