@@ -85,22 +85,59 @@ Rules:
 Here is the candidate's information:
 {data}"""
 
-IMPROVE_PROMPT = """You are a professional resume writer. Rewrite and significantly improve the resume below.
+SAFE_OPTIMIZE_PROMPT = """You are an elite executive resume writer and ATS optimization specialist. 
+Your goal is to optimize the resume below for maximum ATS compatibility, grammar, and professional polish.
 
-Goals:
-- Stronger action verbs and impact-driven bullet points
-- Add metrics and quantifiable achievements where implied
-- Fix ATS issues (clean formatting, proper section headers)
-- Improve clarity and professional tone
-- Keep all real facts — do not invent new ones
+STRICT FACT PRESERVATION RULES:
+- DO NOT invent fake percentages, metrics, team sizes, or dollar amounts.
+- DO NOT invent fake companies, projects, awards, certifications, or employment history.
+- DO NOT remove or replace technical keywords (e.g., PingFederate, PingAccess, Okta, SAML, OAuth, OIDC, AWS, Azure, Docker, Kubernetes, Python, Java, etc.).
+- DO NOT remove company names, awards, client names, or years of experience.
+- Keep all real facts 100% authentic. If metrics are not in the original text, polish the action verbs and clarity without fabricating fake numbers.
 
-Output clean Markdown only. No preamble, no explanation.
+IMPROVEMENTS TO APPLY:
+- Use strong, dynamic action verbs.
+- Fix all grammar, spelling, punctuation, and awkward phrasing.
+- Ensure clear section headers (# Summary, ## Professional Experience, ## Core Competencies, ## Projects, ## Education & Certifications).
+- Output clean Markdown only. No commentary, no preamble.
 
 {instructions_context}
-{job_context}
 
-Original resume:
+Original Resume:
 {resume_text}"""
+
+ROLE_OPTIMIZE_PROMPT = """You are an ATS Keyword Optimization Consultant and Executive Resume Writer.
+Your goal is to tailor the candidate's existing resume to match the target job description while strictly maintaining factual accuracy.
+
+STRICT RULES:
+- Reorder and emphasize relevant experience and skills matching the target role.
+- DO NOT claim skills or experience the candidate does not possess.
+- DO NOT invent fake metrics, companies, or projects.
+- Preserve all technical keywords, awards, company names, and certifications.
+- Output clean Markdown only.
+
+{job_context}
+{instructions_context}
+
+Original Resume:
+{resume_text}"""
+
+EXECUTIVE_OPTIMIZE_PROMPT = """You are an Executive Talent Partner and Master Resume Coach.
+Your goal is to elevate the resume's tone, executive leadership language, and overall flow.
+
+STRICT RULES:
+- Elevate vocabulary to executive C-suite / VP / Senior Director level.
+- DO NOT invent fake facts, metrics, or false accomplishments.
+- Preserve every technology, award, company name, and certification.
+- Output clean Markdown only.
+
+{instructions_context}
+
+Original Resume:
+{resume_text}"""
+
+IMPROVE_PROMPT = SAFE_OPTIMIZE_PROMPT
+
 
 # ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -314,6 +351,84 @@ def login_required(view):
     return wrapped_view
 
 # ── ROUTES ───────────────────────────────────────────────────────────────────
+
+@app.route("/api/export/docx", methods=["POST"])
+@login_required
+def export_docx():
+    import io
+    from docx import Document
+    from docx.shared import Pt, Inches, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    data = request.get_json() or {}
+    text = data.get("text", "").strip()
+    title = data.get("title", "Optimized_Resume").strip()
+
+    doc = Document()
+
+    # Page Margins
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(0.6)
+        section.bottom_margin = Inches(0.6)
+        section.left_margin = Inches(0.6)
+        section.right_margin = Inches(0.6)
+
+    # Style definitions
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = 'Calibri'
+    font.size = Pt(10.5)
+    font.color.rgb = RGBColor(15, 23, 42)
+
+    lines = text.split('\n')
+    for line in lines:
+        line_s = line.strip()
+        if not line_s:
+            continue
+        if line_s.startswith('# '):
+            p = doc.add_paragraph()
+            run = p.add_run(line_s[2:].strip())
+            run.font.size = Pt(22)
+            run.font.bold = True
+            run.font.color.rgb = RGBColor(37, 99, 235)
+            p.paragraph_format.space_after = Pt(4)
+        elif line_s.startswith('## '):
+            p = doc.add_paragraph()
+            run = p.add_run(line_s[3:].strip())
+            run.font.size = Pt(13)
+            run.font.bold = True
+            run.font.color.rgb = RGBColor(30, 41, 59)
+            p.paragraph_format.space_before = Pt(12)
+            p.paragraph_format.space_after = Pt(4)
+        elif line_s.startswith('### '):
+            p = doc.add_paragraph()
+            run = p.add_run(line_s[4:].strip())
+            run.font.size = Pt(11)
+            run.font.bold = True
+            p.paragraph_format.space_before = Pt(6)
+            p.paragraph_format.space_after = Pt(2)
+        elif line_s.startswith('• ') or line_s.startswith('- '):
+            p = doc.add_paragraph(style='List Bullet')
+            run = p.add_run(line_s[2:].strip())
+            p.paragraph_format.space_after = Pt(2)
+        else:
+            p = doc.add_paragraph()
+            p.add_run(line_s)
+            p.paragraph_format.space_after = Pt(4)
+
+    target_stream = io.BytesIO()
+    doc.save(target_stream)
+    target_stream.seek(0)
+
+    clean_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', title) + '.docx'
+    return send_file(
+        target_stream,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        as_attachment=True,
+        download_name=clean_filename
+    )
+
 
 @app.route("/")
 @login_required
@@ -720,8 +835,16 @@ def generate_improve_with_diff():
         instructions_context = f"Special instructions: {instructions}" if instructions else ""
         job_context = f"Target role:\n{job_description}" if job_description else ""
 
-        # Step 1: Rewrite the resume
-        improve_prompt = IMPROVE_PROMPT.format(
+        # Step 1: Rewrite the resume using requested mode
+        mode = request.form.get("mode", "safe").lower()
+        if mode == "role":
+            selected_prompt = ROLE_OPTIMIZE_PROMPT
+        elif mode == "executive":
+            selected_prompt = EXECUTIVE_OPTIMIZE_PROMPT
+        else:
+            selected_prompt = SAFE_OPTIMIZE_PROMPT
+
+        improve_prompt = selected_prompt.format(
             instructions_context=instructions_context,
             job_context=job_context,
             resume_text=resume_text[:12000]

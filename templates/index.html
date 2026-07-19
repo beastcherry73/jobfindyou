@@ -571,12 +571,11 @@
 
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid var(--border); padding-top:14px;">
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">2. Choose Writing Tone</label>
+              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">2. Select Optimization Mode</label>
               <div class="tone-bar" style="margin-bottom:0;">
-                <button class="tone-btn active" onclick="selectTone(this, 'Executive Tone')">Executive Tone 👔</button>
-                <button class="tone-btn" onclick="selectTone(this, 'Technical Engineering')">Technical Engineering 💻</button>
-                <button class="tone-btn" onclick="selectTone(this, 'ATS Heavy Optimization')">ATS Heavy 🎯</button>
-                <button class="tone-btn" onclick="selectTone(this, 'Student Early Career')">Student / Early Career 🎓</button>
+                <button class="tone-btn active" onclick="selectOptimizationMode(this, 'safe')" title="Grammar, ATS & Wording — 100% Fact Preservation (Zero Metric Hallucinations)">🛡️ Safe Optimization (Default)</button>
+                <button class="tone-btn" onclick="selectOptimizationMode(this, 'role')" title="Tailor resume to target Job Description without claiming unpossessed skills">🎯 Role Optimization</button>
+                <button class="tone-btn" onclick="selectOptimizationMode(this, 'executive')" title="Leadership language & C-suite executive polish">👔 Executive Optimization</button>
               </div>
             </div>
             <div style="display:flex; gap:10px; align-items:center;">
@@ -612,6 +611,7 @@
                 <span style="font-size:0.78rem; font-weight:700; color:var(--primary); text-transform:uppercase;">AI Enhanced Version</span>
                 <div style="display:flex; gap:6px;">
                   <button class="btn btn-sm btn-ghost" onclick="copyRewrittenText()">📋 Copy Text</button>
+                  <button class="btn btn-sm btn-ghost" onclick="exportDocx()">📄 Download DOCX</button>
                   <button class="btn btn-sm btn-primary" onclick="exportRewrittenPdf()">📥 Export PDF</button>
                 </div>
               </div>
@@ -1342,6 +1342,7 @@
         fd.append('instructions', `Rewrite in a ${selectedTone} style. ${$('rewriteJobDesc').value}`);
         fd.append('job_description', $('rewriteJobDesc').value);
 
+        fd.append('mode', selectedOptimizationMode || 'safe');
         const res = await fetch('/api/generate/improve-with-diff', { method: 'POST', body: fd });
         const data = await res.json();
 
