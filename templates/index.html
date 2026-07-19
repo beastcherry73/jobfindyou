@@ -1123,18 +1123,35 @@
         const select = $('rewriteDraftSelect');
         if (!select) return;
         select.innerHTML = '';
+
         if (lastResumeFile) {
-          select.innerHTML += `<option value="current">📄 Current Analyzed Resume (${escHtml(lastResumeFile.name)})</option>`;
+          select.innerHTML += `<option value="current">📄 Active Resume (${escHtml(lastResumeFile.name)})</option>`;
         }
+
         select.innerHTML += `<option value="upload">📤 Upload New Resume File...</option>`;
 
-        const res = await fetch('/api/resumes');
-        const drafts = await res.json();
-        if (res.ok && drafts.length) {
-          drafts.forEach(d => {
-            select.innerHTML += `<option value="draft_${d.id}">📝 Saved Draft: ${escHtml(d.title)}</option>`;
-          });
-        }
+        // Fetch Saved Audit History Resumes
+        try {
+          const resAudit = await fetch('/api/analyses');
+          const audits = await resAudit.json();
+          if (resAudit.ok && audits.length) {
+            audits.forEach(a => {
+              select.innerHTML += `<option value="audit_${a.id}">🔍 Analyzed Audit: ${escHtml(a.filename)} (Score: ${a.overall_score})</option>`;
+            });
+          }
+        } catch (ea) {}
+
+        // Fetch Builder Drafts
+        try {
+          const resDrafts = await fetch('/api/resumes');
+          const drafts = await resDrafts.json();
+          if (resDrafts.ok && drafts.length) {
+            drafts.forEach(d => {
+              select.innerHTML += `<option value="draft_${d.id}">✏️ Builder Draft: ${escHtml(d.title)}</option>`;
+            });
+          }
+        } catch (ed) {}
+
       } catch (e) {}
     }
 
@@ -1142,15 +1159,29 @@
       const select = $('rewriteDraftSelect');
       if (!select) return;
       const val = select.value;
+
       if (val === 'upload') {
         $('rewriteFileInput').click();
+      } else if (val.startsWith('audit_')) {
+        const auditId = val.replace('audit_', '');
+        try {
+          const res = await fetch(`/api/analyses/${auditId}`);
+          const data = await res.json();
+          if (res.ok) {
+            $('rewriteFileName').textContent = '🔍 Audit: ' + data.filename;
+            if (data.job_description) $('rewriteJobDesc').value = data.job_description;
+            let text = `Summary:\n${data.summary || ''}\n\nKey Recommendations:\n`;
+            (data.suggestions || []).forEach(s => { text += `• ${s}\n`; });
+            $('originalPreview').value = text;
+          }
+        } catch (e) {}
       } else if (val.startsWith('draft_')) {
         const draftId = val.replace('draft_', '');
         try {
           const res = await fetch(`/api/resumes/${draftId}`);
           const data = await res.json();
           if (res.ok) {
-            $('rewriteFileName').textContent = '📝 Draft: ' + data.title;
+            $('rewriteFileName').textContent = '✏️ Draft: ' + data.title;
             const parsed = data.data_json ? JSON.parse(data.data_json) : {};
             let text = `Name: ${parsed.fullName || ''}\nRole: ${parsed.targetRole || ''}\n\nSummary:\n${parsed.summary || ''}\n\nSkills:\n${parsed.skills || ''}\n\nExperience:\n`;
             (parsed.experience || []).forEach(e => {
