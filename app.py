@@ -792,13 +792,47 @@ def handle_resumes():
                 )
             """, (user_id,))
             db.execute("DELETE FROM analyses WHERE user_id = ? AND filename LIKE 'My Master Resume%'", (user_id,))
+            
+            # Auto-sync any existing analyzed resumes into the unified resumes table
+            db.execute("""
+                INSERT INTO resumes (user_id, title, filename, template, overall_score, analysis_json, data_json)
+                SELECT a.user_id, a.filename, a.filename, 'modern', a.overall_score, 
+                       json_object(
+                           'id', a.id,
+                           'filename', a.filename,
+                           'overall_score', a.overall_score,
+                           'summary', a.summary,
+                           'job_description', a.job_description,
+                           'dimension_scores', json(a.dimension_scores),
+                           'strengths', json(a.strengths),
+                           'weaknesses', json(a.weaknesses),
+                           'missing_sections', json(a.missing_sections),
+                           'ats_issues', json(a.ats_issues),
+                           'suggestions', json(a.suggestions),
+                           'suggested_keywords', json(a.suggested_keywords),
+                           'created_at', a.created_at
+                       ),
+                       json_object('fullName', REPLACE(a.filename, '.pdf', ''), 'summary', a.summary)
+                FROM analyses a
+                WHERE a.user_id = ? AND NOT EXISTS (
+                    SELECT 1 FROM resumes r WHERE r.user_id = a.user_id AND (r.filename = a.filename OR r.title = a.filename)
+                )
+            """, (user_id,))
             db.commit()
 
             rows = db.execute(
-                "SELECT id, title, template, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
+                "SELECT id, title, filename, template, overall_score, analysis_json, data_json, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
                 (user_id,)
             ).fetchall()
-            return jsonify([dict(r) for r in rows])
+            results = []
+            for r in rows:
+                item = dict(r)
+                item["data"] = json.loads(item["data_json"]) if item.get("data_json") else {}
+                item["analysis"] = json.loads(item["analysis_json"]) if item.get("analysis_json") else None
+                if "data_json" in item: del item["data_json"]
+                if "analysis_json" in item: del item["analysis_json"]
+                results.append(item)
+            return jsonify(results)
         else:
             data = request.get_json() or {}
             title = data.get("title", "Untitled Resume").strip()

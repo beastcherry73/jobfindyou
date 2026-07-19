@@ -1208,36 +1208,31 @@
 
       if (val === 'upload') {
         $('rewriteFileInput').click();
-      } else if (val.startsWith('audit_')) {
-        const auditId = val.replace('audit_', '');
-        try {
-          const res = await fetch(`/api/analyses/${auditId}`);
-          const data = await res.json();
-          if (res.ok) {
-            $('rewriteFileName').textContent = '🔍 Audit: ' + data.filename;
-            if (data.job_description) $('rewriteJobDesc').value = data.job_description;
-            let text = `Summary:\n${data.summary || ''}\n\nKey Recommendations:\n`;
-            (data.suggestions || []).forEach(s => { text += `• ${s}\n`; });
-            $('originalPreview').value = text;
-          }
-        } catch (e) {}
-      } else if (val.startsWith('draft_')) {
-        const draftId = val.replace('draft_', '');
-        try {
-          const res = await fetch(`/api/resumes/${draftId}`);
-          const data = await res.json();
-          if (res.ok) {
-            $('rewriteFileName').textContent = '📄 Resume: ' + data.title;
-            const parsed = data.data_json ? JSON.parse(data.data_json) : {};
-            let text = `Name: ${parsed.fullName || ''}\nRole: ${parsed.targetRole || ''}\n\nSummary:\n${parsed.summary || ''}\n\nSkills:\n${parsed.skills || ''}\n\nExperience:\n`;
-            (parsed.experience || []).forEach(e => {
-              text += `• ${e.title} at ${e.company} (${e.dates}):\n${e.bullets}\n`;
-            });
-            $('originalPreview').value = text;
-          }
-        } catch (e) {}
       } else if (val === 'current' && lastResumeFile) {
         $('rewriteFileName').textContent = '📎 ' + lastResumeFile.name;
+      } else {
+        const id = val.replace('draft_', '').replace('audit_', '');
+        try {
+          const res = await fetch(`/api/resumes/${id}`);
+          const data = await res.json();
+          if (res.ok) {
+            $('rewriteFileName').textContent = '📄 Resume: ' + (data.title || data.filename);
+            const parsed = data.data || {};
+            let text = '';
+            if (parsed.summary || parsed.fullName) {
+              text = `Name: ${parsed.fullName || ''}\nRole: ${parsed.targetRole || ''}\n\nSummary:\n${parsed.summary || ''}\n\nSkills:\n${parsed.skills || ''}\n\nExperience:\n`;
+              (parsed.experience || []).forEach(e => {
+                text += `• ${e.title} at ${e.company} (${e.dates}):\n${e.bullets}\n`;
+              });
+            } else if (data.analysis) {
+              text = `Summary:\n${data.analysis.summary || ''}\n\nKey Recommendations:\n`;
+              (data.analysis.suggestions || []).forEach(s => { text += `• ${s}\n`; });
+            } else {
+              text = `Summary:\n${data.title || ''}`;
+            }
+            $('originalPreview').value = text;
+          }
+        } catch (e) {}
       }
     }
 
