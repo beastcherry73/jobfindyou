@@ -842,21 +842,24 @@ def get_analysis_detail(analysis_id):
         if not r:
             return jsonify({"error": "Analysis not found or unauthorized"}), 404
         
-        result = {
+        raw_dict = {
             "id": r["id"],
             "filename": r["filename"],
             "job_description": r["job_description"],
             "overall_score": r["overall_score"],
-            "dimension_scores": json.loads(r["dimension_scores"]),
+            "dimension_scores": json.loads(r["dimension_scores"]) if r["dimension_scores"] else {},
             "summary": r["summary"],
-            "strengths": json.loads(r["strengths"]),
-            "weaknesses": json.loads(r["weaknesses"]),
-            "missing_sections": json.loads(r["missing_sections"]),
-            "ats_issues": json.loads(r["ats_issues"]),
-            "suggestions": json.loads(r["suggestions"]),
-            "suggested_keywords": json.loads(r["suggested_keywords"]),
+            "strengths": json.loads(r["strengths"]) if r["strengths"] else [],
+            "weaknesses": json.loads(r["weaknesses"]) if r["weaknesses"] else [],
+            "missing_sections": json.loads(r["missing_sections"]) if r["missing_sections"] else [],
+            "ats_issues": json.loads(r["ats_issues"]) if r["ats_issues"] else [],
+            "suggestions": json.loads(r["suggestions"]) if r["suggestions"] else [],
+            "suggested_keywords": json.loads(r["suggested_keywords"]) if r["suggested_keywords"] else [],
             "created_at": r["created_at"]
         }
+        result = normalize_analysis_dict(raw_dict)
+        result["id"] = r["id"]
+        result["filename"] = r["filename"]
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

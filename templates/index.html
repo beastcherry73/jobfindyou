@@ -919,20 +919,60 @@
         if (!res.ok) return;
 
         const list = $('historyList');
+        if (!list) return;
         list.innerHTML = '';
+        if (data.length === 0) {
+          list.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">No saved analyses yet</div>';
+          return;
+        }
+
         data.forEach(item => {
           const div = document.createElement('div');
           div.className = 'history-item';
+          div.setAttribute('onclick', `viewSavedAnalysis(${item.id})`);
+          div.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; transition:background 0.15s;';
           div.innerHTML = `
-            <div class="history-score-badge" style="background:#EFF6FF; color:#2563EB;">${item.overall_score}</div>
-            <div class="history-info">
-              <div class="history-name">${escHtml(item.filename)}</div>
-              <div class="history-meta">${fmtDate(item.created_at)}</div>
+            <div class="history-score-badge" style="background:#EFF6FF; color:#2563EB; width:26px; height:26px; border-radius:6px; display:grid; place-items:center; font-weight:800; font-size:0.72rem; flex-shrink:0;">${item.overall_score}</div>
+            <div class="history-info" style="flex:1; min-width:0;">
+              <div class="history-name" style="font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(item.filename)}</div>
+              <div class="history-meta" style="font-size:0.7rem; color:var(--text-muted);">${fmtDate(item.created_at)}</div>
             </div>
+            <button class="history-action-btn" onclick="deleteSavedAnalysis(event, ${item.id})" title="Delete saved report" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px 6px; border-radius:4px; font-size:0.85rem;">🗑️</button>
           `;
           list.appendChild(div);
         });
       } catch (e) {}
+    }
+
+    async function viewSavedAnalysis(analysisId) {
+      try {
+        const res = await fetch(`/api/analyses/${analysisId}`);
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || "Could not load analysis detail.");
+          return;
+        }
+        lastAnalysis = data;
+        switchTab('analyze');
+        renderAnalysis(data);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (err) {
+        alert("Failed to load saved report: " + err.message);
+      }
+    }
+
+    async function deleteSavedAnalysis(event, analysisId) {
+      event.stopPropagation();
+      if (!confirm("Are you sure you want to delete this saved analysis report?")) return;
+
+      try {
+        const res = await fetch(`/api/analyses/${analysisId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Delete failed");
+        loadHistory();
+      } catch (err) {
+        alert("Could not delete report: " + err.message);
+      }
     }
 
     function downloadPdfReport() {
