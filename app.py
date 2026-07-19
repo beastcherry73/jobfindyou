@@ -1161,6 +1161,18 @@ def add_header(response):
     response.headers["Expires"] = "0"
     return response
 
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    import traceback
+    tb = traceback.format_exc()
+    app.logger.error(f"Unhandled Exception: {e}\n{tb}")
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "error": "An unexpected error occurred on the server.",
+            "details": str(e)
+        }), 500
+    return f"<h1>Internal Server Error</h1><p>{str(e)}</p>", 500
+
 init_db()
 
 if __name__ == "__main__":
