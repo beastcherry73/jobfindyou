@@ -290,25 +290,28 @@ def call_groq(prompt, max_tokens=3000):
         return "{}"
 
 def get_db():
-    # Increase timeout to 30 seconds and enable WAL mode to prevent locks on cloud hosting
     db = sqlite3.connect(app.config["DATABASE"], timeout=30.0)
     db.row_factory = sqlite3.Row
-    try:
-        db.execute("PRAGMA journal_mode=WAL")
-        db.execute("PRAGMA synchronous=NORMAL")
-    except Exception:
-        pass
+    if not os.environ.get("VERCEL"):
+        try:
+            db.execute("PRAGMA journal_mode=WAL")
+            db.execute("PRAGMA synchronous=NORMAL")
+        except Exception:
+            pass
     return db
 
 def init_db():
-    with get_db() as db:
-        db.execute("""CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )""")
+    try:
+        db_path = app.config["DATABASE"]
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        with get_db() as db:
+            db.execute("""CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )""")
         columns = {row["name"] for row in db.execute("PRAGMA table_info(users)")}
         if "google_sub" not in columns:
             db.execute("ALTER TABLE users ADD COLUMN google_sub TEXT")
@@ -351,6 +354,8 @@ def init_db():
             db.execute("ALTER TABLE resumes ADD COLUMN overall_score INTEGER DEFAULT 0")
         if "analysis_json" not in r_cols:
             db.execute("ALTER TABLE resumes ADD COLUMN analysis_json TEXT")
+    except Exception as err:
+        app.logger.error(f"init_db error: {err}")
 
 def login_required(view):
     @wraps(view)
