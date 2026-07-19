@@ -305,7 +305,7 @@
       </a>
       <div class="top-search-wrap">
         <span>🔍</span>
-        <input type="text" placeholder="Search resumes, analyses, keywords...">
+        <input type="text" id="globalSearchInput" name="globalSearchInput" aria-label="Search resumes" placeholder="Search resumes, analyses, keywords...">
       </div>
     </div>
     <div class="nav-right">
@@ -413,7 +413,7 @@
         <div class="card">
           <div class="card-title">🔍 ATS Resume Analyzer</div>
           <div class="upload-zone" id="dropZone" onclick="$('resumeFile').click()">
-            <input type="file" id="resumeFile" accept=".pdf,.txt" style="display:none">
+            <input type="file" id="resumeFile" name="resumeFile" aria-label="Upload resume file" accept=".pdf,.txt" style="display:none">
             <div class="upload-icon">📤</div>
             <strong style="font-size:1.05rem; color:var(--text);">Drag &amp; drop your resume file here</strong>
             <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Supported formats: PDF, TXT · Maximum size 10MB</p>
@@ -422,7 +422,7 @@
 
           <div style="margin-top:16px;">
             <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Target Job Description (Optional)</label>
-            <textarea id="jobDesc" placeholder="Paste the job description to calculate exact keyword matching..." style="width:100%; height:75px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:0.85rem; background:#F8FAFC; margin-top:6px; color:var(--text); font-family:inherit;"></textarea>
+            <textarea id="jobDesc" name="jobDesc" aria-label="Target job description" placeholder="Paste the job description to calculate exact keyword matching..." style="width:100%; height:75px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:0.85rem; background:#F8FAFC; margin-top:6px; color:var(--text); font-family:inherit;"></textarea>
           </div>
 
           <div style="display:flex; justify-content:flex-end; margin-top:16px;">
@@ -594,7 +594,7 @@
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Original Resume Content</span>
               </div>
-              <textarea class="editor-box" id="originalPreview" placeholder="Upload a resume file above or paste original resume content here..." style="width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:inherit; resize:vertical;"></textarea>
+              <textarea class="editor-box" id="originalPreview" name="originalPreview" aria-label="Original resume content" placeholder="Upload a resume file above or paste original resume content here..." style="width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:inherit; resize:vertical;"></textarea>
             </div>
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
@@ -628,10 +628,10 @@
         <div class="card" style="margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:300px;">
-              <select id="builderDraftSelect" onchange="loadSelectedDraft()" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#F8FAFC; color:var(--text);">
+              <select id="builderDraftSelect" name="builderDraftSelect" aria-label="Select saved resume" onchange="loadSelectedDraft()" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#F8FAFC; color:var(--text);">
                 <option value="new">+ Create New Resume Draft</option>
               </select>
-              <input type="text" id="builderTitle" value="My Master Resume" oninput="triggerAutosave()" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#F8FAFC; color:var(--text); width:200px;">
+              <input type="text" id="builderTitle" name="builderTitle" aria-label="Resume Title" value="Untitled Resume" oninput="triggerAutosave()" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#F8FAFC; color:var(--text); width:200px;">
               <span id="autosaveStatus" style="font-size:0.75rem; font-weight:600; color:var(--good); display:flex; align-items:center; gap:4px;">
                 ✓ Autosaved
               </span>
@@ -675,7 +675,7 @@
               <div class="card-title">👤 Personal Information</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div style="grid-column:span 2; display:flex; align-items:center; gap:12px; background:#F8FAFC; border:1px solid var(--border); padding:8px 12px; border-radius:8px;">
-                  <input type="file" id="bPhotoInput" accept="image/*" style="display:none" onchange="handlePhotoUpload()">
+                  <input type="file" id="bPhotoInput" name="bPhotoInput" aria-label="Upload profile picture" accept="image/*" style="display:none" onchange="handlePhotoUpload()">
                   <div id="bPhotoPreview" style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-weight:800; font-size:12px;">PHOTO</div>
                   <div>
                     <button class="btn btn-sm btn-ghost" onclick="$('bPhotoInput').click()">📷 Upload Photo</button>
@@ -724,7 +724,7 @@
             <!-- Skills Card -->
             <div class="card" id="secSkills">
               <div class="card-title">🛠️ Skills &amp; Competencies</div>
-              <textarea id="bSkills" placeholder="Python, Kubernetes, AWS, Terraform, CI/CD Pipelines, System Architecture..." oninput="handleFormChange()" style="width:100%; height:70px; padding:8px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.88rem;"></textarea>
+              <textarea id="bSkills" name="bSkills" aria-label="Skills & Competencies" placeholder="Python, Kubernetes, AWS, Terraform, CI/CD Pipelines, System Architecture..." oninput="handleFormChange()" style="width:100%; height:70px; padding:8px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.88rem;"></textarea>
             </div>
 
             <!-- Projects Card -->
@@ -747,7 +747,7 @@
                 <!-- Template Picker -->
                 <div>
                   <label style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:4px;">Template Style</label>
-                  <select id="builderTemplateSelect" onchange="changeTemplate(this.value)" style="border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem; font-weight:700; color:var(--primary); background:#EFF6FF;">
+                  <select id="builderTemplateSelect" name="builderTemplateSelect" aria-label="Select resume template" onchange="changeTemplate(this.value)" style="border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem; font-weight:700; color:var(--primary); background:#EFF6FF;">
                     <option value="modern">Modern Executive 👔</option>
                     <option value="minimal">Clean Minimalist 📄</option>
                     <option value="tech">Tech Specialist 💻</option>
@@ -772,7 +772,7 @@
                 <!-- Font Picker -->
                 <div>
                   <label style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:4px;">Font Family</label>
-                  <select id="builderFontSelect" onchange="changeFontFamily(this.value)" style="border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:0.82rem; background:#F8FAFC;">
+                  <select id="builderFontSelect" name="builderFontSelect" aria-label="Select font family" onchange="changeFontFamily(this.value)" style="border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:0.82rem; background:#F8FAFC;">
                     <option value="Inter">Inter</option>
                     <option value="Plus Jakarta Sans">Plus Jakarta</option>
                     <option value="Roboto">Roboto</option>
@@ -1187,13 +1187,13 @@
           }
         } catch (ea) {}
 
-        // Fetch Builder Drafts
+        // Fetch Saved Resumes
         try {
           const resDrafts = await fetch('/api/resumes');
           const drafts = await resDrafts.json();
           if (resDrafts.ok && drafts.length) {
             drafts.forEach(d => {
-              select.innerHTML += `<option value="draft_${d.id}">✏️ Builder Draft: ${escHtml(d.title)}</option>`;
+              select.innerHTML += `<option value="draft_${d.id}">📄 Saved Resume: ${escHtml(d.title)}</option>`;
             });
           }
         } catch (ed) {}
@@ -1227,7 +1227,7 @@
           const res = await fetch(`/api/resumes/${draftId}`);
           const data = await res.json();
           if (res.ok) {
-            $('rewriteFileName').textContent = '✏️ Draft: ' + data.title;
+            $('rewriteFileName').textContent = '📄 Resume: ' + data.title;
             const parsed = data.data_json ? JSON.parse(data.data_json) : {};
             let text = `Name: ${parsed.fullName || ''}\nRole: ${parsed.targetRole || ''}\n\nSummary:\n${parsed.summary || ''}\n\nSkills:\n${parsed.skills || ''}\n\nExperience:\n`;
             (parsed.experience || []).forEach(e => {
@@ -1422,10 +1422,10 @@
       div.innerHTML = `
         <button onclick="this.parentElement.remove(); handleFormChange();" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--bad); font-size:0.9rem; cursor:pointer;" title="Remove Entry">✕</button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding-right:24px;">
-          <input type="text" class="exp-title" placeholder="Job Title (e.g. Senior DevOps Engineer)" value="${escHtml(data.title || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
-          <input type="text" class="exp-company" placeholder="Company (e.g. Stripe, AWS)" value="${escHtml(data.company || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
-          <input type="text" class="exp-dates" placeholder="Dates (e.g. 2021 – Present)" value="${escHtml(data.dates || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
-          <input type="text" class="exp-location" placeholder="Location (e.g. Remote / New York)" value="${escHtml(data.location || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" class="exp-title" name="expTitle" aria-label="Job Title" placeholder="Job Title (e.g. Senior DevOps Engineer)" value="${escHtml(data.title || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
+          <input type="text" class="exp-company" name="expCompany" aria-label="Company" placeholder="Company (e.g. Stripe, AWS)" value="${escHtml(data.company || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
+          <input type="text" class="exp-dates" name="expDates" aria-label="Dates" placeholder="Dates (e.g. 2021 – Present)" value="${escHtml(data.dates || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" class="exp-location" name="expLocation" aria-label="Location" placeholder="Location (e.g. Remote / New York)" value="${escHtml(data.location || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
         </div>
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -1435,7 +1435,7 @@
               <button class="btn btn-sm btn-ghost" onclick="aiImproveBullet('${id}_bullets', 'quantify')" style="padding:2px 6px; font-size:0.7rem;">📊 Quantify</button>
             </div>
           </div>
-          <textarea id="${id}_bullets" class="exp-bullets" placeholder="• Spearheaded zero-downtime migration of 30+ microservices...\n• Reduced deployment latency by 42%..." oninput="handleFormChange()" style="width:100%; height:75px; padding:6px; border:1px solid var(--border); border-radius:4px; font-family:inherit; font-size:0.82rem;">${escHtml(data.bullets || '')}</textarea>
+          <textarea id="${id}_bullets" class="exp-bullets" name="expBullets" aria-label="Key Accomplishments and Bullets" placeholder="• Spearheaded zero-downtime migration of 30+ microservices...\n• Reduced deployment latency by 42%..." oninput="handleFormChange()" style="width:100%; height:75px; padding:6px; border:1px solid var(--border); border-radius:4px; font-family:inherit; font-size:0.82rem;">${escHtml(data.bullets || '')}</textarea>
         </div>
       `;
       container.appendChild(div);
@@ -1450,9 +1450,9 @@
       div.innerHTML = `
         <button onclick="this.parentElement.remove(); handleFormChange();" style="position:absolute; top:6px; right:6px; background:none; border:none; color:var(--bad); font-size:0.85rem; cursor:pointer;">✕</button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding-right:20px;">
-          <input type="text" class="edu-degree" placeholder="Degree (B.S. Computer Science)" value="${escHtml(data.degree || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
-          <input type="text" class="edu-school" placeholder="University / College" value="${escHtml(data.school || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
-          <input type="text" class="edu-dates" placeholder="Graduation Year (2020)" value="${escHtml(data.dates || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" class="edu-degree" name="eduDegree" aria-label="Degree" placeholder="Degree (B.S. Computer Science)" value="${escHtml(data.degree || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
+          <input type="text" class="edu-school" name="eduSchool" aria-label="University or School" placeholder="University / College" value="${escHtml(data.school || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
+          <input type="text" class="edu-dates" name="eduDates" aria-label="Graduation Year" placeholder="Graduation Year (2020)" value="${escHtml(data.dates || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px;">
         </div>
       `;
       container.appendChild(div);
@@ -1466,8 +1466,8 @@
       div.style.cssText = 'background:#F8FAFC; border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; position:relative;';
       div.innerHTML = `
         <button onclick="this.parentElement.remove(); handleFormChange();" style="position:absolute; top:6px; right:6px; background:none; border:none; color:var(--bad); font-size:0.85rem; cursor:pointer;">✕</button>
-        <input type="text" class="proj-title" placeholder="Project Name &amp; Tech Stack" value="${escHtml(data.title || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
-        <textarea class="proj-desc" placeholder="Brief description of impact and tech used..." oninput="handleFormChange()" style="width:100%; height:50px; padding:6px; border:1px solid var(--border); border-radius:4px; font-family:inherit; font-size:0.82rem;">${escHtml(data.desc || '')}</textarea>
+        <input type="text" class="proj-title" name="projTitle" aria-label="Project Name" placeholder="Project Name &amp; Tech Stack" value="${escHtml(data.title || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
+        <textarea class="proj-desc" name="projDesc" aria-label="Project Description" placeholder="Brief description of impact and tech used..." oninput="handleFormChange()" style="width:100%; height:50px; padding:6px; border:1px solid var(--border); border-radius:4px; font-family:inherit; font-size:0.82rem;">${escHtml(data.desc || '')}</textarea>
       `;
       container.appendChild(div);
       handleFormChange();
