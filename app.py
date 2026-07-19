@@ -5,7 +5,7 @@ import sqlite3
 import secrets
 import requests
 from functools import wraps
-from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash, Response
 from pypdf import PdfReader
 from dotenv import load_dotenv
 from groq import Groq
@@ -32,6 +32,33 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 @app.route("/favicon.ico")
 def favicon():
     return "", 204
+
+@app.route("/robots.txt")
+def robots():
+    content = "User-agent: *\nAllow: /\nSitemap: https://www.jobspike.in/sitemap.xml"
+    return Response(content, mimetype="text/plain")
+
+@app.route("/sitemap.xml")
+def sitemap():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.jobspike.in/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.jobspike.in/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.jobspike.in/register</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>"""
+    return Response(xml, mimetype="application/xml")
 
 # ── PROMPTS ──────────────────────────────────────────────────────────────────
 
