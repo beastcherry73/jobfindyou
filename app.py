@@ -528,6 +528,7 @@ def analyze():
 
         result = normalize_analysis_dict(parsed)
         result["filename"] = file.filename
+        result["raw_text"] = resume_text
 
         # Save to database
         user_id = session.get("user_id")
@@ -567,7 +568,8 @@ def analyze():
                     data_payload = json.dumps({
                         "fullName": file.filename.rsplit('.', 1)[0],
                         "summary": result.get("summary", ""),
-                        "skills": ", ".join(result.get("suggested_keywords", []))
+                        "skills": ", ".join(result.get("suggested_keywords", [])),
+                        "rawText": resume_text
                     })
 
                     if existing:

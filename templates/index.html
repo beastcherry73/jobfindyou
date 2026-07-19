@@ -569,9 +569,9 @@
             </div>
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; border-top:1px solid var(--border); padding-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid var(--border); padding-top:14px;">
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">2. Choose Executive Writing Tone</label>
+              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">2. Choose Writing Tone</label>
               <div class="tone-bar" style="margin-bottom:0;">
                 <button class="tone-btn active" onclick="selectTone(this, 'Executive Tone')">Executive Tone 👔</button>
                 <button class="tone-btn" onclick="selectTone(this, 'Technical Engineering')">Technical Engineering 💻</button>
@@ -579,7 +579,9 @@
                 <button class="tone-btn" onclick="selectTone(this, 'Student Early Career')">Student / Early Career 🎓</button>
               </div>
             </div>
-            <button class="btn btn-primary" id="runRewriteBtn" onclick="executeAiRewrite()">✨ Run AI Rewrite</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <button class="btn btn-primary" id="runOptimizeFullBtn" onclick="openOptimizeFullModal()" style="background:linear-gradient(135deg, #2563EB, #1D4ED8); box-shadow:0 4px 14px rgba(37,99,235,0.3); font-weight:700; padding:10px 18px; border-radius:8px;">🚀 Optimize Entire Resume</button>
+            </div>
           </div>
         </div>
 
@@ -591,8 +593,17 @@
         <div class="card">
           <div class="rewrite-grid">
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
                 <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Original Resume Content</span>
+                <span style="font-size:0.72rem; color:var(--primary); font-weight:600;">Level 1: Improve Selected Section Below</span>
+              </div>
+              <!-- Level 1 Inline Controls -->
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; background:#F1F5F9; padding:6px 8px; border-radius:8px; align-items:center;">
+                <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-right:4px;">✨ IMPROVE:</span>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('improve_bullet')" title="Improve selected bullet or text" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">✨ Improve</button>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('quantify_bullet')" title="Add metrics & business impact" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">📈 Quantify</button>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('ats_polish')" title="Optimize keywords for ATS" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">🎯 ATS</button>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('fix_grammar')" title="Fix grammar & spelling" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">✔ Grammar</button>
               </div>
               <textarea class="editor-box" id="originalPreview" name="originalPreview" aria-label="Original resume content" placeholder="Upload a resume file above or paste original resume content here..." style="width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:inherit; resize:vertical;"></textarea>
             </div>
@@ -1209,7 +1220,11 @@
             $('rewriteFileName').textContent = '📄 Resume: ' + (data.title || data.filename);
             const parsed = data.data || {};
             let text = '';
-            if (parsed.summary || parsed.fullName) {
+            if (parsed.rawText) {
+              text = parsed.rawText;
+            } else if (data.analysis && data.analysis.raw_text) {
+              text = data.analysis.raw_text;
+            } else if (parsed.summary || parsed.fullName) {
               text = `Name: ${parsed.fullName || ''}\nRole: ${parsed.targetRole || ''}\n\nSummary:\n${parsed.summary || ''}\n\nSkills:\n${parsed.skills || ''}\n\nExperience:\n`;
               (parsed.experience || []).forEach(e => {
                 text += `• ${e.title} at ${e.company} (${e.dates}):\n${e.bullets}\n`;
@@ -1247,6 +1262,60 @@
       document.querySelectorAll('#improvePanel .tone-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       selectedTone = tone;
+    }
+
+    
+    // ── LEVEL 1 vs LEVEL 2 AI UX FUNCTIONS ──────────────────────────
+    function openOptimizeFullModal() {
+      const modal = $('optimizeFullModal');
+      if (modal) modal.style.display = 'grid';
+    }
+
+    function closeOptimizeFullModal() {
+      const modal = $('optimizeFullModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function confirmExecuteFullDocumentOptimization() {
+      closeOptimizeFullModal();
+      const goals = [];
+      if ($('optAtsKeywords')?.checked) goals.push('ATS Keyword Optimization');
+      if ($('optExecutiveTone')?.checked) goals.push('Executive Tone');
+      if ($('optQuantify')?.checked) goals.push('Quantify Achievements & Metrics');
+      if ($('optActionVerbs')?.checked) goals.push('Stronger Action Verbs');
+      if ($('optGrammar')?.checked) goals.push('Grammar & Consistency Cleanup');
+
+      const instructions = `Full Document Optimization Goals: ${goals.join(', ')}. Rewrite the entire resume comprehensively.`;
+      const origInst = $('rewriteJobDesc')?.value;
+      if ($('rewriteJobDesc')) $('rewriteJobDesc').value = instructions;
+      await executeAiRewrite();
+      if ($('rewriteJobDesc')) $('rewriteJobDesc').value = origInst || '';
+    }
+
+    async function executeInlineImprove(action) {
+      const text = $('originalPreview')?.value.trim();
+      if (!text) { alert("Please provide or select content to improve."); return; }
+
+      $('rewriteLoading').style.display = 'block';
+      $('improvedPreview').innerHTML = '<span style="color:var(--text-muted);">Improving selected content...</span>';
+
+      try {
+        const res = await fetch('/api/builder/ai-assist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, text, target_role: $('bTargetRole')?.value || 'Professional' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Inline improvement failed");
+
+        $('improvedPreview').innerHTML = escHtml(data.result || data.summary || "Improved text ready.");
+        $('rewriteRationaleCard').style.display = 'block';
+        $('rewriteRationaleList').innerHTML = `<li>Level 1 Inline Action (${action}): Modified selected text without altering the rest of your document.</li>`;
+      } catch (err) {
+        alert("Inline improve error: " + err.message);
+      } finally {
+        $('rewriteLoading').style.display = 'none';
+      }
     }
 
     async function executeAiRewrite() {
@@ -1327,7 +1396,49 @@
         </head>
         <body>
           <div>${content}</div>
-        </body>
+        
+  <!-- LEVEL 2: WHOLE-DOCUMENT AI OPTIMIZATION MODAL -->
+  <div id="optimizeFullModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; display:none; place-items:center;">
+    <div style="background:#FFFFFF; border-radius:16px; width:90%; max-width:540px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation:modalSlideUp 0.2s ease-out;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px;">
+          🚀 Optimize Entire Resume
+        </h3>
+        <button onclick="closeOptimizeFullModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+      </div>
+
+      <div style="background:#EFF6FF; border:1px solid #BFDBFE; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:0.82rem; color:#1E40AF; line-height:1.5;">
+        ℹ️ <strong>Whole-Document Workflow:</strong> This will improve every section of your resume while strictly preserving all your experience, companies, and factual information.
+      </div>
+
+      <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:8px;">Select Optimization Goals:</label>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optAtsKeywords" checked> 🎯 ATS Keywords
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optExecutiveTone" checked> 👔 Executive Tone
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optQuantify" checked> 📈 Quantify Impact
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optActionVerbs" checked> ⚡ Action Verbs
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
+          <input type="checkbox" id="optGrammar" checked> ✔ Grammar & Consistency Cleanup
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-ghost" onclick="closeOptimizeFullModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExecuteFullDocumentOptimization()" style="background:linear-gradient(135deg, #2563EB, #1D4ED8); font-weight:700;">🚀 Run Full Optimization</button>
+      </div>
+    </div>
+  </div>
+
+</body>
         </html>
       `);
       printWin.document.close();
@@ -1855,5 +1966,47 @@
       if (name && $('userAvatar')) $('userAvatar').textContent = name.slice(0, 2).toUpperCase();
     });
   </script>
+
+  <!-- LEVEL 2: WHOLE-DOCUMENT AI OPTIMIZATION MODAL -->
+  <div id="optimizeFullModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; display:none; place-items:center;">
+    <div style="background:#FFFFFF; border-radius:16px; width:90%; max-width:540px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation:modalSlideUp 0.2s ease-out;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px;">
+          🚀 Optimize Entire Resume
+        </h3>
+        <button onclick="closeOptimizeFullModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+      </div>
+
+      <div style="background:#EFF6FF; border:1px solid #BFDBFE; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:0.82rem; color:#1E40AF; line-height:1.5;">
+        ℹ️ <strong>Whole-Document Workflow:</strong> This will improve every section of your resume while strictly preserving all your experience, companies, and factual information.
+      </div>
+
+      <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:8px;">Select Optimization Goals:</label>
+      
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optAtsKeywords" checked> 🎯 ATS Keywords
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optExecutiveTone" checked> 👔 Executive Tone
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optQuantify" checked> 📈 Quantify Impact
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+          <input type="checkbox" id="optActionVerbs" checked> ⚡ Action Verbs
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
+          <input type="checkbox" id="optGrammar" checked> ✔ Grammar & Consistency Cleanup
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button class="btn btn-ghost" onclick="closeOptimizeFullModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExecuteFullDocumentOptimization()" style="background:linear-gradient(135deg, #2563EB, #1D4ED8); font-weight:700;">🚀 Run Full Optimization</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
