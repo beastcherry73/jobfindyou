@@ -15,7 +15,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-local-development-secret")
-app.config["DATABASE"] = os.path.join(app.root_path, "resumeai.db")
+if os.environ.get("VERCEL") or not os.access(app.root_path, os.W_OK):
+    app.config["DATABASE"] = "/tmp/resumeai.db"
+else:
+    app.config["DATABASE"] = os.path.join(app.root_path, "resumeai.db")
 app.config["GOOGLE_CLIENT_ID"] = os.environ.get("GOOGLE_CLIENT_ID")
 app.config["GOOGLE_CLIENT_SECRET"] = os.environ.get("GOOGLE_CLIENT_SECRET")
 app.config["GOOGLE_REDIRECT_URI"] = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback")
