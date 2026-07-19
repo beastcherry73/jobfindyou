@@ -320,15 +320,60 @@ def call_groq(prompt, max_tokens=3000):
         return "{}"
 
 def get_db():
-    db = sqlite3.connect(app.config["DATABASE"], timeout=30.0)
-    db.row_factory = sqlite3.Row
-    if not os.environ.get("VERCEL"):
+    if os.environ.get("VERCEL"):
+        db = sqlite3.connect(":memory:", timeout=30.0)
+        db.row_factory = sqlite3.Row
+        try:
+            db.execute("""CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                google_sub TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )""")
+            db.execute("""CREATE TABLE IF NOT EXISTS analyses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                job_description TEXT,
+                overall_score INTEGER NOT NULL,
+                dimension_scores TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                strengths TEXT NOT NULL,
+                weaknesses TEXT NOT NULL,
+                missing_sections TEXT NOT NULL,
+                ats_issues TEXT NOT NULL,
+                suggestions TEXT NOT NULL,
+                suggested_keywords TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )""")
+            db.execute("""CREATE TABLE IF NOT EXISTS resumes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                filename TEXT,
+                template TEXT NOT NULL DEFAULT 'modern',
+                overall_score INTEGER DEFAULT 0,
+                analysis_json TEXT,
+                data_json TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )""")
+        except Exception:
+            pass
+        return db
+    else:
+        db = sqlite3.connect(app.config["DATABASE"], timeout=30.0)
+        db.row_factory = sqlite3.Row
         try:
             db.execute("PRAGMA journal_mode=WAL")
             db.execute("PRAGMA synchronous=NORMAL")
         except Exception:
             pass
-    return db
+        return db
 
 def init_db():
     try:
