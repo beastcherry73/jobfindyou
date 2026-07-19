@@ -595,7 +595,10 @@
             <div>
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span style="font-size:0.78rem; font-weight:700; color:var(--primary); text-transform:uppercase;">AI Enhanced Version</span>
-                <button class="btn btn-sm btn-ghost" onclick="copyRewrittenText()">📋 Copy Text</button>
+                <div style="display:flex; gap:6px;">
+                  <button class="btn btn-sm btn-ghost" onclick="copyRewrittenText()">📋 Copy Text</button>
+                  <button class="btn btn-sm btn-primary" onclick="exportRewrittenPdf()">📥 Export PDF</button>
+                </div>
               </div>
               <div class="editor-box" id="improvedPreview" style="border:1px solid var(--border); border-radius:8px; padding:12px; background:#F8FAFC; overflow-y:auto; font-family:inherit;">Rewritten AI version will appear here...</div>
             </div>
@@ -1179,6 +1182,41 @@
       const text = $('improvedPreview').innerText;
       navigator.clipboard.writeText(text);
       alert("AI Enhanced Resume copied to clipboard!");
+    }
+
+    function exportRewrittenPdf() {
+      const content = $('improvedPreview').innerHTML;
+      if (!content || content.includes('Rewritten AI version will appear here')) {
+        alert("Please run an AI Rewrite first before exporting to PDF.");
+        return;
+      }
+      const printWin = window.open('', '_blank');
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>JobSpike — AI Enhanced Resume</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+            body { font-family: 'Inter', sans-serif; padding: 40px; color: #0f172a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+            h1, h2, h3 { color: #2563eb; font-weight: 800; }
+            hr { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+            ul { padding-left: 20px; }
+            li { margin-bottom: 6px; }
+            @media print {
+              body { padding: 0; max-width: 100%; }
+            }
+          </style>
+        </head>
+        <body>
+          <div>${content}</div>
+          <script>
+            window.onload = function() { window.print(); };
+          </script>
+        </body>
+        </html>
+      `);
+      printWin.document.close();
     }
 
     // ── PHASE 5: AI RESUME BUILDER ENGINE ─────────────────────────────────────
