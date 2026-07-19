@@ -733,6 +733,16 @@ def handle_resumes():
     user_id = session["user_id"]
     with get_db() as db:
         if request.method == "GET":
+            # Deduplicate untitled/default "My Master Resume" drafts, keeping only the latest one
+            db.execute("""
+                DELETE FROM resumes 
+                WHERE user_id = ? AND title = 'My Master Resume' 
+                AND id NOT IN (
+                    SELECT max(id) FROM resumes WHERE user_id = ? AND title = 'My Master Resume'
+                )
+            """, (user_id, user_id))
+            db.commit()
+
             rows = db.execute(
                 "SELECT id, title, template, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
                 (user_id,)

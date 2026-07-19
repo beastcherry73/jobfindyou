@@ -1426,6 +1426,7 @@
     }
 
     function triggerAutosave() {
+      if (!currentDraftId) return;
       const status = $('autosaveStatus');
       if (status) status.textContent = '⏳ Saving...';
       clearTimeout(autosaveTimer);
