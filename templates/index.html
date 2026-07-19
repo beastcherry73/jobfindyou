@@ -1173,27 +1173,17 @@
         if (lastResumeFile) {
           select.innerHTML += `<option value="current">📄 Active Resume (${escHtml(lastResumeFile.name)})</option>`;
         }
-
         select.innerHTML += `<option value="upload">📤 Upload New Resume File...</option>`;
 
-        // Fetch Saved Audit History Resumes
+        // Fetch Single Source of Truth Resumes from /api/resumes
         try {
-          const resAudit = await fetch('/api/analyses');
-          const audits = await resAudit.json();
-          if (resAudit.ok && audits.length) {
-            audits.forEach(a => {
-              select.innerHTML += `<option value="audit_${a.id}">🔍 Analyzed Audit: ${escHtml(a.filename)} (Score: ${a.overall_score})</option>`;
-            });
-          }
-        } catch (ea) {}
-
-        // Fetch Saved Resumes
-        try {
-          const resDrafts = await fetch('/api/resumes');
-          const drafts = await resDrafts.json();
-          if (resDrafts.ok && drafts.length) {
-            drafts.forEach(d => {
-              select.innerHTML += `<option value="draft_${d.id}">📄 Saved Resume: ${escHtml(d.title)}</option>`;
+          const res = await fetch('/api/resumes');
+          const list = await res.json();
+          if (res.ok && list.length) {
+            list.forEach(item => {
+              const name = item.title || item.filename || 'Untitled Resume';
+              const scoreText = item.overall_score ? ` (${item.overall_score} pts)` : '';
+              select.innerHTML += `<option value="${item.id}">📄 ${escHtml(name)}${scoreText}</option>`;
             });
           }
         } catch (ed) {}
