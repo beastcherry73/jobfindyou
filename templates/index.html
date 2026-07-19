@@ -678,12 +678,12 @@
                     <span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:2px;">Optional · Automatically hidden on strict ATS templates</span>
                   </div>
                 </div>
-                <input type="text" id="bFullName" placeholder="Full Name *" oninput="handleFormChange()" style="grid-column:span 2; padding:8px; border:1px solid var(--border); border-radius:6px; font-weight:600;">
-                <input type="text" id="bTargetRole" placeholder="Target Job Title *" oninput="handleFormChange()" style="grid-column:span 2; padding:8px; border:1px solid var(--border); border-radius:6px; font-weight:600;">
-                <input type="email" id="bEmail" placeholder="Email *" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
-                <input type="tel" id="bPhone" placeholder="Phone *" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
-                <input type="text" id="bLocation" placeholder="Location (e.g. New York, NY)" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
-                <input type="text" id="bLinkedin" placeholder="LinkedIn URL" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+                <input type="text" id="bFullName" name="bFullName" aria-label="Full Name" placeholder="Full Name *" oninput="handleFormChange()" style="grid-column:span 2; padding:8px; border:1px solid var(--border); border-radius:6px; font-weight:600;">
+                <input type="text" id="bTargetRole" name="bTargetRole" aria-label="Target Job Title" placeholder="Target Job Title *" oninput="handleFormChange()" style="grid-column:span 2; padding:8px; border:1px solid var(--border); border-radius:6px; font-weight:600;">
+                <input type="email" id="bEmail" name="bEmail" aria-label="Email Address" placeholder="Email *" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+                <input type="tel" id="bPhone" name="bPhone" aria-label="Phone Number" placeholder="Phone *" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+                <input type="text" id="bLocation" name="bLocation" aria-label="Location" placeholder="Location (e.g. New York, NY)" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+                <input type="text" id="bLinkedin" name="bLinkedin" aria-label="LinkedIn Profile URL" placeholder="LinkedIn URL" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
               </div>
             </div>
 
@@ -696,7 +696,7 @@
                   <button class="btn btn-sm btn-ghost" onclick="aiAssist('fix_grammar', 'bSummary')">🧹 Fix Grammar</button>
                 </div>
               </div>
-              <textarea id="bSummary" placeholder="Concise summary highlighting your core expertise and business impact..." oninput="handleFormChange()" style="width:100%; height:90px; padding:10px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.88rem;"></textarea>
+              <textarea id="bSummary" name="bSummary" aria-label="Professional Summary" placeholder="Concise summary highlighting your core expertise and business impact..." oninput="handleFormChange()" style="width:100%; height:90px; padding:10px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.88rem;"></textarea>
             </div>
 
             <!-- Work Experience Card -->
@@ -1210,13 +1210,12 @@
         </head>
         <body>
           <div>${content}</div>
-          <script>
-            window.onload = function() { window.print(); };
-          </script>
         </body>
         </html>
       `);
       printWin.document.close();
+      printWin.focus();
+      setTimeout(() => { printWin.print(); }, 500);
     }
 
     // ── PHASE 5: AI RESUME BUILDER ENGINE ─────────────────────────────────────
