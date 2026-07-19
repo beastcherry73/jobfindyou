@@ -13,16 +13,25 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
+)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-local-development-secret")
-if os.environ.get("VERCEL") or not os.access(app.root_path, os.W_OK):
+if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
     app.config["DATABASE"] = "/tmp/resumeai.db"
 else:
-    app.config["DATABASE"] = os.path.join(app.root_path, "resumeai.db")
+    app.config["DATABASE"] = os.path.join(BASE_DIR, "resumeai.db")
 app.config["GOOGLE_CLIENT_ID"] = os.environ.get("GOOGLE_CLIENT_ID")
 app.config["GOOGLE_CLIENT_SECRET"] = os.environ.get("GOOGLE_CLIENT_SECRET")
 app.config["GOOGLE_REDIRECT_URI"] = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback")
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
 
 # ── PROMPTS ──────────────────────────────────────────────────────────────────
 
