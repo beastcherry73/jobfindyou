@@ -552,16 +552,20 @@
           <div class="card-title">✨ Side-by-Side AI Rewrite Workspace</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">1. Select Resume File to Rewrite</label>
+              <label for="rewriteDraftSelect" style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">1. Select Resume Source to Rewrite</label>
               <div style="display:flex; gap:8px; align-items:center;">
-                <input type="file" id="rewriteFileInput" accept=".pdf,.txt" style="display:none" onchange="handleRewriteFileSelect()">
-                <button class="btn btn-sm btn-ghost" onclick="$('rewriteFileInput').click()">📤 Upload Resume File</button>
-                <span id="rewriteFileName" style="font-size:0.82rem; font-weight:600; color:var(--primary);">No file selected</span>
+                <select id="rewriteDraftSelect" name="rewriteDraftSelect" onchange="handleRewriteSourceChange()" style="border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem; font-weight:600; background:#F8FAFC; flex:1;">
+                  <option value="current">📄 Current Analyzed Resume</option>
+                  <option value="upload">📤 Upload New Resume File...</option>
+                </select>
+                <input type="file" id="rewriteFileInput" name="rewriteFileInput" accept=".pdf,.txt" style="display:none" onchange="handleRewriteFileSelect()">
+                <button class="btn btn-sm btn-ghost" onclick="$('rewriteFileInput').click()">📤 Upload File</button>
               </div>
+              <div id="rewriteFileName" style="font-size:0.75rem; font-weight:600; color:var(--primary); margin-top:4px;">📎 No file selected</div>
             </div>
             <div>
-              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Target Job Title / Instructions (Optional)</label>
-              <input type="text" id="rewriteJobDesc" placeholder="e.g. Senior DevOps Lead, AWS, Kubernetes..." style="width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; background:#F8FAFC;">
+              <label for="rewriteJobDesc" style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Target Job Title / Instructions (Optional)</label>
+              <input type="text" id="rewriteJobDesc" name="rewriteJobDesc" placeholder="e.g. Senior DevOps Lead, AWS, Kubernetes..." style="width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; background:#F8FAFC;">
             </div>
           </div>
 
@@ -833,6 +837,9 @@
       if (tab === 'builder' && typeof loadResumeDrafts === 'function') {
         loadResumeDrafts();
       }
+      if (tab === 'improve' && typeof loadRewriteDraftOptions === 'function') {
+        loadRewriteDraftOptions();
+      }
     }
 
     // ── ANALYSIS & CHARTS ────────────────────────────────────
@@ -1099,8 +1106,10 @@
 
     function startFixWithAI() {
       switchTab('improve');
+      loadRewriteDraftOptions();
       if (lastResumeFile && $('rewriteFileName')) {
         $('rewriteFileName').textContent = '📎 ' + lastResumeFile.name;
+        if ($('rewriteDraftSelect')) $('rewriteDraftSelect').value = 'current';
         executeAiRewrite();
       }
     }
@@ -1108,6 +1117,52 @@
     // ── AI REWRITE ENGINE ─────────────────────────────────────
     let selectedTone = 'Executive Tone';
     let rewriteFileObj = null;
+
+    async function loadRewriteDraftOptions() {
+      try {
+        const select = $('rewriteDraftSelect');
+        if (!select) return;
+        select.innerHTML = '';
+        if (lastResumeFile) {
+          select.innerHTML += `<option value="current">📄 Current Analyzed Resume (${escHtml(lastResumeFile.name)})</option>`;
+        }
+        select.innerHTML += `<option value="upload">📤 Upload New Resume File...</option>`;
+
+        const res = await fetch('/api/resumes');
+        const drafts = await res.json();
+        if (res.ok && drafts.length) {
+          drafts.forEach(d => {
+            select.innerHTML += `<option value="draft_${d.id}">📝 Saved Draft: ${escHtml(d.title)}</option>`;
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function handleRewriteSourceChange() {
+      const select = $('rewriteDraftSelect');
+      if (!select) return;
+      const val = select.value;
+      if (val === 'upload') {
+        $('rewriteFileInput').click();
+      } else if (val.startsWith('draft_')) {
+        const draftId = val.replace('draft_', '');
+        try {
+          const res = await fetch(`/api/resumes/${draftId}`);
+          const data = await res.json();
+          if (res.ok) {
+            $('rewriteFileName').textContent = '📝 Draft: ' + data.title;
+            const parsed = data.data_json ? JSON.parse(data.data_json) : {};
+            let text = `Name: ${parsed.fullName || ''}\nRole: ${parsed.targetRole || ''}\n\nSummary:\n${parsed.summary || ''}\n\nSkills:\n${parsed.skills || ''}\n\nExperience:\n`;
+            (parsed.experience || []).forEach(e => {
+              text += `• ${e.title} at ${e.company} (${e.dates}):\n${e.bullets}\n`;
+            });
+            $('originalPreview').value = text;
+          }
+        } catch (e) {}
+      } else if (val === 'current' && lastResumeFile) {
+        $('rewriteFileName').textContent = '📎 ' + lastResumeFile.name;
+      }
+    }
 
     function handleRewriteFileSelect() {
       const input = $('rewriteFileInput');
