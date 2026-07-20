@@ -378,7 +378,8 @@ def get_db():
 def init_db():
     try:
         db_path = app.config["DATABASE"]
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        if not os.environ.get("VERCEL"):
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
         with get_db() as db:
             db.execute("""CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -387,48 +388,49 @@ def init_db():
                 password_hash TEXT NOT NULL,
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )""")
-        columns = {row["name"] for row in db.execute("PRAGMA table_info(users)")}
-        if "google_sub" not in columns:
-            db.execute("ALTER TABLE users ADD COLUMN google_sub TEXT")
-        
-        db.execute("""CREATE TABLE IF NOT EXISTS analyses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            filename TEXT NOT NULL,
-            job_description TEXT,
-            overall_score INTEGER NOT NULL,
-            dimension_scores TEXT NOT NULL,
-            summary TEXT NOT NULL,
-            strengths TEXT NOT NULL,
-            weaknesses TEXT NOT NULL,
-            missing_sections TEXT NOT NULL,
-            ats_issues TEXT NOT NULL,
-            suggestions TEXT NOT NULL,
-            suggested_keywords TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        )""")
-        
-        db.execute("""CREATE TABLE IF NOT EXISTS resumes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            filename TEXT,
-            template TEXT NOT NULL DEFAULT 'modern',
-            overall_score INTEGER DEFAULT 0,
-            analysis_json TEXT,
-            data_json TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        )""")
-        r_cols = {row["name"] for row in db.execute("PRAGMA table_info(resumes)")}
-        if "filename" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN filename TEXT")
-        if "overall_score" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN overall_score INTEGER DEFAULT 0")
-        if "analysis_json" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN analysis_json TEXT")
+            columns = {row["name"] for row in db.execute("PRAGMA table_info(users)")}
+            if "google_sub" not in columns:
+                db.execute("ALTER TABLE users ADD COLUMN google_sub TEXT")
+            
+            db.execute("""CREATE TABLE IF NOT EXISTS analyses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                job_description TEXT,
+                overall_score INTEGER NOT NULL,
+                dimension_scores TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                strengths TEXT NOT NULL,
+                weaknesses TEXT NOT NULL,
+                missing_sections TEXT NOT NULL,
+                ats_issues TEXT NOT NULL,
+                suggestions TEXT NOT NULL,
+                suggested_keywords TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )""")
+            
+            db.execute("""CREATE TABLE IF NOT EXISTS resumes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                filename TEXT,
+                template TEXT NOT NULL DEFAULT 'modern',
+                overall_score INTEGER DEFAULT 0,
+                analysis_json TEXT,
+                data_json TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+            )""")
+            r_cols = {row["name"] for row in db.execute("PRAGMA table_info(resumes)")}
+            if "filename" not in r_cols:
+                db.execute("ALTER TABLE resumes ADD COLUMN filename TEXT")
+            if "overall_score" not in r_cols:
+                db.execute("ALTER TABLE resumes ADD COLUMN overall_score INTEGER DEFAULT 0")
+            if "analysis_json" not in r_cols:
+                db.execute("ALTER TABLE resumes ADD COLUMN analysis_json TEXT")
+            db.commit()
     except Exception as err:
         app.logger.error(f"init_db error: {err}")
 
