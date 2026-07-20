@@ -1220,7 +1220,6 @@ def handle_unexpected_error(e):
         }), 500
     return f"<h1>Internal Server Error</h1><p>{str(e)}</p>", 500
 
-init_db()
-
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True, port=5000)
