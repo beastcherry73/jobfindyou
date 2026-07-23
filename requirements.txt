@@ -6,3 +6,4 @@ groq
 requests
 gunicorn
 python-docx
+libsql-client
