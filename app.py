@@ -27,7 +27,11 @@ else:
     app.config["DATABASE"] = os.path.join(BASE_DIR, "resumeai.db")
 app.config["GOOGLE_CLIENT_ID"] = os.environ.get("GOOGLE_CLIENT_ID")
 app.config["GOOGLE_CLIENT_SECRET"] = os.environ.get("GOOGLE_CLIENT_SECRET")
-app.config["GOOGLE_REDIRECT_URI"] = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback")
+if os.environ.get("VERCEL"):
+    default_redirect = "https://www.jobspike.in/auth/google/callback"
+else:
+    default_redirect = "http://localhost:5000/auth/google/callback"
+app.config["GOOGLE_REDIRECT_URI"] = os.environ.get("GOOGLE_REDIRECT_URI", default_redirect)
 groq_key = os.environ.get("GROQ_API_KEY", "")
 client = Groq(api_key=groq_key) if groq_key else None
 
