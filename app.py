@@ -3,6 +3,7 @@ import json
 import re
 import sqlite3
 import secrets
+from urllib.parse import urlencode
 import requests
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, flash, Response, send_file
@@ -660,7 +661,7 @@ def google_login():
         "state": state,
         "prompt": "select_account",
     }
-    return redirect("https://accounts.google.com/o/oauth2/v2/auth?" + requests.compat.urlencode(params))
+    return redirect("https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params))
 
 @app.route("/auth/google/callback")
 def google_callback():
