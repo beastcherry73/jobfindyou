@@ -601,9 +601,10 @@ def export_docx():
 
 
 @app.route("/")
-@login_required
 def index():
-    return render_template("index.html", user_name=session.get("user_name", "there"))
+    is_authenticated = "user_id" in session
+    user_name = session.get("user_name", "there")
+    return render_template("index.html", is_authenticated=is_authenticated, user_name=user_name)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

@@ -293,8 +293,233 @@
       font-family: 'Inter', sans-serif;
     }
   </style>
+  
+  {% if not is_authenticated %}
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ── ARCTIC HORIZON PREMIUM LANDING PAGE STYLING ── */
+    .arctic-body {
+      background-color: #08111F;
+      color: #F8F5EF;
+      font-family: 'Inter', 'Manrope', sans-serif;
+      overflow-x: hidden;
+    }
+
+    .landing-nav {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(90%, 1100px);
+      height: 64px;
+      background: rgba(8, 17, 31, 0.75);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(124, 200, 255, 0.15);
+      border-radius: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 9999;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    .landing-brand {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: #ffffff;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .landing-brand span {
+      background: linear-gradient(135deg, #2563EB, #7CC8FF);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .landing-links {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+    .landing-link {
+      color: #F8F5EF;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.85rem;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .landing-link:hover {
+      opacity: 1;
+    }
+    .landing-cta {
+      background: #2563EB;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .landing-cta:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Common Section Wrapper */
+    .l-sec {
+      padding: 140px 24px;
+      position: relative;
+    }
+    .l-sec-dark { background-color: #08111F; color: #F8F5EF; }
+    .l-sec-light { background-color: #FAFBFC; color: #08111F; }
+    .l-sec-cream { background-color: #F8F5EF; color: #08111F; }
+
+    .l-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .h-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(37, 99, 235, 0.1);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      color: #7CC8FF;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 24px;
+    }
+
+    .l-title {
+      font-family: 'Manrope', sans-serif;
+      font-size: clamp(2rem, 4.5vw, 3.25rem);
+      font-weight: 800;
+      letter-spacing: -1.2px;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    .l-subtitle {
+      font-size: clamp(0.95rem, 2vw, 1.15rem);
+      opacity: 0.75;
+      max-width: 600px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    /* Cards */
+    .p-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 28px;
+      margin-top: 54px;
+    }
+    .p-card {
+      border: 1px solid rgba(8, 17, 31, 0.08);
+      border-radius: 20px;
+      padding: 36px;
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .p-card-dark {
+      background: rgba(18, 30, 49, 0.6);
+      border-color: rgba(124, 200, 255, 0.1);
+      color: #F8F5EF;
+    }
+    .p-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+    }
+    .p-card-dark:hover {
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    }
+
+    /* Hero Layout */
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+      align-items: center;
+      padding-top: 60px;
+    }
+    .hero-3d-wrap {
+      position: relative;
+      perspective: 1000px;
+      height: 480px;
+      display: grid;
+      place-items: center;
+    }
+    .float-resume {
+      width: 280px;
+      height: 380px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+      transform: rotateY(-18deg) rotateX(12deg);
+      box-shadow: 20px 30px 60px rgba(0,0,0,0.25);
+      padding: 24px;
+      color: #0f172a;
+      transition: transform 0.3s;
+    }
+    .float-badge {
+      position: absolute;
+      background: rgba(8, 17, 31, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(124, 200, 255, 0.2);
+      border-radius: 16px;
+      padding: 16px;
+      color: #fff;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    /* Walkthrough Interactive Demo */
+    .walk-wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      background: rgba(18, 30, 49, 0.4);
+      border: 1px solid rgba(124, 200, 255, 0.1);
+      border-radius: 24px;
+      padding: 40px;
+    }
+
+    /* Auth Intercept Modal */
+    .auth-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 17, 31, 0.7);
+      backdrop-filter: blur(10px);
+      z-index: 10000;
+      display: none;
+      place-items: center;
+      animation: fadeIn 0.25s ease-out;
+    }
+    .auth-modal-card {
+      width: min(90%, 420px);
+      background: #08111F;
+      border: 1px solid rgba(124, 200, 255, 0.15);
+      border-radius: 24px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    }
+  </style>
+  {% endif %}
 </head>
-<body>
+
+<body class="{% if not is_authenticated %}arctic-body{% endif %}">
+
+  {% if is_authenticated %}
 
   <!-- ── TOP UTILITY BAR ── -->
   <nav>
@@ -830,7 +1055,471 @@
 
   <script>
     // ── GENERAL UTILITIES ─────────────────────────────────────
+    
+  {% else %}
+
+  <!-- ── 1. FLOATING NAVIGATION BAR ── -->
+  <nav class="landing-nav">
+    <a href="/" class="landing-brand">
+      <span>⚡</span> JobSpike AI
+    </a>
+    <div class="landing-links">
+      <a href="#features" class="landing-link">Features</a>
+      <a href="#walkthrough" class="landing-link">Walkthrough</a>
+      <a href="#demo" class="landing-link">Interactive Demo</a>
+      <a href="#pricing" class="landing-link">Pricing</a>
+      <a href="#faq" class="landing-link">FAQ</a>
+    </div>
+    <a href="#upload" class="landing-cta">Get Started Free</a>
+  </nav>
+
+  <!-- ── 2. HERO SECTION (DARK NAVY) ── -->
+  <section class="l-sec l-sec-dark" style="padding-top:180px;">
+    <div class="l-container hero-layout">
+      <div>
+        <div class="h-badge">⚡ Next Generation Resume Analytics</div>
+        <h1 class="l-title" style="color:#ffffff;">Your Career,<br>Engineered for Impact.</h1>
+        <p class="l-subtitle" style="color:#CBD5E1;">Optimize your resume for applicant tracking systems, bridge keyword gaps, simulate callbacks, and match with sponsors—all through direct AI scoring.</p>
+        <a href="#upload" class="cta-btn" style="background:#2563EB;">Optimize Your Resume Free</a>
+      </div>
+      <div class="hero-3d-wrap">
+        <!-- Interactive 3D CSS Layout Representing the Floating Resume and Bird -->
+        <div class="float-resume" id="hero3dResume" style="transform: rotateY(-14deg) rotateX(8deg); transition: transform 0.2s ease-out;">
+          <div style="width:40px; height:6px; background:#e2e8f0; margin-bottom:12px;"></div>
+          <div style="width:100%; height:8px; background:#cbd5e1; margin-bottom:8px;"></div>
+          <div style="width:85%; height:8px; background:#e2e8f0; margin-bottom:20px;"></div>
+          <div style="width:100%; height:5px; background:#cbd5e1; margin-bottom:6px;"></div>
+          <div style="width:90%; height:5px; background:#cbd5e1; margin-bottom:6px;"></div>
+          <div style="width:40%; height:5px; background:#e2e8f0;"></div>
+        </div>
+        <div class="float-badge" style="top:40px; right:20px; font-weight:800; color:#4CAF7A; border-color:#4CAF7A; font-size:1.1rem;">
+          🎯 94% ATS Match
+        </div>
+        <div class="float-badge" style="bottom:60px; left:10px; font-weight:600; color:#7CC8FF;">
+          🔑 Kubernetes added
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. INTERACTIVE PRODUCT WALKTHROUGH ── -->
+  <section class="l-sec l-sec-light" id="walkthrough">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge">Interactive Walkthrough</div>
+        <h2 class="l-title" style="color:#08111F;">See how JobSpike polishes your profile.</h2>
+        <p class="l-subtitle" style="margin:0 auto; color:#475569;">Witness the AI precision scanning engine improve experience scores in real-time.</p>
+      </div>
+
+      <div class="walk-wrap">
+        <div style="background:#ffffff; border-radius:16px; padding:32px; border:1px solid rgba(0,0,0,0.06); color:#0f172a;">
+          <div style="border-bottom:1px solid #e2e8f0; padding-bottom:14px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <h4 style="font-weight:800; font-size:1rem; font-family:'Manrope';">Senior Backend Engineer</h4>
+            <span style="font-size:0.75rem; color:#64748b; font-weight:700;">app.py (Modified)</span>
+          </div>
+          <div style="font-family:monospace; font-size:0.82rem; line-height:1.6;">
+            <span style="color:#ef4444; background:rgba(239,68,68,0.1); display:block; padding:4px 8px; border-radius:4px; margin-bottom:8px;">- Worked on Docker container deployment for cloud services.</span>
+            <span style="color:#4CAF7A; background:rgba(76,175,122,0.1); display:block; padding:4px 8px; border-radius:4px;" id="demoCodeOutput">+ Spearheaded Docker containerization, reducing build pipeline latency by 38% and optimizing ECS clusters.</span>
+          </div>
+        </div>
+        <div style="color:#08111F; display:flex; flex-direction:column; justify-content:center; gap:20px; padding-left:20px;">
+          <h3 style="font-size:1.5rem; font-weight:800; font-family:'Manrope';">AI Precision Bullet Optimization</h3>
+          <p style="font-size:0.95rem; opacity:0.8; line-height:1.6;">JobSpike automatically scans work experience sentences, highlights weak action verbs, and suggests quantified improvements based on industry standards.</p>
+          <button class="cta-btn" onclick="startWalkthroughDemo()" style="width:max-content; background:#2563EB; border:none; border-radius:20px; color:#fff; font-weight:700; padding:10px 20px; cursor:pointer;">Animate Transformation</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. WHY JOBSPIKE ── -->
+  <section class="l-sec l-sec-cream" id="features">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge" style="background:rgba(8,17,31,0.05); color:#2563EB; border-color:rgba(8,17,31,0.1);">Crafted for Engineers</div>
+        <h2 class="l-title">Built like a YC-funded Platform.</h2>
+        <p class="l-subtitle" style="margin:0 auto;">No shortcuts. Clean metrics, fast performance, and actionable intelligence to optimize your application cycles.</p>
+      </div>
+
+      <div class="p-grid">
+        <div class="p-card">
+          <span style="font-size:2rem;">📊</span>
+          <h3 style="font-size:1.15rem; font-weight:800; margin:16px 0 8px; font-family:'Manrope';">ATS Score Checkers</h3>
+          <p style="font-size:0.88rem; opacity:0.75; line-height:1.5;">Evaluate overall resume scoring against hundreds of corporate ATS profiles instantly.</p>
+        </div>
+        <div class="p-card">
+          <span style="font-size:2rem;">🎯</span>
+          <h3 style="font-size:1.15rem; font-weight:800; margin:16px 0 8px; font-family:'Manrope';">Contextual Matching</h3>
+          <p style="font-size:0.88rem; opacity:0.75; line-height:1.5;">Match keywords dynamically using natural language understanding instead of simple string checks.</p>
+        </div>
+        <div class="p-card">
+          <span style="font-size:2rem;">🚀</span>
+          <h3 style="font-size:1.15rem; font-weight:800; margin:16px 0 8px; font-family:'Manrope';">Stateless Sandbox</h3>
+          <p style="font-size:0.88rem; opacity:0.75; line-height:1.5;">Try the product sandbox completely free before sharing credentials or creating an account.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 5. ATS OPTIMIZATION DEMO ── -->
+  <section class="l-sec l-sec-dark" id="demo">
+    <div class="l-container" style="display:grid; grid-template-columns:1fr 1.2fr; gap:40px; align-items:center;">
+      <div>
+        <div class="h-badge">Interactive ATS Demo</div>
+        <h2 class="l-title" style="color:#ffffff;">Watch your ATS score rise dynamically.</h2>
+        <p class="l-subtitle" style="color:#CBD5E1;">By bridging core keyword gaps and tailoring the summary structure, candidates observe an immediate increase in competitive indexing.</p>
+      </div>
+      <div style="background:rgba(18, 30, 49, 0.6); border:1px solid rgba(124, 200, 255, 0.15); border-radius:20px; padding:36px; text-align:center;">
+        <div style="font-size:4.5rem; font-weight:800; color:#4CAF7A; font-family:'Manrope';" id="atsScoreCount">72</div>
+        <p style="font-weight:700; color:#7CC8FF; font-size:0.85rem; letter-spacing:0.08em; text-transform:uppercase;">Overall ATS Rating</p>
+        <div style="display:flex; justify-content:center; gap:8px; margin-top:20px; flex-wrap:wrap;">
+          <span style="background:rgba(76,175,122,0.15); border:1px solid rgba(76,175,122,0.3); color:#4CAF7A; padding:6px 12px; border-radius:20px; font-size:0.78rem; font-weight:600;">+ Kubernetes</span>
+          <span style="background:rgba(76,175,122,0.15); border:1px solid rgba(76,175,122,0.3); color:#4CAF7A; padding:6px 12px; border-radius:20px; font-size:0.78rem; font-weight:600;">+ Terraform</span>
+          <span style="background:rgba(76,175,122,0.15); border:1px solid rgba(76,175,122,0.3); color:#4CAF7A; padding:6px 12px; border-radius:20px; font-size:0.78rem; font-weight:600;">+ AWS ECS</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 6. RESUME TAILORING ── -->
+  <section class="l-sec l-sec-light">
+    <div class="l-container" style="display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center;">
+      <div style="background:#ffffff; border:1px solid rgba(0,0,0,0.06); border-radius:20px; padding:36px; box-shadow:0 10px 30px rgba(0,0,0,0.02); color:#08111F;">
+        <h4 style="font-weight:800; font-family:'Manrope'; margin-bottom:12px;">Resume Summary</h4>
+        <p style="font-size:0.88rem; color:#475569; line-height:1.6; border-left:3px solid #2563EB; padding-left:12px; font-style:italic;">"Experienced cloud developer looking for a DevOps role at an active startup. Proficient in cloud hosting and setting up deployment servers."</p>
+        <div style="margin-top:20px; display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.75rem; background:#EFF6FF; color:#2563EB; font-weight:700; padding:4px 8px; border-radius:4px;">AI Suggestion Applied</span>
+        </div>
+      </div>
+      <div>
+        <div class="h-badge">Tailoring Sandbox</div>
+        <h2 class="l-title" style="color:#08111F;">Tailor every resume to the specific job.</h2>
+        <p class="l-subtitle" style="color:#475569;">Paste the job description and JobSpike automatically structures your profiles to emphasize target credentials, resolving keyword gaps in seconds.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 7. AI JOB MATCHING ── -->
+  <section class="l-sec l-sec-cream">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge" style="background:rgba(8,17,31,0.05); color:#2563EB; border-color:rgba(8,17,31,0.1);">Precision Matches</div>
+        <h2 class="l-title">Find roles worth applying to.</h2>
+        <p class="l-subtitle" style="margin:0 auto;">Review salary benchmarks, remote availability, and visa sponsorship, matched with percentage competitiveness scores.</p>
+      </div>
+
+      <div class="p-grid">
+        <div class="p-card" style="background:#ffffff; color:#08111F;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong style="font-family:'Manrope'; font-size:1.1rem;">Vercel</strong>
+            <span style="background:rgba(76,175,122,0.1); color:#4CAF7A; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">92% Match</span>
+          </div>
+          <p style="font-size:0.85rem; color:#475569; margin-bottom:20px;">Senior Software Engineer, Edge Runtime</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:600; color:#64748b;">
+            <span>$165k - $210k</span>
+            <span>Remote</span>
+          </div>
+        </div>
+        <div class="p-card" style="background:#ffffff; color:#08111F;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <strong style="font-family:'Manrope'; font-size:1.1rem;">Linear</strong>
+            <span style="background:rgba(76,175,122,0.1); color:#4CAF7A; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">88% Match</span>
+          </div>
+          <p style="font-size:0.85rem; color:#475569; margin-bottom:20px;">Product Engineer, Core Platform</p>
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; font-weight:600; color:#64748b;">
+            <span>$150k - $190k</span>
+            <span>Remote (Europe/US)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 8. LEARNING ROADMAPS ── -->
+  <section class="l-sec l-sec-dark">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge">Interactive Roadmaps</div>
+        <h2 class="l-title" style="color:#ffffff;">Bridge missing skill gaps interactively.</h2>
+        <p class="l-subtitle" style="margin:0 auto; color:#CBD5E1;">Every analysis generates a custom pathway mapping out the exact topics you need to master to meet high role readiness standards.</p>
+      </div>
+
+      <div class="p-grid">
+        <div class="p-card p-card-dark">
+          <h4 style="font-family:'Manrope'; font-size:1.2rem; margin-bottom:10px;">DevOps Engineer Track</h4>
+          <p style="font-size:0.85rem; opacity:0.8; line-height:1.5; margin-bottom:20px;">Master container orchestration, Terraform configuration states, and GitHub Actions CD pipelines.</p>
+          <span style="background:rgba(124,200,255,0.15); color:#7CC8FF; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">8 Steps Remaining</span>
+        </div>
+        <div class="p-card p-card-dark">
+          <h4 style="font-family:'Manrope'; font-size:1.2rem; margin-bottom:10px;">Frontend Architect Track</h4>
+          <p style="font-size:0.85rem; opacity:0.8; line-height:1.5; margin-bottom:20px;">Deep dive into modern rendering models, edge caching patterns, React Server Components, and Next.js.</p>
+          <span style="background:rgba(124,200,255,0.15); color:#7CC8FF; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">6 Steps Remaining</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 9. INTERVIEW PREPARATION ── -->
+  <section class="l-sec l-sec-light">
+    <div class="l-container" style="display:grid; grid-template-columns:1.2fr 1fr; gap:40px; align-items:center;">
+      <div style="background:#ffffff; border:1px solid rgba(0,0,0,0.06); border-radius:20px; padding:36px; box-shadow:0 10px 30px rgba(0,0,0,0.02); color:#08111F;">
+        <h4 style="font-weight:800; font-family:'Manrope'; margin-bottom:12px;">Mock Simulator</h4>
+        <div style="background:#08111F; color:#F8F5EF; border-radius:12px; padding:20px; font-family:monospace; font-size:0.8rem; margin-bottom:16px;">
+          <span style="color:#7CC8FF;">[AI interviewer]</span> "How would you optimize an API gateway that faces sudden traffic spikes of over 10k requests per second?"
+        </div>
+        <p style="font-size:0.85rem; color:#64748b;">Difficulty: Hard | Estimated Prep: 4 days</p>
+      </div>
+      <div>
+        <div class="h-badge">Interactive Interview Prep</div>
+        <h2 class="l-title" style="color:#08111F;">Prepare with personalized mock questions.</h2>
+        <p class="l-subtitle" style="color:#475569;">Get standard interview questions custom-tailored for your target positions, focusing on edge cases, system design, and role-specific algorithms.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 10. APPLICATION TRACKER ── -->
+  <section class="l-sec l-sec-cream">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge" style="background:rgba(8,17,31,0.05); color:#2563EB; border-color:rgba(8,17,31,0.1);">Kanban Workflow</div>
+        <h2 class="l-title">Never drop a single application thread.</h2>
+        <p class="l-subtitle" style="margin:0 auto;">Track pipeline progress from Saved, to Applied, Interviews, and active Offers in one fluid workspace.</p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; margin-top:40px; color:#08111F;">
+        <div style="background:#ffffff; border:1px solid rgba(0,0,0,0.05); border-radius:16px; padding:20px;">
+          <h4 style="font-weight:800; font-family:'Manrope'; margin-bottom:12px; color:#64748b;">Applied</h4>
+          <div style="background:#FAFBFC; border:1px solid rgba(0,0,0,0.05); border-radius:8px; padding:12px; margin-bottom:8px;">
+            <strong style="font-size:0.88rem;">Stripe</strong>
+            <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">Backend Engineer</p>
+          </div>
+        </div>
+        <div style="background:#ffffff; border:1px solid rgba(0,0,0,0.05); border-radius:16px; padding:20px;">
+          <h4 style="font-weight:800; font-family:'Manrope'; margin-bottom:12px; color:#64748b;">Interview</h4>
+          <div style="background:#FAFBFC; border:1px solid rgba(0,0,0,0.05); border-radius:8px; padding:12px; margin-bottom:8px; border-left:3px solid #2563EB;">
+            <strong style="font-size:0.88rem;">Linear</strong>
+            <p style="font-size:0.75rem; color:#64748b; margin-top:4px;">Technical Round 2</p>
+          </div>
+        </div>
+        <div style="background:#ffffff; border:1px solid rgba(0,0,0,0.05); border-radius:16px; padding:20px;">
+          <h4 style="font-weight:800; font-family:'Manrope'; margin-bottom:12px; color:#64748b;">Offers</h4>
+          <div style="background:#FAFBFC; border:1px solid rgba(0,0,0,0.05); border-radius:8px; padding:12px; margin-bottom:8px; border-left:3px solid #4CAF7A;">
+            <strong style="font-size:0.88rem;">Vercel</strong>
+            <p style="font-size:0.75rem; color:#4CAF7A; margin-top:4px;">$180k Base + Equity</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 11. TESTIMONIALS ── -->
+  <section class="l-sec l-sec-dark">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge">Hired Candidates</div>
+        <h2 class="l-title" style="color:#ffffff;">Hired by world-class teams.</h2>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:40px;">
+        <blockquote style="border-left:3px solid #7CC8FF; padding-left:20px; font-size:1.1rem; line-height:1.6; font-style:italic;">
+          "JobSpike shifted my resume from a standard listing of technologies to a clear document detailing quantifiable outcomes. I secured a senior backend offer at a fast-growing startup within three weeks of optimizing."
+          <cite style="display:block; margin-top:16px; font-size:0.88rem; font-weight:700; color:#7CC8FF; font-style:normal;">— Alex Carter, Senior Cloud Engineer</cite>
+        </blockquote>
+        <blockquote style="border-left:3px solid #7CC8FF; padding-left:20px; font-size:1.1rem; line-height:1.6; font-style:italic;">
+          "The interactive roadmaps helped me bridge the gap in container technologies that standard ATS checkers kept rejecting. Highly recommend JobSpike to anyone aiming for top-tier SaaS teams."
+          <cite style="display:block; margin-top:16px; font-size:0.88rem; font-weight:700; color:#7CC8FF; font-style:normal;">— Liam Reynolds, DevOps Specialist</cite>
+        </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 12. PRICING ── -->
+  <section class="l-sec l-sec-light" id="pricing">
+    <div class="l-container">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge">Pricing Plans</div>
+        <h2 class="l-title" style="color:#08111F;">Predictable pricing for your job cycle.</h2>
+      </div>
+
+      <div style="display:flex; justify-content:center; gap:28px; flex-wrap:wrap; margin-top:40px; color:#08111F;">
+        <div class="p-card" style="background:#ffffff; width:340px;">
+          <h4 style="font-family:'Manrope'; font-size:1.25rem; font-weight:800; margin-bottom:10px;">Free Sandbox</h4>
+          <p style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">Try the core layout features completely free.</p>
+          <div style="font-size:2rem; font-weight:800; font-family:'Manrope'; margin-bottom:20px;">$0</div>
+          <ul style="list-style:none; padding:0; margin:0 0 24px; font-size:0.88rem; color:#475569; display:flex; flex-direction:column; gap:10px;">
+            <li>✓ 1 Resume Scan</li>
+            <li>✓ ATS Score Breakdown</li>
+            <li>✓ Demo Job Matching</li>
+          </ul>
+          <a href="#upload" class="cta-btn" style="background:#08111F; width:100%; text-align:center; display:block; text-decoration:none;">Try Now</a>
+        </div>
+        <div class="p-card" style="background:#ffffff; border-color:#2563EB; width:340px; box-shadow:0 15px 30px rgba(37,99,235,0.06);">
+          <h4 style="font-family:'Manrope'; font-size:1.25rem; font-weight:800; margin-bottom:10px; color:#2563EB;">Pro Access</h4>
+          <p style="font-size:0.85rem; color:#64748b; margin-bottom:20px;">Unrestricted access for candidates actively interviewing.</p>
+          <div style="font-size:2rem; font-weight:800; font-family:'Manrope'; margin-bottom:20px;">$19 <span style="font-size:1rem; color:#64748b; font-weight:500;">/ month</span></div>
+          <ul style="list-style:none; padding:0; margin:0 0 24px; font-size:0.88rem; color:#475569; display:flex; flex-direction:column; gap:10px;">
+            <li>✓ Unlimited Resume Scans</li>
+            <li>✓ Deep AI Keyword Injection</li>
+            <li>✓ Tailor-to-Job Generator</li>
+            <li>✓ Complete Kanban Tracker</li>
+          </ul>
+          <a href="#upload" class="cta-btn" style="width:100%; text-align:center; display:block; text-decoration:none;">Get Pro Access</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 13. FAQ ── -->
+  <section class="l-sec l-sec-dark" id="faq">
+    <div class="l-container" style="max-width:800px;">
+      <div style="text-align:center; margin-bottom:60px;">
+        <div class="h-badge">Support Center</div>
+        <h2 class="l-title" style="color:#ffffff;">Frequently Asked Questions</h2>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <details style="background:rgba(18,30,49,0.5); border:1px solid rgba(124,200,255,0.1); border-radius:12px; padding:20px; cursor:pointer;">
+          <summary style="font-weight:700; font-size:1rem; outline:none; font-family:'Manrope';">How does try-before-signup work?</summary>
+          <p style="margin-top:12px; font-size:0.88rem; opacity:0.8; line-height:1.6; color:#F8F5EF;">You can upload your resume, check ATS score trends, preview job matches, and try sandbox mockups. You only need to verify your credentials once you click "Start Analysis" to obtain your customized deep audit.</p>
+        </details>
+        <details style="background:rgba(18,30,49,0.5); border:1px solid rgba(124,200,255,0.1); border-radius:12px; padding:20px; cursor:pointer;">
+          <summary style="font-weight:700; font-size:1rem; outline:none; font-family:'Manrope';">Is my resume data secure?</summary>
+          <p style="margin-top:12px; font-size:0.88rem; opacity:0.8; line-height:1.6; color:#F8F5EF;">Yes. We prioritize candidate privacy. Your files are encrypted at rest, and we do not sell data to candidate brokers.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 14. FOOTER ── -->
+  <footer style="background:#08111F; border-top:1px solid rgba(124,200,255,0.15); padding:80px 24px 40px; color:#F8F5EF;">
+    <div class="l-container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:30px;">
+      <a href="/" class="landing-brand">
+        <span>⚡</span> JobSpike AI
+      </a>
+      <div style="display:flex; gap:24px; font-size:0.85rem; opacity:0.7;">
+        <span>© 2026 JobSpike. All rights reserved.</span>
+        <a href="#" style="color:#F8F5EF; text-decoration:none;">Privacy Policy</a>
+        <a href="#" style="color:#F8F5EF; text-decoration:none;">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── RESUME UPLOAD SECTION & AUTH GATE ── -->
+  <section class="l-sec l-sec-light" id="upload">
+    <div class="l-container" style="max-width:600px; text-align:center;">
+      <div class="h-badge" style="background:rgba(8,17,31,0.05); color:#2563EB; border-color:rgba(8,17,31,0.1);">Try Sandbox</div>
+      <h2 class="l-title" style="color:#08111F;">Upload your resume to begin.</h2>
+      <p class="l-subtitle" style="margin:0 auto 40px; color:#475569;">Select your PDF resume. JobSpike will guide you through authentication before running the deep optimization.</p>
+
+      <div style="background:#ffffff; border:2px dashed rgba(8,17,31,0.15); border-radius:20px; padding:48px; cursor:pointer; color:#08111F;" onclick="triggerLandingUpload()">
+        <span style="font-size:3rem;">📄</span>
+        <h4 style="font-size:1.1rem; font-weight:800; font-family:'Manrope'; margin:16px 0 6px;">Select PDF resume file</h4>
+        <p style="font-size:0.82rem; color:#64748b;">Drag your resume here or click to browse</p>
+        <input type="file" id="landingFileInput" accept=".pdf" style="display:none;" onchange="handleLandingFile(event)">
+      </div>
+      <div id="landingFileInfo" style="margin-top:20px; display:none; justify-content:space-between; align-items:center; background:#ffffff; padding:12px 18px; border-radius:12px; border:1px solid rgba(8,17,31,0.1); color:#08111F;">
+        <span id="landingFileName" style="font-weight:700; font-size:0.88rem; color:#08111F;">filename.pdf</span>
+        <button class="cta-btn" id="landingStartAnalysisBtn" onclick="openAuthModal()" style="padding:10px 20px; font-size:0.82rem;">Start Analysis</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AUTH INTERCEPT MODAL ── -->
+  <div class="auth-modal" id="authGateModal">
+    <div class="auth-modal-card">
+      <div style="display:flex; justify-content:flex-end;">
+        <button onclick="closeAuthModal()" style="background:none; border:none; color:#F8F5EF; font-size:1.2rem; cursor:pointer; opacity:0.7;">✕</button>
+      </div>
+      <h3 style="font-family:'Manrope'; font-size:1.6rem; font-weight:800; margin-bottom:12px; color:#F8F5EF;">Sign in to view your report</h3>
+      <p style="font-size:0.88rem; opacity:0.8; line-height:1.5; margin-bottom:30px; color:#F8F5EF;">Verify your identity to complete the analysis and open your dashboard workspace.</p>
+      
+      <a class="cta-btn" href="/auth/google" style="background:#ffffff; color:#08111F; width:100%; justify-content:center; margin-bottom:16px; border:1px solid rgba(255,255,255,0.2); text-decoration:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:8px;"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/></svg>
+        Continue with Google
+      </a>
+      <a class="cta-btn" href="/login" style="width:100%; justify-content:center; background:#2563EB; text-decoration:none;">
+        Continue with Email
+      </a>
+    </div>
+  </div>
+
+  <!-- ── LANDING PAGE INTERACTIVE JAVASCRIPT ── -->
+  <script>
+    function triggerLandingUpload() {
+      document.getElementById('landingFileInput').click();
+    }
+    function handleLandingFile(e) {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('landingFileName').textContent = file.name;
+        document.getElementById('landingFileInfo').style.display = 'flex';
+      }
+    }
+    function openAuthModal() {
+      document.getElementById('authGateModal').style.display = 'grid';
+    }
+    function closeAuthModal() {
+      document.getElementById('authGateModal').style.display = 'none';
+    }
+
+    // Interactive Hero 3D Parallax Movement
+    document.addEventListener('mousemove', (e) => {
+      const resume = document.getElementById('hero3dResume');
+      if (!resume) return;
+      const x = (window.innerWidth / 2 - e.pageX) / 25;
+      const y = (window.innerHeight / 2 - e.pageY) / 25;
+      resume.style.transform = `rotateY(${x - 14}deg) rotateX(${y + 8}deg)`;
+    });
+
+    // Walkthrough Demo Animation
+    let walkStep = 0;
+    function startWalkthroughDemo() {
+      const out = document.getElementById('demoCodeOutput');
+      if (!out) return;
+      if (walkStep === 0) {
+        out.textContent = "+ Analyzing resume parameters...";
+        out.style.color = "#2563EB";
+        setTimeout(() => {
+          out.textContent = "+ Injecting missing keywords: [Docker, ECS, CD]";
+          out.style.color = "#f59e0b";
+        }, 1500);
+        setTimeout(() => {
+          out.textContent = "+ Polished result: Spearheaded Docker containerization, reducing build pipeline latency by 38% and optimizing ECS clusters.";
+          out.style.color = "#4CAF7A";
+          walkStep = 1;
+        }, 3500);
+      } else {
+        out.textContent = "+ Spearheaded Docker containerization, reducing build pipeline latency by 38% and optimizing ECS clusters.";
+        out.style.color = "#4CAF7A";
+      }
+    }
+
+    // ATS Score Roller Demo
+    let rollerInterval;
+    document.addEventListener('DOMContentLoaded', () => {
+      const score = document.getElementById('atsScoreCount');
+      if (!score) return;
+      let count = 72;
+      rollerInterval = setInterval(() => {
+        if (count < 94) {
+          count++;
+          score.textContent = count;
+        } else {
+          clearInterval(rollerInterval);
+        }
+      }, 80);
+    });
+  </script>
+  {% endif %}
+
+  <!-- ── COMMON BASE SCRIPT & PLUGINS ── -->
+  <script>
+    // Helper to grab DOM components
     const $ = id => document.getElementById(id);
+    
+    // We open/close the existing dashboard javascript as is...
+    // The rest of the original script follows.
+    // ...
+
     const escHtml = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
     const fmtDate = s => s ? new Date(s).toLocaleDateString() : '';
 
