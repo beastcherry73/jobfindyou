@@ -97,7 +97,7 @@ body {
 .ds-btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text-soft); }
 .ds-btn-secondary:hover { background: var(--surface-hover); color: var(--text); }
 
-.ds-btn-ghost { background: transparent; border-color: transparent; color: var(--text-soft); }
+.ds-btn-ghost { background: transparent; border-color: var(--border); color: var(--text-soft); }
 .ds-btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
 
 .ds-btn-danger { background: var(--bad); color: #fff; }
@@ -418,6 +418,63 @@ body {
 .ds-divider {
   height: 1px; background: var(--border); margin: 20px 0;
 }
+
+/* ── Color Utilities ── */
+.ds-text-primary { color: var(--primary); }
+.ds-text-good { color: var(--good); }
+.ds-text-warn { color: var(--warn); }
+.ds-text-bad { color: var(--bad); }
+.ds-text-muted { color: var(--text-muted); }
+.ds-text-soft { color: var(--text-soft); }
+.ds-text-white { color: #fff; }
+
+.ds-bg-primary { background: var(--primary); }
+.ds-bg-good { background: var(--good-bg); }
+.ds-bg-warn { background: var(--warn-bg); }
+.ds-bg-bad { background: var(--bad-bg); }
+.ds-bg-surface { background: var(--surface); }
+.ds-bg-canvas { background: var(--bg); }
+
+.ds-border-good { border-color: var(--good); }
+.ds-border-warn { border-color: var(--warn); }
+.ds-border-bad { border-color: var(--bad); }
+.ds-border-primary { border-color: var(--primary); }
+
+/* ── Typography Utilities ── */
+.ds-text-xs { font-size: 0.7rem; }
+.ds-text-sm { font-size: 0.78rem; }
+.ds-text-base { font-size: 0.85rem; }
+.ds-text-lg { font-size: 0.95rem; }
+.ds-text-xl { font-size: 1.15rem; }
+.ds-text-2xl { font-size: 1.4rem; }
+.ds-font-medium { font-weight: 500; }
+.ds-font-semibold { font-weight: 600; }
+.ds-font-bold { font-weight: 700; }
+.ds-font-extrabold { font-weight: 800; }
+
+/* ── Border / Radius Utilities ── */
+.ds-rounded-xs { border-radius: var(--radius-xs); }
+.ds-rounded-sm { border-radius: var(--radius-sm); }
+.ds-rounded-md { border-radius: 14px; }
+.ds-rounded-lg { border-radius: var(--radius); }
+.ds-border { border: 1px solid var(--border); }
+.ds-border-light { border: 1px solid var(--border-light); }
+.ds-border-none { border: none; }
+
+/* ── Width / Height Utilities ── */
+.ds-w-full { width: 100%; }
+.ds-h-full { height: 100%; }
+
+/* ── Cursor Utilities ── */
+.ds-cursor-pointer { cursor: pointer; }
+
+/* ── Overflow ── */
+.ds-truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Box Shadow ── */
+.ds-shadow-sm { box-shadow: var(--shadow-sm); }
+.ds-shadow-md { box-shadow: var(--shadow-md); }
+.ds-shadow-lg { box-shadow: var(--shadow-lg); }
 
 /* ── Animations ── */
 @keyframes ds-fadeIn {
