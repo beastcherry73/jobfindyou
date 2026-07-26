@@ -7,6 +7,7 @@
   <meta name="description" content="The ultimate AI-powered resume platform. Multi-dimension ATS analysis, 3-column resume builder, side-by-side AI rewrites, and PDF reports.">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  {% if is_authenticated %}
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
@@ -293,6 +294,7 @@
       font-family: 'Inter', sans-serif;
     }
   </style>
+  {% endif %}
   
   {% if not is_authenticated %}
   <link rel="stylesheet" href="/static/assets/styles-B4UKy-BY.css" data-precedence="default">
@@ -1283,7 +1285,9 @@ a:focus-visible,button:focus-visible{outline:2px solid #2563eb;outline-offset:2p
 
   {% endif %}
 
-  <!-- ── COMMON BASE SCRIPT & PLUGINS ── -->
+  {% if is_authenticated %}
+
+  <!-- ── DASHBOARD JAVASCRIPT ── -->
   <script>
     // Helper to grab DOM components
     const $ = id => document.getElementById(id);
@@ -2469,6 +2473,8 @@ a:focus-visible,button:focus-visible{outline:2px solid #2563eb;outline-offset:2p
       </div>
     </div>
   </div>
+
+{% endif %}
 
 </body>
 </html>
