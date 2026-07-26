@@ -727,7 +727,7 @@
       <!-- ══════════════════════════════════════════════ -->
       <!--  MODULE 3: SIDE-BY-SIDE REWRITE                -->
       <!-- ══════════════════════════════════════════════ -->
-      <div class="panel ds-fade-in" id="improvePanel">
+      <div class="panel ds-fade-in" id="improvePanel" style="gap:20px;">
         <div class="ds-section">
           <div class="ds-section-header">
             <div>
@@ -737,7 +737,8 @@
           </div>
         </div>
 
-        <div class="ds-card">
+        <!-- Controls -->
+        <div class="ds-glass-card" style="padding:24px;">
           <div class="ds-grid-2">
             <div class="ds-field">
               <label class="ds-field-label" for="rewriteDraftSelect">Resume Source</label>
@@ -763,8 +764,8 @@
             <div>
               <div class="ds-field-label" style="margin-bottom:8px;">Optimization Mode</div>
               <div class="ds-flex" style="gap:6px; flex-wrap:wrap;">
-                <button class="ds-btn ds-btn-secondary ds-btn-sm tone-btn active" onclick="selectOptimizationMode(this, 'safe')">Safe Optimization</button>
-                <button class="ds-btn ds-btn-secondary ds-btn-sm tone-btn" onclick="selectOptimizationMode(this, 'role')">Role Optimization</button>
+                <button class="ds-btn ds-btn-secondary ds-btn-sm tone-btn active" onclick="selectOptimizationMode(this, 'safe')" style="border-color:rgba(37,99,235,0.2);">Safe</button>
+                <button class="ds-btn ds-btn-secondary ds-btn-sm tone-btn" onclick="selectOptimizationMode(this, 'role')">Role Match</button>
                 <button class="ds-btn ds-btn-secondary ds-btn-sm tone-btn" onclick="selectOptimizationMode(this, 'executive')">Executive</button>
               </div>
             </div>
@@ -779,38 +780,58 @@
           </div>
         </div>
 
-        <div class="ds-card">
-          <div class="rewrite-grid">
-            <div>
-              <div class="ds-flex-between" style="margin-bottom:8px;">
-                <span class="ds-eyebrow">Original</span>
-                <span style="font-size:0.7rem; color:var(--text-soft);">Select text to improve</span>
-              </div>
-              <div class="ds-flex" style="gap:4px; flex-wrap:wrap; margin-bottom:10px; background:var(--bg); padding:6px 8px; border-radius:10px;">
-                <span class="ds-eyebrow" style="margin-right:4px;">Improve:</span>
-                <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('improve_bullet')" style="font-size:0.72rem; padding:3px 10px;">Improve</button>
-                <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('quantify_bullet')" style="font-size:0.72rem; padding:3px 10px;">Quantify</button>
-                <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('ats_polish')" style="font-size:0.72rem; padding:3px 10px;">ATS</button>
-                <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('fix_grammar')" style="font-size:0.72rem; padding:3px 10px;">Grammar</button>
-              </div>
-              <textarea class="editor-box ds-textarea" id="originalPreview" name="originalPreview" aria-label="Original resume content" placeholder="Upload a resume file above or paste content here..." style="min-height:460px;"></textarea>
+        <!-- GitHub-style Diff View -->
+        <div class="ds-glass-card" style="padding:0; overflow:hidden;">
+          <!-- Diff header -->
+          <div class="ds-flex-between" style="padding:12px 20px; background:var(--bg); border-bottom:1px solid var(--border);">
+            <div class="ds-flex" style="gap:16px;">
+              <span class="ds-eyebrow" style="display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--text-muted); display:inline-block;"></span> Original</span>
+              <span class="ds-eyebrow" style="color:var(--primary); display:flex; align-items:center; gap:6px;"><span style="width:8px; height:8px; border-radius:50%; background:var(--primary); display:inline-block;"></span> AI Enhanced</span>
             </div>
-            <div>
-              <div class="ds-flex-between" style="margin-bottom:8px;">
-                <span class="ds-eyebrow" style="color:var(--primary);">AI Enhanced</span>
-                <div class="ds-flex" style="gap:6px;">
-                  <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="copyRewrittenText()">Copy</button>
-                  <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="exportDocx()">DOCX</button>
-                  <button class="ds-btn ds-btn-primary ds-btn-sm" onclick="exportRewrittenPdf()">PDF</button>
-                </div>
-              </div>
-              <div class="editor-box" id="improvedPreview" style="border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--bg); overflow-y:auto; min-height:460px; color:var(--text); font-size:0.88rem; line-height:1.6;">Rewritten AI version will appear here...</div>
+            <div class="ds-flex" style="gap:4px;">
+              <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('improve_bullet')" style="font-size:0.72rem; padding:3px 10px;">Improve</button>
+              <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('quantify_bullet')" style="font-size:0.72rem; padding:3px 10px;">Quantify</button>
+              <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('ats_polish')" style="font-size:0.72rem; padding:3px 10px;">ATS</button>
+              <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="executeInlineImprove('fix_grammar')" style="font-size:0.72rem; padding:3px 10px;">Grammar</button>
             </div>
           </div>
 
-          <div id="rewriteRationaleCard" style="display:none; margin-top:20px; background:var(--good-bg); border:1px solid var(--good); border-radius:12px; padding:16px;">
-            <strong style="font-size:0.85rem; color:var(--good); display:block; margin-bottom:8px;">AI Improvement Rationale</strong>
-            <ul id="rewriteRationaleList" style="font-size:0.82rem; color:var(--text); padding-left:18px; line-height:1.6;"></ul>
+          <!-- Diff columns -->
+          <div style="display:grid; grid-template-columns:1fr 1px 1fr;">
+            <!-- Original -->
+            <div>
+              <div class="ds-flex-between" style="padding:10px 16px; border-bottom:1px solid var(--border-light);">
+                <span style="font-size:0.78rem; font-weight:600; color:var(--text-soft);">Original Resume</span>
+                <span style="font-size:0.65rem; color:var(--text-muted);">Select text to improve</span>
+              </div>
+              <textarea class="ds-textarea" id="originalPreview" name="originalPreview" aria-label="Original resume content" placeholder="Upload a resume file above or paste content here..." style="min-height:460px; border:none; border-radius:0; resize:vertical; background:var(--bg); font-size:0.85rem; line-height:1.7;"></textarea>
+            </div>
+
+            <!-- Divider -->
+            <div style="background:var(--border); width:1px; height:100%;"></div>
+
+            <!-- Enhanced -->
+            <div>
+              <div class="ds-flex-between" style="padding:10px 16px; border-bottom:1px solid var(--border-light);">
+                <span style="font-size:0.78rem; font-weight:600; color:var(--primary);">AI Enhanced</span>
+                <div class="ds-flex" style="gap:6px;">
+                  <button class="ds-btn ds-btn-ghost ds-btn-sm" onclick="copyRewrittenText()" style="font-size:0.72rem; padding:2px 8px;">Copy</button>
+                  <button class="ds-btn ds-btn-primary ds-btn-sm" onclick="exportRewrittenPdf()" style="font-size:0.72rem; padding:2px 10px;">PDF</button>
+                </div>
+              </div>
+              <div id="improvedPreview" class="ds-textarea" style="min-height:460px; border:none; border-radius:0; resize:none; background:var(--surface); font-size:0.85rem; line-height:1.7; color:var(--text); overflow-y:auto; cursor:text;">Rewritten AI version will appear here...</div>
+            </div>
+          </div>
+
+          <!-- Rationale -->
+          <div id="rewriteRationaleCard" style="display:none; border-top:1px solid var(--border); background:var(--good-bg); padding:16px 20px;">
+            <div class="ds-flex" style="gap:8px; align-items:flex-start;">
+              <span style="font-size:1rem; margin-top:1px;">💡</span>
+              <div>
+                <strong style="font-size:0.82rem; color:var(--good); display:block; margin-bottom:6px;">AI Improvement Rationale</strong>
+                <ul id="rewriteRationaleList" style="font-size:0.8rem; color:var(--text); padding-left:16px; line-height:1.6; margin:0;"></ul>
+              </div>
+            </div>
           </div>
         </div>
       </div><!-- /#improvePanel -->
@@ -851,8 +872,8 @@
 
         <div class="builder-workspace">
           <div class="ds-flex-col" style="gap:8px;">
-            <div class="ds-card" style="padding:14px;">
-              <div class="ds-label" style="margin-bottom:10px;">Sections</div>
+            <div class="ds-glass-card" style="padding:16px;">
+              <div class="ds-label" style="margin-bottom:12px;">Sections</div>
               <div id="sectionNavList" class="ds-flex-col" style="gap:4px;">
                 <button class="builder-sec-btn active" onclick="scrollToSection('secPersonalInfo')">Personal Info <span id="valPersonalInfo" style="font-size:0.7rem; color:var(--good);">✓</span></button>
                 <button class="builder-sec-btn" onclick="scrollToSection('secSummary')">Summary <span id="valSummary" style="font-size:0.7rem; color:var(--good);">✓</span></button>
@@ -866,7 +887,7 @@
           </div>
 
           <div class="ds-flex-col" style="gap:16px;">
-            <div class="ds-card" id="secPersonalInfo">
+            <div class="ds-glass-card" id="secPersonalInfo">
               <div class="ds-card-title">Personal Information</div>
               <div class="ds-field-grid">
                 <div style="grid-column:span 2; display:flex; align-items:center; gap:12px; background:var(--bg); border:1px solid var(--border); padding:8px 12px; border-radius:10px;">
@@ -886,11 +907,12 @@
               </div>
             </div>
 
-            <div class="ds-card" id="secSummary">
+            <div class="ds-glass-card" id="secSummary" style="position:relative;">
+              <div style="position:absolute; top:-1px; right:24px; width:60px; height:2px; background:linear-gradient(90deg, transparent, var(--primary), transparent); border-radius:1px; opacity:0.5;"></div>
               <div class="ds-card-header">
                 <span class="ds-card-title">Professional Summary</span>
                 <div class="ds-flex" style="gap:6px;">
-                  <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="aiAssist('generate_summary', 'bSummary')">AI Generate</button>
+                  <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="aiAssist('generate_summary', 'bSummary')" style="border-color:rgba(37,99,235,0.2);">✨ AI Generate</button>
                   <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="aiAssist('fix_grammar', 'bSummary')">Fix Grammar</button>
                 </div>
               </div>
@@ -982,7 +1004,7 @@
       <!-- ══════════════════════════════════════════════ -->
       <!--  MODULE 5: EMPLOYER PORTAL                    -->
       <!-- ══════════════════════════════════════════════ -->
-      <div class="panel ds-fade-in" id="employerPanel">
+      <div class="panel ds-fade-in" id="employerPanel" style="gap:20px;">
         <div class="ds-section">
           <div class="ds-section-header">
             <div>
@@ -991,11 +1013,36 @@
             </div>
           </div>
         </div>
-        <div class="ds-card">
+
+        <!-- Glass preview cards -->
+        <div class="ds-stat-grid" style="grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));">
+          <div class="ds-stat-premium">
+            <div class="ds-stat-label">Active Candidates</div>
+            <div class="ds-stat-value">0</div>
+            <div class="ds-stat-delta ds-text-muted" style="margin-top:6px;">Awaiting first upload</div>
+          </div>
+          <div class="ds-stat-premium">
+            <div class="ds-stat-label">Avg. Match Score</div>
+            <div class="ds-stat-value">--</div>
+            <div class="ds-stat-delta ds-text-muted" style="margin-top:6px;">Analyze to generate</div>
+          </div>
+          <div class="ds-stat-premium" style="background:linear-gradient(135deg, rgba(30,58,95,0.04), rgba(37,99,235,0.04)); border-color:rgba(37,99,235,0.15);">
+            <div class="ds-stat-label ds-text-primary" style="font-weight:700;">Open Positions</div>
+            <div class="ds-stat-value ds-gradient-text" style="font-size:1.8rem;">3</div>
+            <div class="ds-stat-delta ds-text-muted" style="margin-top:6px;">Job listings active</div>
+          </div>
+        </div>
+
+        <div class="ds-glass-card" style="padding:32px;">
           <div class="ds-empty">
-            <div class="ds-empty-icon">🏢</div>
-            <div class="ds-empty-title">Coming Soon</div>
-            <div class="ds-empty-text">Candidate search and job portal integration is on the roadmap.</div>
+            <div class="ds-empty-icon" style="font-size:3rem; margin-bottom:16px;">🏢</div>
+            <div class="ds-empty-title" style="font-size:1.15rem;">Coming Soon</div>
+            <div class="ds-empty-text" style="max-width:380px; margin:0 auto 20px;">Candidate search, score-based matching, and job portal integration are on the roadmap.</div>
+            <div class="ds-flex" style="gap:8px; justify-content:center;">
+              <span class="ds-badge ds-badge-primary">Score Matching</span>
+              <span class="ds-badge ds-badge-primary">Job Board</span>
+              <span class="ds-badge ds-badge-primary">ATS Sync</span>
+            </div>
           </div>
         </div>
       </div><!-- /#employerPanel -->
