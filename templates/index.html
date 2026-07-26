@@ -431,25 +431,25 @@
   <div class="app-shell">
 
     <!-- ── PERSISTENT SIDEBAR ── -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-menu">
-        <div class="sidebar-label">Navigation</div>
-        <button class="tab-btn active" id="tabDashboard" onclick="switchTab('dashboard')">
-          <span class="tab-icon">🏠</span> Dashboard
-        </button>
-        <button class="tab-btn" id="tabAnalyze" onclick="switchTab('analyze')">
-          <span class="tab-icon">🔍</span> Resume Analyzer
-        </button>
-        <button class="tab-btn" id="tabBuilder" onclick="switchTab('builder')">
-          <span class="tab-icon">✏️</span> Resume Builder
-        </button>
-        <button class="tab-btn" id="tabImprove" onclick="switchTab('improve')">
-          <span class="tab-icon">✨</span> Side-by-Side Rewrite
-        </button>
-        <button class="tab-btn" id="tabEmployer" onclick="switchTab('employer')">
-          <span class="tab-icon">🏢</span> Employer Portal
-        </button>
-      </div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-menu">
+          <div class="sidebar-label">Navigation</div>
+          <button class="ds-nav-pill active" id="tabDashboard" onclick="switchTab('dashboard')">
+            <span class="ds-nav-icon" style="background:rgba(30,58,95,0.08); color:var(--primary);">📊</span> Dashboard
+          </button>
+          <button class="ds-nav-pill" id="tabAnalyze" onclick="switchTab('analyze')">
+            <span class="ds-nav-icon" style="background:var(--bg);">🔍</span> Resume Analyzer
+          </button>
+          <button class="ds-nav-pill" id="tabBuilder" onclick="switchTab('builder')">
+            <span class="ds-nav-icon" style="background:var(--bg);">✏️</span> Resume Builder
+          </button>
+          <button class="ds-nav-pill" id="tabImprove" onclick="switchTab('improve')">
+            <span class="ds-nav-icon" style="background:var(--bg);">✨</span> AI Rewrite
+          </button>
+          <button class="ds-nav-pill" id="tabEmployer" onclick="switchTab('employer')">
+            <span class="ds-nav-icon" style="background:var(--bg);">🏢</span> Employer Portal
+          </button>
+        </div>
 
       <div class="sidebar-history">
         <div class="sidebar-label">Saved Analyses</div>
@@ -467,49 +467,64 @@
       <!--  MODULE 1: EXECUTIVE DASHBOARD                 -->
       <!-- ══════════════════════════════════════════════ -->
       <div class="panel active ds-fade-in" id="dashboardPanel">
-        <!-- Hero -->
-        <div class="ds-card ds-bg-primary ds-text-white ds-border-none" style="padding:36px 40px;">
-          <div class="ds-eyebrow" style="color:rgba(255,255,255,0.6); margin-bottom:6px;">Dashboard</div>
-          <h1 class="ds-font-bold ds-text-2xl" style="margin-bottom:8px; letter-spacing:-0.3px; color:#fff;">Welcome back<span style="color:#FCD34D;">, {{ user_name }}</span></h1>
-          <p style="font-size:0.92rem; color:rgba(255,255,255,0.7); max-width:560px; line-height:1.6;">Run ATS audits, build resumes, and manage your candidate profile from one place.</p>
+        <!-- Premium Hero -->
+        <div class="ds-glass-card ds-animated-bg" style="padding:40px 44px; position:relative; overflow:hidden;">
+          <div style="position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:rgba(30,58,95,0.03); pointer-events:none;"></div>
+          <div style="position:absolute; bottom:-40px; left:-40px; width:160px; height:160px; border-radius:50%; background:rgba(37,99,235,0.03); pointer-events:none;"></div>
+          <div class="ds-eyebrow" style="color:var(--text-muted); margin-bottom:8px; position:relative;">Good <span id="dashGreetingTime">evening</span><span style="margin:0 8px; color:var(--border);">·</span><span class="ds-gradient-text ds-font-semibold">{{ user_name }}</span></div>
+          <h1 class="ds-heading-xl" style="margin-bottom:12px; max-width:500px;">Let's get you hired.</h1>
+          <p style="font-size:0.92rem; color:var(--text-soft); max-width:500px; line-height:1.6;">Run an ATS audit, build a resume, or pick up where you left off.</p>
         </div>
 
-        <!-- Stats -->
-        <div class="ds-stat-grid reveal-up">
-          <div class="ds-stat">
-            <div class="ds-stat-label">Average ATS Score</div>
-            <div class="ds-stat-value" id="dashAvgScore">84%</div>
-            <div class="ds-stat-delta">↑ 12% boost this month</div>
+        <!-- Premium Stats -->
+        <div class="ds-stat-grid reveal-up" style="grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));">
+          <div class="ds-stat-premium">
+            <div class="ds-stat-label">Resume Score</div>
+            <div class="ds-stat-value" id="dashAvgScore">84</div>
+            <div class="ds-stat-delta" style="margin-top:6px;">↑ 12% this month</div>
           </div>
-          <div class="ds-stat">
-            <div class="ds-stat-label">Prepared Resumes</div>
+          <div class="ds-stat-premium">
+            <div class="ds-stat-label">Ready to Apply</div>
             <div class="ds-stat-value" id="dashResumeCount">3</div>
-            <div class="ds-stat-delta" style="color:var(--text-muted);">Active ATS Drafts</div>
+            <div class="ds-stat-delta ds-text-muted" style="margin-top:6px;">Active drafts</div>
           </div>
-          <div class="ds-stat">
-            <div class="ds-stat-label">ATS Audits</div>
+          <div class="ds-stat-premium">
+            <div class="ds-stat-label">ATS Audits Run</div>
             <div class="ds-stat-value" id="dashAuditCount">8</div>
-            <div class="ds-stat-delta" style="color:var(--text-muted);">Total reports saved</div>
+            <div class="ds-stat-delta ds-text-muted" style="margin-top:6px;">Total reports</div>
+          </div>
+          <div class="ds-stat-premium" style="background:linear-gradient(135deg, rgba(30,58,95,0.04), rgba(37,99,235,0.04)); border-color:rgba(37,99,235,0.15);">
+            <div class="ds-stat-label ds-text-primary" style="font-weight:700;">Today's Goal</div>
+            <div class="ds-stat-value ds-gradient-text" style="font-size:1.6rem;">90 ATS</div>
+            <div class="ds-stat-delta" style="margin-top:6px; display:flex; align-items:center; gap:8px;">
+              <span style="flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden;">
+                <span style="display:block; height:100%; width:70%; background:linear-gradient(90deg, var(--primary), #2563EB); border-radius:2px; transition:width 0.5s ease;"></span>
+              </span>
+              <span class="ds-font-semibold" style="font-size:0.78rem; color:var(--primary);">70%</span>
+            </div>
           </div>
         </div>
 
-        <!-- Feature Cards -->
-        <div class="ds-grid-auto reveal-up">
-          <div class="ds-card" onclick="switchTab('analyze')" style="cursor:pointer;">
-            <div class="ds-card-title">🔍 Resume Analyzer</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Upload your resume for multi-dimension ATS scoring, keyword gap analysis, and radar mapping.</p>
+        <!-- Premium Feature Cards -->
+        <div class="ds-grid-auto reveal-up" style="gap:20px;">
+          <div class="ds-glass-card ds-cursor-pointer ds-hover-lift" onclick="switchTab('analyze')" style="padding:28px;">
+            <div style="width:40px; height:40px; border-radius:12px; background:rgba(30,58,95,0.08); display:grid; place-items:center; font-size:1.2rem; margin-bottom:16px;">🔍</div>
+            <h3 style="font-size:1rem; font-weight:700; color:var(--text); margin-bottom:8px;">Resume Analyzer</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">Multi-dimension ATS scoring, keyword gap analysis, and radar mapping.</p>
             <span class="ds-btn ds-btn-secondary ds-btn-sm">Run ATS Audit →</span>
           </div>
 
-          <div class="ds-card" onclick="switchTab('builder')" style="cursor:pointer;">
-            <div class="ds-card-title">✏️ AI Resume Builder</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Build executive resumes with live preview, AI bullet suggestions, and modern templates.</p>
+          <div class="ds-glass-card ds-cursor-pointer ds-hover-lift" onclick="switchTab('builder')" style="padding:28px;">
+            <div style="width:40px; height:40px; border-radius:12px; background:rgba(30,58,95,0.08); display:grid; place-items:center; font-size:1.2rem; margin-bottom:16px;">✏️</div>
+            <h3 style="font-size:1rem; font-weight:700; color:var(--text); margin-bottom:8px;">AI Resume Builder</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">Build executive resumes with live preview, AI suggestions, and modern templates.</p>
             <span class="ds-btn ds-btn-secondary ds-btn-sm">Open Builder →</span>
           </div>
 
-          <div class="ds-card" onclick="switchTab('improve')" style="cursor:pointer;">
-            <div class="ds-card-title">✨ Side-by-Side Rewrite</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Compare original vs AI-rewritten bullet points with instant tone toggles and change explanations.</p>
+          <div class="ds-glass-card ds-cursor-pointer ds-hover-lift" onclick="switchTab('improve')" style="padding:28px;">
+            <div style="width:40px; height:40px; border-radius:12px; background:rgba(30,58,95,0.08); display:grid; place-items:center; font-size:1.2rem; margin-bottom:16px;">✨</div>
+            <h3 style="font-size:1rem; font-weight:700; color:var(--text); margin-bottom:8px;">Side-by-Side Rewrite</h3>
+            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px;">Compare original vs AI-rewritten bullets with tone toggles and diffs.</p>
             <span class="ds-btn ds-btn-secondary ds-btn-sm">Open AI Rewrite →</span>
           </div>
         </div>
@@ -529,52 +544,108 @@
           </div>
         </div>
 
-        <div class="ds-card">
-          <div class="ds-upload" id="dropZone" onclick="$('resumeFile').click()">
-            <input type="file" id="resumeFile" name="resumeFile" aria-label="Upload resume file" accept=".pdf,.txt" style="display:none">
-            <span class="ds-upload-icon">📤</span>
-            <div class="ds-upload-title">Drop your resume here</div>
-            <div class="ds-upload-hint">PDF or TXT · Max 10MB</div>
-            <div class="ds-upload-file" id="fileLabel"></div>
+        <!-- Upload Card -->
+        <div class="ds-glass-card" id="uploadCard" style="padding:60px 40px; text-align:center;">
+          <input type="file" id="resumeFile" name="resumeFile" aria-label="Upload resume file" accept=".pdf,.txt" style="display:none">
+          <div id="dropZone" style="cursor:pointer;">
+            <div style="width:64px; height:64px; border-radius:20px; background:rgba(30,58,95,0.06); display:grid; place-items:center; font-size:2rem; margin:0 auto 20px;">📄</div>
+            <h3 style="font-size:1.2rem; font-weight:700; color:var(--text); margin-bottom:8px;">Drop your resume here</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:4px;">or <span style="color:var(--primary); font-weight:600; text-decoration:underline; cursor:pointer;" onclick="document.getElementById('resumeFile').click()">browse files</span></p>
+            <p style="font-size:0.78rem; color:var(--text-soft);">PDF or TXT · Max 10MB</p>
+            <div class="ds-upload-file" id="fileLabel" style="margin-top:16px; font-weight:600; color:var(--primary);"></div>
           </div>
 
-          <div class="ds-field" style="margin-top:20px;">
-            <label class="ds-field-label">Target Job Description <span style="font-weight:400; text-transform:none; color:var(--text-muted);">(optional)</span></label>
-            <textarea class="ds-textarea" id="jobDesc" name="jobDesc" aria-label="Target job description" placeholder="Paste the job description for keyword matching..." style="height:80px;"></textarea>
-          </div>
-
-          <div style="display:flex; justify-content:flex-end; margin-top:20px;">
-            <button class="ds-btn ds-btn-primary" id="analyzeBtn">Analyze Resume →</button>
+          <div id="uploadJobField" style="display:none; margin-top:24px; max-width:500px; margin-left:auto; margin-right:auto; text-align:left;">
+            <div class="ds-divider"></div>
+            <label class="ds-field-label" style="margin-bottom:8px;">Target Job Description <span style="font-weight:400; text-transform:none; color:var(--text-muted);">(optional)</span></label>
+            <textarea class="ds-textarea" id="jobDesc" name="jobDesc" aria-label="Target job description" placeholder="Paste the job description for keyword matching..." style="height:70px;"></textarea>
+            <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+              <button class="ds-btn ds-btn-primary" id="analyzeBtn">Analyze Resume →</button>
+            </div>
           </div>
         </div>
 
+        <!-- Animated Analysis Steps -->
         <div id="analyzeLoading" style="display:none;">
-          <div class="ds-loading">
-            <div class="ds-loading-spinner"></div>
-            <div class="ds-loading-text">Analyzing resume across 6 core dimensions…</div>
+          <div class="ds-glass-card" style="padding:40px; text-align:center; max-width:500px; margin:0 auto;">
+            <div style="width:48px; height:48px; border-radius:16px; background:rgba(30,58,95,0.06); display:grid; place-items:center; font-size:1.4rem; margin:0 auto 20px;">⚡</div>
+            <h3 style="font-size:1rem; font-weight:700; color:var(--text); margin-bottom:20px;">Analyzing Your Resume</h3>
+            <div class="ds-flex-col" style="gap:12px; text-align:left; max-width:320px; margin:0 auto;">
+              <div class="ds-flex" style="gap:10px; align-items:center;">
+                <span class="ds-step" id="stepUpload" style="width:10px; height:10px;"></span>
+                <span style="font-size:0.85rem; color:var(--text-soft);" id="stepUploadText">Uploading file...</span>
+              </div>
+              <div class="ds-flex" style="gap:10px; align-items:center;">
+                <span class="ds-step" id="stepParse" style="width:10px; height:10px;"></span>
+                <span style="font-size:0.85rem; color:var(--text-soft);" id="stepParseText">Parsing keywords...</span>
+              </div>
+              <div class="ds-flex" style="gap:10px; align-items:center;">
+                <span class="ds-step" id="stepScan" style="width:10px; height:10px;"></span>
+                <span style="font-size:0.85rem; color:var(--text-soft);" id="stepScanText">Scanning ATS formatting...</span>
+              </div>
+              <div class="ds-flex" style="gap:10px; align-items:center;">
+                <span class="ds-step" id="stepGenerate" style="width:10px; height:10px;"></span>
+                <span style="font-size:0.85rem; color:var(--text-soft);" id="stepGenerateText">Generating insights...</span>
+              </div>
+            </div>
+            <div style="margin-top:24px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; max-width:320px; margin-left:auto; margin-right:auto;">
+              <div id="analysisProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg, var(--primary), #2563EB); border-radius:2px; transition:width 0.5s ease;"></div>
+            </div>
           </div>
         </div>
 
         <div id="analyzeResults" style="display:none; flex-direction:column; gap:20px;">
-          <div class="ds-flex-between">
-            <div>
-              <div class="ds-eyebrow">Analysis Report</div>
-              <h2 class="ds-title" id="resultsFilename" style="margin-top:2px;">Evaluation Report</h2>
-              <p class="ds-subtitle" id="resultsSubtitle">Analyzed successfully</p>
-            </div>
-            <div class="ds-flex" style="gap:8px;">
-              <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="downloadPdfReport()">📥 PDF Report</button>
-              <button class="ds-btn ds-btn-primary ds-btn-sm" onclick="startFixWithAI()">Fix with AI →</button>
+          <!-- Score Hero -->
+          <div class="ds-glass-card" style="padding:36px 40px; text-align:center; position:relative; overflow:hidden;">
+            <div style="position:absolute; top:-80px; right:-80px; width:240px; height:240px; border-radius:50%; background:rgba(37,99,235,0.04); pointer-events:none;"></div>
+            <div class="ds-eyebrow" style="margin-bottom:8px;" id="resultsSubtitle">Analyzed successfully</div>
+            <h2 class="ds-heading-lg" id="resultsFilename" style="margin-top:2px; margin-bottom:4px;">Evaluation Report</h2>
+            <div style="display:flex; justify-content:center; gap:40px; align-items:center; margin-top:24px; flex-wrap:wrap;">
+              <div>
+                <div style="position:relative; width:140px; height:140px; margin:0 auto;">
+                  <canvas id="scoreChart" style="width:140px; height:140px;"></canvas>
+                  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center;">
+                    <div class="ds-heading-xl" id="scoreNum" style="line-height:1;">--</div>
+                    <div class="ds-score-lbl">ATS Score</div>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align:left; min-width:200px;">
+                <div class="ds-flex-between" style="gap:10px; margin-bottom:8px;">
+                  <span class="ds-stat-label">Verdict</span>
+                  <span class="ds-badge" id="verdictBadge" style="font-size:0.78rem;">✓ Strong Candidate</span>
+                </div>
+                <p style="font-size:0.85rem; color:var(--text-soft); line-height:1.5;" id="verdictDecisionSummary">Ready to improve your resume?</p>
+              </div>
+              <div class="ds-flex" style="gap:8px;">
+                <button class="ds-btn ds-btn-secondary ds-btn-sm" onclick="downloadPdfReport()">📥 PDF</button>
+                <button class="ds-btn ds-btn-primary ds-btn-sm" onclick="startFixWithAI()">Fix with AI →</button>
+              </div>
             </div>
           </div>
 
+          <!-- Strengths + Weaknesses (revealed first) -->
+          <div class="ds-grid-2 reveal-up">
+            <div class="ds-glass-card" style="padding:24px;">
+              <div style="width:36px; height:36px; border-radius:12px; background:var(--good-bg); display:grid; place-items:center; font-size:1rem; margin-bottom:12px;">✓</div>
+              <h3 class="ds-text-good ds-font-semibold" style="margin-bottom:12px;">What's Working Well</h3>
+              <div id="strengthsList" class="ds-flex" style="flex-wrap:wrap; gap:6px;"></div>
+            </div>
+            <div class="ds-glass-card" style="padding:24px;">
+              <div style="width:36px; height:36px; border-radius:12px; background:var(--bad-bg); display:grid; place-items:center; font-size:1rem; margin-bottom:12px;">⚠</div>
+              <h3 class="ds-text-bad ds-font-semibold" style="margin-bottom:12px;">Needs Improvement</h3>
+              <div id="weaknessesList" class="ds-flex" style="flex-wrap:wrap; gap:6px;"></div>
+            </div>
+          </div>
+
+          <!-- Recruiter Verdict -->
           <div class="ds-card reveal-up" id="recruiterVerdictCard" style="background:var(--primary); color:#fff; border:none;">
             <div class="ds-flex-between" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; margin-bottom:16px;">
               <div>
                 <div class="ds-eyebrow" style="color:rgba(255,255,255,0.6); margin-bottom:4px;">Recruiter Verdict</div>
                 <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#fff;" id="verdictDecisionText">Would I interview this candidate?</h3>
               </div>
-              <span class="ds-badge" style="background:rgba(255,255,255,0.15); color:#fff; padding:6px 16px;" id="verdictBadge">✓ YES — Strong Candidate</span>
+              <span class="ds-badge" style="background:rgba(255,255,255,0.15); color:#fff; padding:6px 16px;" id="verdictBadge2">✓ YES — Strong Candidate</span>
             </div>
             <div class="ds-grid-2" style="font-size:0.85rem; line-height:1.5; color:rgba(255,255,255,0.8);">
               <div>
@@ -588,62 +659,66 @@
             </div>
           </div>
 
-          <div class="ds-card">
-            <div class="score-overview-container">
-              <div class="score-center">
-                <div class="ds-score-ring">
-                  <canvas id="scoreChart"></canvas>
+          <!-- Premium Sections (blur-locked) -->
+          <div style="position:relative;" id="premiumSectionsWrap">
+            <div id="premiumSections" class="ds-flex-col" style="gap:20px;">
+              <div class="ds-card">
+                <div class="score-overview-container">
+                  <div class="score-center">
+                    <div class="ds-score-ring">
+                      <canvas id="radarChart" style="max-height:180px;"></canvas>
+                    </div>
+                    <div class="ds-score-lbl">Dimension Radar</div>
+                  </div>
+                  <div>
+                    <div class="ds-card-title" style="margin-bottom:12px;">Dimension Breakdown</div>
+                    <div id="dimList"></div>
+                  </div>
+                  <div class="ds-bg-canvas ds-border ds-rounded-sm" style="padding:20px; text-align:center;">
+                    <div class="ds-card-title ds-mb-sm">Radar Map</div>
+                    <div class="ds-flex-center">
+                      <canvas id="radarChart" style="max-height:180px;"></canvas>
+                    </div>
+                  </div>
                 </div>
-                <div class="ds-score-num" id="scoreNum">--</div>
-                <div class="ds-score-lbl">Overall ATS Score</div>
               </div>
-              <div>
-                <div class="ds-card-title" style="margin-bottom:12px;">Dimension Breakdown</div>
-                <div id="dimList"></div>
+
+              <div class="ds-card">
+                <div class="ds-card-title">Target Role Competitiveness</div>
+                <div id="competitivenessGrid" class="ds-grid-auto" style="grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));"></div>
               </div>
-              <div class="ds-bg-canvas ds-border ds-rounded-sm" style="padding:20px; text-align:center;">
-                <div class="ds-card-title ds-mb-sm">Radar Map</div>
-                <div class="ds-flex-center">
-                  <canvas id="radarChart" style="max-height:180px;"></canvas>
-                </div>
+
+              <div class="ds-card">
+                <div class="ds-card-title">Priority Action List</div>
+                <div id="priorityActionList" class="ds-flex-col" style="gap:8px;"></div>
+              </div>
+
+              <div class="ds-card">
+                <div class="ds-card-title">Before vs After Bullet Improvements</div>
+                <div id="beforeAfterContainer" class="ds-flex-col" style="gap:12px;"></div>
+              </div>
+
+              <div class="ds-card">
+                <div class="ds-card-title">Keyword Gap Analysis</div>
+                <div id="keywordGapContainer" class="ds-grid-2"></div>
+              </div>
+
+              <div class="ds-card">
+                <div class="ds-card-title">Improvement Roadmap</div>
+                <div id="roadmapContainer" class="ds-grid-3"></div>
               </div>
             </div>
-          </div>
 
-          <div class="ds-card">
-            <div class="ds-card-title">Target Role Competitiveness</div>
-            <div id="competitivenessGrid" class="ds-grid-auto" style="grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));"></div>
-          </div>
-
-          <div class="ds-card">
-            <div class="ds-card-title">Priority Action List</div>
-            <div id="priorityActionList" class="ds-flex-col" style="gap:8px;"></div>
-          </div>
-
-          <div class="ds-card">
-            <div class="ds-card-title">Before vs After Bullet Improvements</div>
-            <div id="beforeAfterContainer" class="ds-flex-col" style="gap:12px;"></div>
-          </div>
-
-          <div class="ds-grid-2">
-            <div class="ds-card">
-              <div class="ds-card-title ds-text-good">What's Working Well</div>
-              <div id="strengthsList" class="ds-flex" style="flex-wrap:wrap; gap:6px;"></div>
+            <!-- Unlock Overlay -->
+            <div class="ds-blur-unlock-overlay" id="unlockOverlay" style="display:none;">
+              <div class="ds-glass-card" style="padding:36px; text-align:center; max-width:400px;">
+                <div style="width:56px; height:56px; border-radius:16px; background:var(--primary-light); display:grid; place-items:center; font-size:1.5rem; margin:0 auto 16px;">🔒</div>
+                <h3 style="font-size:1.15rem; font-weight:700; color:var(--text); margin-bottom:8px;">Unlock Full Analysis</h3>
+                <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:20px;">Create a free account to see your complete ATS breakdown, keyword gaps, improvement roadmap, and more.</p>
+                <button class="ds-btn ds-btn-primary ds-btn-block" onclick="startFixWithAI()">Continue with Free Account →</button>
+                <p style="font-size:0.75rem; color:var(--text-soft); margin-top:12px;">Already have one? <a href="/login" style="color:var(--primary); font-weight:600;">Sign in</a></p>
+              </div>
             </div>
-            <div class="ds-card">
-              <div class="ds-card-title ds-text-bad">Needs Improvement</div>
-              <div id="weaknessesList" class="ds-flex" style="flex-wrap:wrap; gap:6px;"></div>
-            </div>
-          </div>
-
-          <div class="ds-card">
-            <div class="ds-card-title">Keyword Gap Analysis</div>
-            <div id="keywordGapContainer" class="ds-grid-2"></div>
-          </div>
-
-          <div class="ds-card">
-            <div class="ds-card-title">Improvement Roadmap</div>
-            <div id="roadmapContainer" class="ds-grid-3"></div>
           </div>
         </div>
       </div><!-- /#analyzePanel -->
@@ -1113,7 +1188,12 @@
         const btn = $('tab' + t.charAt(0).toUpperCase() + t.slice(1));
         const panel = $(t + 'Panel');
         if (btn) btn.classList.toggle('active', t === tab);
-        if (panel) panel.classList.toggle('active', t === tab);
+        if (panel) {
+          panel.classList.toggle('active', t === tab);
+          if (t === tab) panel.querySelectorAll('.reveal-up').forEach((el, i) => {
+            setTimeout(() => el.classList.add('is-visible'), i * 100);
+          });
+        }
       });
       if (tab === 'builder' && typeof loadResumeDrafts === 'function') {
         loadResumeDrafts();
@@ -1127,53 +1207,106 @@
     let lastAnalysis = null;
     let lastResumeFile = null;
 
+    // ── UPLOAD FLOW ──
     $('resumeFile').addEventListener('change', () => {
       const f = $('resumeFile').files[0];
       if (f) {
         $('fileLabel').textContent = '📎 ' + f.name;
         lastResumeFile = f;
+        $('uploadJobField').style.display = 'block';
+        $('dropZone').querySelector('h3').textContent = 'Resume selected';
       }
     });
 
+    $('dropZone').addEventListener('click', (e) => {
+      if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'SPAN') {
+        $('resumeFile').click();
+      }
+    });
+
+    async function runAnalysisSteps() {
+      const steps = ['stepUpload', 'stepParse', 'stepScan', 'stepGenerate'];
+      const texts = ['stepUploadText', 'stepParseText', 'stepScanText', 'stepGenerateText'];
+      const labels = ['Uploading file...', 'Parsing keywords...', 'Scanning ATS formatting...', 'Generating insights...'];
+      const bar = $('analysisProgressBar');
+
+      for (let i = 0; i < steps.length; i++) {
+        const step = $(steps[i]);
+        const text = $(texts[i]);
+        step.className = 'ds-step active';
+        text.innerHTML = labels[i] + ' <span style="font-size:0.7rem; color:var(--text-muted);">— processing</span>';
+        bar.style.width = ((i + 1) / steps.length * 100) + '%';
+        await new Promise(r => setTimeout(r, 400 + Math.random() * 600));
+        step.className = 'ds-step done';
+        text.innerHTML = labels[i] + ' <span style="color:var(--good);">✓</span>';
+      }
+    }
+
     $('analyzeBtn').addEventListener('click', async () => {
       const f = $('resumeFile').files[0];
-      if (!f) { alert("Please select a resume file first."); return; }
+      if (!f) { showToast("Please select a resume file first.", 'warning'); return; }
 
+      // Reset steps
+      ['stepUpload','stepParse','stepScan','stepGenerate'].forEach(id => $(id).className = 'ds-step');
+      ['stepUploadText','stepParseText','stepScanText','stepGenerateText'].forEach(id => $(id).textContent = id.replace('step','').replace('Text','') + '...');
+      $('analysisProgressBar').style.width = '0%';
       $('analyzeLoading').style.display = 'block';
       $('analyzeResults').style.display = 'none';
+      $('uploadCard').style.display = 'none';
 
       try {
         const fd = new FormData();
         fd.append('resume', f);
         fd.append('job_description', $('jobDesc').value);
+        const apiPromise = fetch('/api/analyze', { method: 'POST', body: fd }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Analysis failed'); return d; });
 
-        const res = await fetch('/api/analyze', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        await runAnalysisSteps();
+
+        const data = await apiPromise;
+        if (!data || data.error) throw new Error(data?.error || 'Analysis failed');
 
         lastAnalysis = data;
         renderAnalysis(data);
+        $('analyzeResults').style.display = 'flex';
       } catch (err) {
         showToast("Analysis error: " + err.message, 'error');
+        $('uploadCard').style.display = 'block';
       } finally {
         $('analyzeLoading').style.display = 'none';
       }
     });
 
+    function animateScore(target, el, duration = 800) {
+      const start = 0;
+      const startTime = performance.now();
+      function tick(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(start + (target - start) * eased);
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
     function renderAnalysis(data) {
       const score = data.overall_score || 0;
-      $('scoreNum').textContent = score;
       $('resultsFilename').textContent = data.filename || 'Evaluation Report';
-      $('resultsSubtitle').textContent = `Overall ATS & Recruiter Readiness Score: ${score}/100`;
+      $('resultsSubtitle').textContent = `ATS Score: ${score}/100`;
 
-      // 1. Recruiter Verdict Card
+      // Animated score
+      animateScore(score, $('scoreNum'));
+
+      // 1. Recruiter Verdict
       const rv = data.recruiter_verdict || {};
       const decision = rv.decision || 'Maybe';
       const verdictBadge = $('verdictBadge');
-      if (verdictBadge) {
-        verdictBadge.textContent = decision === 'Yes' ? '✓ YES — High Priority Candidate' : decision === 'Maybe' ? '⚠️ MAYBE — Needs Bullet Tuning' : '❌ REJECT — Major ATS Gaps';
-        verdictBadge.style.background = decision === 'Yes' ? '#059669' : decision === 'Maybe' ? '#D97706' : '#DC2626';
-      }
+      const verdictBadge2 = $('verdictBadge2');
+      const badgeText = decision === 'Yes' ? '✓ YES — High Priority' : decision === 'Maybe' ? '⚠️ MAYBE — Needs Tuning' : '❌ REJECT — Major Gaps';
+      const badgeBg = decision === 'Yes' ? '#059669' : decision === 'Maybe' ? '#D97706' : '#DC2626';
+      if (verdictBadge) { verdictBadge.textContent = badgeText; verdictBadge.style.background = badgeBg; }
+      if (verdictBadge2) { verdictBadge2.textContent = badgeText; verdictBadge2.style.background = badgeBg; }
+      if ($('verdictDecisionText')) $('verdictDecisionText').textContent = 'Would I interview this candidate?';
       if ($('verdictStandoutText')) $('verdictStandoutText').textContent = rv.top_standout || 'Clear structure and professional formatting.';
       if ($('verdictFixText')) $('verdictFixText').textContent = rv.priority_fix || rv.biggest_weakness || 'Add quantifiable metrics to bullet points.';
 
@@ -1185,7 +1318,7 @@
         data: {
           datasets: [{
             data: [score, 100 - score],
-            backgroundColor: ['#1E3A5F', '#E8E4DE'],
+            backgroundColor: ['#2563EB', '#E8E4DE'],
             borderWidth: 0
           }]
         },
@@ -2245,6 +2378,13 @@
       addEducationRow({ degree: 'B.S. Computer Science', school: 'University of Engineering', dates: '2017 – 2021' });
       const name = $('userGreet')?.textContent.replace('Hi, ', '').trim();
       if (name && $('userAvatar')) $('userAvatar').textContent = name.slice(0, 2).toUpperCase();
+
+      // Greeting time
+      const greet = $('dashGreetingTime');
+      if (greet) {
+        const h = new Date().getHours();
+        greet.textContent = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+      }
     });
   </script>
 

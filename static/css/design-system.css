@@ -476,9 +476,234 @@ body {
 .ds-shadow-md { box-shadow: var(--shadow-md); }
 .ds-shadow-lg { box-shadow: var(--shadow-lg); }
 
+/* ── Glassmorphism ── */
+.ds-glass {
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+}
+.ds-glass-dark {
+  background: rgba(30,58,95,0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(30,58,95,0.1);
+}
+.ds-glass-card {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.ds-glass-card:hover {
+  box-shadow: 0 16px 48px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.02);
+  transform: translateY(-2px);
+}
+
+/* ── Gradient Accents ── */
+.ds-gradient-text {
+  background: linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.ds-gradient-gold {
+  background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.ds-gradient-primary {
+  background: linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%);
+}
+.ds-gradient-warm {
+  background: linear-gradient(135deg, #F8F6F1 0%, #FFF8EE 100%);
+}
+
+/* ── Glow Effects ── */
+.ds-glow-blue {
+  box-shadow: 0 0 20px rgba(37,99,235,0.15), 0 0 60px rgba(37,99,235,0.06);
+}
+.ds-glow-gold {
+  box-shadow: 0 0 20px rgba(251,191,36,0.15), 0 0 60px rgba(251,191,36,0.06);
+}
+.ds-glow-hover {
+  transition: box-shadow 0.3s ease;
+}
+.ds-glow-hover:hover {
+  box-shadow: 0 0 24px rgba(37,99,235,0.2), 0 0 80px rgba(37,99,235,0.08);
+}
+
+/* ── Animated Gradient Background ── */
+.ds-animated-bg {
+  background: linear-gradient(-45deg, #F8F6F1, #FFF8EE, #F0EDE8, #FFF5E6);
+  background-size: 400% 400%;
+  animation: ds-gradientShift 8s ease infinite;
+}
+@keyframes ds-gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Floating Animation ── */
+.ds-float {
+  animation: ds-float 6s ease-in-out infinite;
+}
+@keyframes ds-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+/* ── Scale on Hover ── */
+.ds-hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.ds-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+}
+
+/* ── Pulse Ring ── */
+.ds-pulse-ring {
+  position: relative;
+}
+.ds-pulse-ring::before {
+  content: '';
+  position: absolute; inset: -4px;
+  border-radius: inherit;
+  border: 2px solid var(--primary);
+  animation: ds-pulseRing 2s ease-out infinite;
+}
+@keyframes ds-pulseRing {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.08); }
+}
+
+/* ── Skeleton Loading (Premium) ── */
+.ds-skeleton-premium {
+  background: linear-gradient(90deg, var(--bg) 25%, #EDE9E3 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: ds-shimmer 1.8s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+/* ── Blur Reveal ── */
+.ds-blur-locked {
+  filter: blur(12px);
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+}
+.ds-blur-unlock-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 10;
+  background: linear-gradient(to top, rgba(248,246,241,0.95) 40%, rgba(248,246,241,0) 100%);
+  pointer-events: auto;
+}
+
+/* ── Step Indicator ── */
+.ds-steps {
+  display: flex; gap: 8px; align-items: center;
+}
+.ds-step {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); transition: all 0.3s ease;
+}
+.ds-step.active { background: var(--primary); transform: scale(1.3); }
+.ds-step.done { background: var(--good); }
+
+/* ── Typography Extras ── */
+.ds-heading-xl {
+  font-size: 2rem; font-weight: 800; letter-spacing: -0.04em;
+  line-height: 1.1; color: var(--text);
+}
+.ds-heading-lg {
+  font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.15; color: var(--text);
+}
+
+/* ── Stats (Premium) ── */
+.ds-stat-premium {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+.ds-stat-premium:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
+}
+.ds-stat-premium .ds-stat-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+/* ── Nav Pill ── */
+.ds-nav-pill {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-radius: 14px;
+  font-size: 0.85rem; font-weight: 500; color: var(--text-soft);
+  cursor: pointer; transition: all 0.2s ease;
+  border: none; background: transparent; width: 100%; text-align: left;
+  font-family: 'Inter', sans-serif;
+}
+.ds-nav-pill:hover {
+  background: rgba(30,58,95,0.06);
+  color: var(--text);
+}
+.ds-nav-pill.active {
+  background: rgba(30,58,95,0.1);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.ds-nav-pill .ds-nav-icon {
+  width: 28px; height: 28px; border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.ds-nav-pill.active .ds-nav-icon {
+  background: var(--primary);
+  color: #fff;
+}
+
 /* ── Animations ── */
 @keyframes ds-fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .ds-fade-in { animation: ds-fadeIn 0.3s ease-out; }
+
+@keyframes ds-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Input Grade ── */
+.ds-input-glass {
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font: 500 0.9rem 'Inter', sans-serif;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ds-input-glass:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(30,58,95,0.08);
+}
