@@ -9,25 +9,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   {% if is_authenticated %}
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-    /* ── SERIES A SAAS DESIGN SYSTEM (LINEAR / STRIPE / VERCEL STYLE) ── */
     :root {
-      --bg:            #F8FAFC;
+      --bg:            #F8F6F1;
       --surface:       #FFFFFF;
-      --card:          #FFFFFF;
-      --card-hover:    #F1F5F9;
-      
-      --border:        #E2E8F0;
-      --border-light:  #F1F5F9;
+      --surface-hover: #F5F3EF;
+      --border:        #E8E4DE;
+      --border-light:  #F0EDE8;
 
-      --text:          #0F172A;
-      --text-muted:    #64748B;
-      --text-soft:     #475569;
+      --text:          #1A1A2E;
+      --text-muted:    #8B8790;
+      --text-soft:     #6B7280;
 
-      --primary:       #2563EB;
-      --primary-hover: #1D4ED8;
-      --primary-light: #EFF6FF;
+      --primary:       #1E3A5F;
+      --primary-hover: #152B47;
+      --primary-light: #E8EEF5;
 
       --good:          #16A34A;
       --good-bg:       #F0FDF4;
@@ -36,13 +33,13 @@
       --bad:           #DC2626;
       --bad-bg:        #FEF2F2;
 
-      --shadow-sm:     0 1px 2px 0 rgba(0, 0, 0, 0.05);
-      --shadow-md:     0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-      --shadow-lg:     0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+      --shadow-sm:     0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md:     0 4px 12px rgba(0,0,0,0.05);
+      --shadow-lg:     0 12px 32px rgba(0,0,0,0.07);
 
       --sidebar-w:     260px;
-      --nav-h:         64px;
-      --radius:        12px;
+      --nav-h:         60px;
+      --radius:        18px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -56,121 +53,120 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── TOP UTILITY BAR ────────────────────────────────────── */
+    /* ── TOP NAV ── */
     nav {
       height: var(--nav-h);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
+      padding: 0 28px;
       border-bottom: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
       position: sticky;
       top: 0;
       z-index: 200;
     }
-    .nav-left { display: flex; align-items: center; gap: 16px; }
+    .nav-left { display: flex; align-items: center; gap: 12px; }
     .menu-btn {
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text-soft);
-      width: 36px; height: 36px;
-      border-radius: 8px;
+      width: 34px; height: 34px;
+      border-radius: 10px;
       cursor: pointer;
       font-size: 1rem;
       display: grid; place-items: center;
       transition: all 0.2s ease;
     }
-    .menu-btn:hover { background: var(--card-hover); color: var(--text); }
+    .menu-btn:hover { background: var(--surface-hover); color: var(--text); }
     .brand-logo {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 800;
       text-decoration: none;
       color: var(--text);
       display: flex;
       align-items: center;
       gap: 10px;
-      letter-spacing: -0.4px;
+      letter-spacing: -0.3px;
     }
     .brand-mark {
-      width: 30px; height: 30px;
-      background: linear-gradient(135deg, #2563EB, #3B82F6);
+      width: 28px; height: 28px;
+      background: var(--primary);
       border-radius: 8px;
       display: grid; place-items: center;
-      color: #fff; font-size: 15px; font-weight: 800;
-      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+      color: #fff; font-size: 13px; font-weight: 800;
     }
 
     .top-search-wrap {
       display: flex; align-items: center; gap: 8px;
-      background: #F1F5F9; border: 1px solid var(--border);
-      border-radius: 8px; padding: 6px 12px; width: 320px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 6px 12px; width: 260px;
     }
     .top-search-wrap input {
       border: none; background: transparent; outline: none;
-      font-size: 0.85rem; color: var(--text); width: 100%;
+      font-size: 0.82rem; color: var(--text); width: 100%;
     }
 
-    .nav-right { display: flex; align-items: center; gap: 14px; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
     .user-chip {
-      display: flex; align-items: center; gap: 10px;
-      background: #F1F5F9; border: 1px solid var(--border);
-      padding: 5px 12px 5px 6px; border-radius: 20px;
-      font-weight: 600; font-size: 0.85rem; color: var(--text);
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 4px 10px 4px 4px; border-radius: 20px;
+      font-weight: 600; font-size: 0.82rem; color: var(--text);
     }
     .user-avatar {
-      width: 28px; height: 28px;
+      width: 26px; height: 26px;
       background: var(--primary); color: #fff;
       border-radius: 50%; display: grid; place-items: center;
-      font-size: 11px; font-weight: 800;
+      font-size: 10px; font-weight: 700;
     }
     .btn-quick-new {
       background: var(--primary); color: #fff; border: none;
-      padding: 8px 14px; border-radius: 8px; font-weight: 700;
+      padding: 7px 14px; border-radius: 10px; font-weight: 600;
       font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px;
-      transition: background 0.2s;
+      transition: all 0.2s;
     }
     .btn-quick-new:hover { background: var(--primary-hover); }
     .logout-btn {
       background: transparent; border: none; color: var(--text-muted);
-      font-size: 0.82rem; font-weight: 600; cursor: pointer; padding: 4px 8px;
+      font-size: 0.82rem; font-weight: 500; cursor: pointer; padding: 4px 10px;
+      border-radius: 8px; transition: all 0.15s;
     }
-    .logout-btn:hover { color: var(--bad); }
+    .logout-btn:hover { color: var(--bad); background: var(--bad-bg); }
 
-    /* ── APP SHELL ────────────────────────────────────────── */
+    /* ── APP SHELL ── */
     .app-shell { display: flex; min-height: calc(100vh - var(--nav-h)); }
 
-    /* ── PERSISTENT LEFT SIDEBAR ──────────────────────────── */
+    /* ── SIDEBAR ── */
     .sidebar {
       width: var(--sidebar-w);
       background: var(--surface);
       border-right: 1px solid var(--border);
-      padding: 20px 14px;
+      padding: 24px 16px;
       display: flex; flex-direction: column; justify-content: space-between;
       transition: width 0.25s ease, transform 0.25s ease;
       position: sticky; top: var(--nav-h); height: calc(100vh - var(--nav-h));
       z-index: 100; flex-shrink: 0;
     }
     .sidebar.hidden { width: 0; padding: 0; overflow: hidden; border: none; }
-    .sidebar-menu { display: flex; flex-direction: column; gap: 6px; }
+    .sidebar-menu { display: flex; flex-direction: column; gap: 2px; }
     .sidebar-label {
-      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-muted); padding: 8px 12px 4px;
+      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted); padding: 12px 12px 6px;
     }
     .tab-btn {
-      display: flex; align-items: center; gap: 12px;
-      width: 100%; padding: 10px 14px;
-      border: none; border-radius: 8px;
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 9px 14px;
+      border: none; border-radius: 10px;
       background: transparent; color: var(--text-soft);
-      font: 600 0.88rem 'Inter', sans-serif;
+      font: 500 0.85rem 'Inter', sans-serif;
       cursor: pointer; text-align: left;
       transition: all 0.15s ease;
     }
-    .tab-btn:hover { background: var(--card-hover); color: var(--text); }
-    .tab-btn.active { background: var(--primary-light); color: var(--primary); font-weight: 700; }
-    .tab-icon { font-size: 1.1rem; }
+    .tab-btn:hover { background: var(--surface-hover); color: var(--text); }
+    .tab-btn.active { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .tab-icon { font-size: 1rem; width: 20px; text-align: center; }
 
     .sidebar-history {
       margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;
@@ -178,118 +174,139 @@
     }
     .history-item {
       display: flex; align-items: center; gap: 10px;
-      padding: 8px 10px; border-radius: 8px; font-size: 0.8rem;
-      cursor: pointer; transition: background 0.15s; margin-bottom: 4px;
+      padding: 8px 10px; border-radius: 10px; font-size: 0.8rem;
+      cursor: pointer; transition: background 0.15s; margin-bottom: 2px;
     }
-    .history-item:hover { background: var(--card-hover); }
+    .history-item:hover { background: var(--surface-hover); }
     .history-item.active { background: var(--primary-light); }
     .history-score-badge {
-      width: 26px; height: 26px; border-radius: 6px;
-      display: grid; place-items: center; font-weight: 800; font-size: 0.72rem;
+      width: 24px; height: 24px; border-radius: 6px;
+      display: grid; place-items: center; font-weight: 700; font-size: 0.7rem;
     }
     .history-info { flex: 1; min-width: 0; }
-    .history-name { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-meta { font-size: 0.7rem; color: var(--text-muted); }
+    .history-name { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.78rem; }
+    .history-meta { font-size: 0.68rem; color: var(--text-muted); }
     .history-action-btn {
       background: none; border: none; color: var(--text-muted);
-      cursor: pointer; padding: 2px 4px; border-radius: 4px; font-size: 0.75rem;
+      cursor: pointer; padding: 2px 6px; border-radius: 6px; font-size: 0.75rem;
+      transition: all 0.15s;
     }
-    .history-action-btn:hover { color: var(--text); background: rgba(0,0,0,0.05); }
+    .history-action-btn:hover { color: var(--text); background: var(--surface-hover); }
 
-    /* ── MAIN CONTENT AREA ────────────────────────────────── */
-    .main-panel { flex: 1; padding: 32px; max-width: 1400px; margin: 0 auto; width: 100%; }
+    /* ── MAIN CONTENT ── */
+    .main-panel { flex: 1; padding: 32px 36px; max-width: 1200px; margin: 0 auto; width: 100%; }
 
-    .panel { display: none; flex-direction: column; gap: 24px; animation: fadeIn 0.25s ease-out; }
+    .panel { display: none; flex-direction: column; gap: 24px; animation: fadeIn 0.3s ease-out; }
     .panel.active { display: flex; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ── DASHBOARD WELCOME HERO ──────────────────────────── */
+    /* ── DASHBOARD HERO ── */
     .dash-hero {
-      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-      color: #ffffff; border-radius: 16px; padding: 32px 36px;
-      box-shadow: var(--shadow-md); position: relative; overflow: hidden;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      position: relative; overflow: hidden;
     }
-    .dash-hero h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
-    .dash-hero p { font-size: 0.95rem; color: #94A3B8; max-width: 600px; line-height: 1.5; }
+    .dash-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 400px;
+      height: 400px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 50%;
+    }
+    .dash-hero h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.3px; position: relative; }
+    .dash-hero p { font-size: 0.92rem; color: rgba(255,255,255,0.7); max-width: 560px; line-height: 1.6; position: relative; }
 
-    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
     .metric-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; padding: 20px; box-shadow: var(--shadow-sm);
+      border-radius: 16px; padding: 22px 24px;
+      transition: box-shadow 0.2s;
     }
-    .metric-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
-    .metric-val { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.8rem; font-weight: 800; color: var(--text); }
-    .metric-sub { font-size: 0.78rem; color: var(--good); font-weight: 600; margin-top: 4px; }
+    .metric-card:hover { box-shadow: var(--shadow-md); }
+    .metric-title { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px; }
+    .metric-val { font-size: 1.8rem; font-weight: 700; color: var(--text); letter-spacing: -0.5px; }
+    .metric-sub { font-size: 0.78rem; color: var(--good); font-weight: 500; margin-top: 4px; }
 
-    /* ── CARDS & UTILITIES ────────────────────────────────── */
+    /* ── CARDS ── */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
-      box-shadow: var(--shadow-sm);
+      border-radius: 16px;
+      padding: 24px 28px;
+      transition: box-shadow 0.2s;
     }
+    .card:hover { box-shadow: var(--shadow-sm); }
     .card-title {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      font-size: 1rem; font-weight: 700; color: var(--text);
+      font-size: 0.95rem; font-weight: 700; color: var(--text);
       margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
     }
 
+    /* ── BUTTONS ── */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px 18px; border-radius: 8px; font: 600 0.85rem 'Inter', sans-serif;
+      padding: 10px 20px; border-radius: 12px; font: 500 0.85rem 'Inter', sans-serif;
       cursor: pointer; transition: all 0.15s ease; border: 1px solid transparent; text-decoration: none;
     }
-    .btn-primary { background: var(--primary); color: #ffffff; }
-    .btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow-sm); }
-    .btn-ghost { background: var(--surface); border-color: var(--border); color: var(--text-soft); }
-    .btn-ghost:hover { background: var(--card-hover); color: var(--text); }
-    .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-ghost { background: transparent; border-color: var(--border); color: var(--text-soft); }
+    .btn-ghost:hover { background: var(--surface-hover); color: var(--text); }
+    .btn-sm { padding: 6px 14px; font-size: 0.78rem; border-radius: 10px; }
 
-    /* ── RESUME ANALYZER DASHBOARD ────────────────────────── */
+    /* ── UPLOAD ZONE ── */
     .upload-zone {
-      border: 2px dashed var(--border); border-radius: 12px; padding: 36px;
-      text-align: center; background: #F8FAFC; cursor: pointer; transition: border-color 0.2s;
+      border: 2px dashed var(--border); border-radius: var(--radius); padding: 48px 36px;
+      text-align: center; background: var(--bg); cursor: pointer; transition: all 0.2s;
     }
     .upload-zone:hover { border-color: var(--primary); background: var(--primary-light); }
-    .upload-icon { font-size: 2.2rem; margin-bottom: 10px; }
+    .upload-icon { font-size: 2.4rem; margin-bottom: 12px; }
 
+    /* ── SCORE OVERVIEW ── */
     .score-overview-container {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; align-items: center;
+      display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 24px; align-items: center;
     }
     .score-center { text-align: center; position: relative; }
-    .score-num { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 2.8rem; font-weight: 800; color: var(--text); margin-top: -85px; margin-bottom: 30px; }
-    .score-lbl { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .score-num { font-size: 2.6rem; font-weight: 700; color: var(--text); margin-top: -80px; margin-bottom: 28px; letter-spacing: -1px; }
+    .score-lbl { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
-    .dim-row { margin-bottom: 12px; }
-    .dim-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
-    .dim-track { height: 7px; background: #E2E8F0; border-radius: 4px; overflow: hidden; }
-    .dim-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease-out; }
+    .dim-row { margin-bottom: 10px; }
+    .dim-header { display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 500; margin-bottom: 4px; }
+    .dim-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .dim-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease-out; }
 
-    /* ── SIDE-BY-SIDE EDITOR ──────────────────────────────── */
+    /* ── SIDE-BY-SIDE EDITOR ── */
     .rewrite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .editor-box {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 20px; min-height: 480px; font-size: 0.9rem; line-height: 1.6; color: var(--text);
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px; min-height: 460px; font-size: 0.88rem; line-height: 1.6; color: var(--text);
     }
-    .tone-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .tone-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
     .tone-btn {
-      padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
-      background: #F1F5F9; border: 1px solid var(--border); color: var(--text-soft); cursor: pointer;
+      padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 500;
+      background: var(--bg); border: 1px solid var(--border); color: var(--text-soft); cursor: pointer;
+      transition: all 0.15s;
     }
+    .tone-btn:hover { background: var(--surface-hover); }
     .tone-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
-    /* ── 3-COLUMN RESUME BUILDER ─────────────────────────── */
-    .builder-workspace { display: grid; grid-template-columns: 240px 1fr 1.2fr; gap: 20px; }
-    .builder-sec-list { display: flex; flex-direction: column; gap: 6px; }
+    /* ── BUILDER ── */
+    .builder-workspace { display: grid; grid-template-columns: 220px 1fr 1.1fr; gap: 20px; }
+    .builder-sec-list { display: flex; flex-direction: column; gap: 4px; }
     .builder-sec-btn {
-      padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
-      background: var(--surface); font-size: 0.82rem; font-weight: 600; text-align: left; cursor: pointer;
+      padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); font-size: 0.8rem; font-weight: 500; text-align: left; cursor: pointer;
+      transition: all 0.15s;
     }
-    .builder-sec-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .builder-sec-btn:hover { background: var(--surface-hover); }
+    .builder-sec-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); font-weight: 600; }
 
     .preview-canvas {
-      background: #ffffff; color: #0f172a; border: 1px solid var(--border);
+      background: #fff; color: var(--text); border: 1px solid var(--border);
       border-radius: 14px; padding: 36px; min-height: 700px; box-shadow: var(--shadow-lg);
       font-family: 'Inter', sans-serif;
     }
@@ -387,8 +404,9 @@
       <!-- ══════════════════════════════════════════════ -->
       <div class="panel active" id="dashboardPanel">
         <div class="dash-hero">
-          <h1>Welcome back to <span style="color:#38BDF8;">JobSpike</span></h1>
-          <p>Manage your professional resumes, run high-precision ATS audits, and generate executive-grade candidate packages in one unified workspace.</p>
+          <p style="font-size:0.82rem; font-weight:500; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Dashboard</p>
+          <h1>Welcome back<span style="color:#FCD34D;">, {{ user_name }}</span></h1>
+          <p>Run ATS audits, build resumes, and manage your candidate profile from one place.</p>
         </div>
 
         <div class="metrics-grid">
@@ -403,28 +421,28 @@
             <div class="metric-sub">Active ATS Drafts</div>
           </div>
           <div class="metric-card">
-            <div class="metric-title">ATS Audits Completed</div>
+            <div class="metric-title">ATS Audits</div>
             <div class="metric-val" id="dashAuditCount">8</div>
-            <div class="metric-sub">All reports saved</div>
+            <div class="metric-sub">Total reports saved</div>
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
           <div class="card" onclick="switchTab('analyze')" style="cursor:pointer;">
             <div class="card-title">🔍 Resume Analyzer</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Upload your PDF or text resume for instant multi-dimension scoring, keyword gap checks, and radar maps.</p>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Upload your resume for multi-dimension ATS scoring, keyword gap analysis, and radar mapping.</p>
             <span class="btn btn-sm btn-ghost">Run ATS Audit →</span>
           </div>
 
           <div class="card" onclick="switchTab('builder')" style="cursor:pointer;">
             <div class="card-title">✏️ AI Resume Builder</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Build executive resumes with live synchronous preview, AI bullet improvers, and modern templates.</p>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Build executive resumes with live preview, AI bullet suggestions, and modern templates.</p>
             <span class="btn btn-sm btn-ghost">Open Builder →</span>
           </div>
 
           <div class="card" onclick="switchTab('improve')" style="cursor:pointer;">
             <div class="card-title">✨ Side-by-Side Rewrite</div>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:14px;">Compare original vs AI-rewritten bullet points with instant tone toggles and change explanations.</p>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Compare original vs AI-rewritten bullet points with instant tone toggles and change explanations.</p>
             <span class="btn btn-sm btn-ghost">Open AI Rewrite →</span>
           </div>
         </div>
@@ -435,131 +453,135 @@
       <!--  MODULE 2: RESUME ANALYZER                    -->
       <!-- ══════════════════════════════════════════════ -->
       <div class="panel" id="analyzePanel">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <p style="font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:2px;">ATS Analysis</p>
+            <h2 style="font-size:1.4rem; font-weight:700; color:var(--text); margin:0;">Resume Analyzer</h2>
+          </div>
+        </div>
+
         <div class="card">
-          <div class="card-title">🔍 ATS Resume Analyzer</div>
           <div class="upload-zone" id="dropZone" onclick="$('resumeFile').click()">
             <input type="file" id="resumeFile" name="resumeFile" aria-label="Upload resume file" accept=".pdf,.txt" style="display:none">
             <div class="upload-icon">📤</div>
-            <strong style="font-size:1.05rem; color:var(--text);">Drag &amp; drop your resume file here</strong>
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Supported formats: PDF, TXT · Maximum size 10MB</p>
-            <p id="fileLabel" style="font-weight:700; color:var(--primary); margin-top:10px;"></p>
+            <strong style="font-size:1rem; color:var(--text);">Drop your resume here</strong>
+            <p style="font-size:0.82rem; color:var(--text-muted); margin-top:4px;">PDF or TXT · Max 10MB</p>
+            <p id="fileLabel" style="font-weight:600; color:var(--primary); margin-top:8px;"></p>
           </div>
 
-          <div style="margin-top:16px;">
-            <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Target Job Description (Optional)</label>
-            <textarea id="jobDesc" name="jobDesc" aria-label="Target job description" placeholder="Paste the job description to calculate exact keyword matching..." style="width:100%; height:75px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:0.85rem; background:#F8FAFC; margin-top:6px; color:var(--text); font-family:inherit;"></textarea>
+          <div style="margin-top:20px;">
+            <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Target Job Description <span style="font-weight:400; text-transform:none; color:var(--text-muted);">(optional)</span></label>
+            <textarea id="jobDesc" name="jobDesc" aria-label="Target job description" placeholder="Paste the job description for keyword matching..." style="width:100%; height:80px; border:1px solid var(--border); border-radius:12px; padding:12px; font-size:0.85rem; background:var(--bg); margin-top:8px; color:var(--text); font-family:inherit; resize:vertical;"></textarea>
           </div>
 
-          <div style="display:flex; justify-content:flex-end; margin-top:16px;">
-            <button class="btn btn-primary" id="analyzeBtn">🔍 Analyze Resume</button>
+          <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+            <button class="btn btn-primary" id="analyzeBtn">Analyze Resume →</button>
           </div>
         </div>
 
         <!-- Loading state -->
-        <div id="analyzeLoading" style="display:none; text-align:center; padding:40px;">
-          <div style="font-size:2rem; margin-bottom:10px;">⚡</div>
-          <strong style="color:var(--text);">Analyzing Resume Across 6 Core Dimensions…</strong>
+        <div id="analyzeLoading" style="display:none; text-align:center; padding:60px 40px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
+          <div style="font-size:2.4rem; margin-bottom:12px;">⚡</div>
+          <strong style="color:var(--text); font-size:1rem;">Analyzing resume across 6 core dimensions…</strong>
         </div>
 
         <!-- Results Section -->
         <div id="analyzeResults" style="display:none; flex-direction:column; gap:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div>
-              <h2 style="font-size:1.4rem; font-weight:800; color:var(--text);" id="resultsFilename">Evaluation Report</h2>
-              <p style="font-size:0.85rem; color:var(--text-muted);" id="resultsSubtitle">Analyzed successfully</p>
+              <p style="font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:2px;">Analysis Report</p>
+              <h2 style="font-size:1.3rem; font-weight:700; color:var(--text); margin:0;" id="resultsFilename">Evaluation Report</h2>
+              <p style="font-size:0.82rem; color:var(--text-muted); margin-top:2px;" id="resultsSubtitle">Analyzed successfully</p>
             </div>
-            <div style="display:flex; gap:10px;">
-              <button class="btn btn-ghost" onclick="downloadPdfReport()">📥 Download PDF Report</button>
-              <button class="btn btn-primary" onclick="startFixWithAI()">✨ Fix with AI</button>
-            </div>
-          </div>
-
-          <!-- Recruiter Verdict & First Impression Card -->
-          <div class="card" id="recruiterVerdictCard" style="background:linear-gradient(135deg, #1E293B 0%, #0F172A 100%); color:#ffffff;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; padding-bottom:14px; margin-bottom:16px;">
-              <div>
-                <span style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:#38BDF8; letter-spacing:0.08em;">👨‍💼 Recruiter Verdict</span>
-                <h3 style="margin:4px 0 0; font-size:1.2rem; font-weight:800; color:#ffffff;" id="verdictDecisionText">Would I interview this candidate?</h3>
-              </div>
-              <span id="verdictBadge" style="font-size:0.85rem; font-weight:800; padding:6px 14px; border-radius:20px; background:#059669; color:#ffffff;">✓ YES — Strong Candidate</span>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; font-size:0.85rem; line-height:1.5; color:#CBD5E1;">
-              <div>
-                <strong style="color:#F8FAFC; display:block; margin-bottom:4px;">🌟 Top Standout Highlight:</strong>
-                <p id="verdictStandoutText">Clear technical title and professional structure.</p>
-              </div>
-              <div>
-                <strong style="color:#FCA5A5; display:block; margin-bottom:4px;">⚠️ Biggest Area to Fix:</strong>
-                <p id="verdictFixText">Needs stronger quantifiable metrics in experience bullet points.</p>
-              </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-sm btn-ghost" onclick="downloadPdfReport()">📥 PDF Report</button>
+              <button class="btn btn-sm btn-primary" onclick="startFixWithAI()">Fix with AI →</button>
             </div>
           </div>
 
-          <!-- Overview Card + Radar Map -->
+          <!-- Recruiter Verdict -->
+          <div class="card" id="recruiterVerdictCard" style="background:var(--primary); color:#fff;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; margin-bottom:16px;">
+              <div>
+                <p style="font-size:0.72rem; font-weight:600; text-transform:uppercase; color:rgba(255,255,255,0.6); letter-spacing:0.05em; margin-bottom:4px;">Recruiter Verdict</p>
+                <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:#fff;" id="verdictDecisionText">Would I interview this candidate?</h3>
+              </div>
+              <span id="verdictBadge" style="font-size:0.82rem; font-weight:600; padding:6px 16px; border-radius:20px; background:rgba(255,255,255,0.15); color:#fff;">✓ YES — Strong Candidate</span>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; font-size:0.85rem; line-height:1.5; color:rgba(255,255,255,0.8);">
+              <div>
+                <strong style="color:#fff; display:block; margin-bottom:4px; font-size:0.78rem;">🌟 Top Standout Highlight</strong>
+                <p id="verdictStandoutText" style="margin:0;">Clear technical title and professional structure.</p>
+              </div>
+              <div>
+                <strong style="color:#FCA5A5; display:block; margin-bottom:4px; font-size:0.78rem;">⚠️ Biggest Area to Fix</strong>
+                <p id="verdictFixText" style="margin:0;">Needs stronger quantifiable metrics in experience bullet points.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Score Overview + Radar -->
           <div class="card">
             <div class="score-overview-container">
               <div class="score-center">
-                <div style="width:160px; height:160px; margin:0 auto;">
+                <div style="width:140px; height:140px; margin:0 auto;">
                   <canvas id="scoreChart"></canvas>
                 </div>
                 <div class="score-num" id="scoreNum">--</div>
                 <div class="score-lbl">Overall ATS Score</div>
               </div>
-
               <div>
-                <div class="card-title">Core Dimension Breakdown</div>
+                <div class="card-title" style="margin-bottom:12px;">Dimension Breakdown</div>
                 <div id="dimList"></div>
               </div>
-
-              <div style="background:#F8FAFC; border:1px solid var(--border); border-radius:12px; padding:16px; text-align:center;">
-                <div class="card-title" style="margin-bottom:10px;">📊 Dimension Radar Map</div>
-                <div style="max-height:200px; position:relative; display:flex; justify-content:center;">
-                  <canvas id="radarChart" style="max-height:190px;"></canvas>
+              <div style="background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center;">
+                <div class="card-title" style="margin-bottom:12px;">Radar Map</div>
+                <div style="display:flex; justify-content:center;">
+                  <canvas id="radarChart" style="max-height:180px;"></canvas>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Role Competitiveness & Readiness Matrix -->
+          <!-- Role Competitiveness -->
           <div class="card">
-            <div class="card-title">🎯 Target Role Competitiveness &amp; Readiness</div>
-            <div id="competitivenessGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;"></div>
+            <div class="card-title">Target Role Competitiveness</div>
+            <div id="competitivenessGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px;"></div>
           </div>
 
-          <!-- Ranked AI Priority Action List -->
+          <!-- Priority Actions -->
           <div class="card">
-            <div class="card-title">⚡ Ranked AI Priority Action List</div>
-            <div id="priorityActionList" style="display:flex; flex-direction:column; gap:10px;"></div>
+            <div class="card-title">Priority Action List</div>
+            <div id="priorityActionList" style="display:flex; flex-direction:column; gap:8px;"></div>
           </div>
 
-          <!-- Before & After Examples -->
+          <!-- Before & After -->
           <div class="card">
-            <div class="card-title">🔄 Before vs After Bullet Improvements</div>
+            <div class="card-title">Before vs After Bullet Improvements</div>
             <div id="beforeAfterContainer" style="display:flex; flex-direction:column; gap:12px;"></div>
           </div>
 
-          <!-- Detail Cards Grid -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <!-- Strengths & Weaknesses -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
             <div class="card">
-              <div class="card-title" style="color:var(--good);">✓ What's Working Well</div>
+              <div class="card-title" style="color:var(--good);">What's Working Well</div>
               <div id="strengthsList" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
             </div>
             <div class="card">
-              <div class="card-title" style="color:var(--bad);">⚠️ Needs Improvement</div>
+              <div class="card-title" style="color:var(--bad);">Needs Improvement</div>
               <div id="weaknessesList" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
             </div>
           </div>
 
-          <!-- Keyword Suggestions & Gap Matrix -->
+          <!-- Keyword Gap -->
           <div class="card">
-            <div class="card-title">🔑 Keyword Gap Analysis (Matched vs Missing)</div>
+            <div class="card-title">Keyword Gap Analysis</div>
             <div id="keywordGapContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:14px;"></div>
           </div>
 
-          <!-- Improvement Roadmap -->
+          <!-- Roadmap -->
           <div class="card">
-            <div class="card-title">🗺️ Estimated Improvement Roadmap</div>
+            <div class="card-title">Improvement Roadmap</div>
             <div id="roadmapContainer" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px;"></div>
           </div>
         </div>
@@ -569,284 +591,262 @@
       <!-- ══════════════════════════════════════════════ -->
       <!--  MODULE 3: SIDE-BY-SIDE REWRITE                -->
       <!-- ══════════════════════════════════════════════ -->
-      <!-- ══════════════════════════════════════════════ -->
-      <!--  MODULE 3: SIDE-BY-SIDE REWRITE                -->
-      <!-- ══════════════════════════════════════════════ -->
       <div class="panel" id="improvePanel">
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-title">✨ Side-by-Side AI Rewrite Workspace</div>
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-            <div>
-              <label for="rewriteDraftSelect" style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">1. Select Resume Source to Rewrite</label>
-              <div style="display:flex; gap:8px; align-items:center;">
-                <select id="rewriteDraftSelect" name="rewriteDraftSelect" onchange="handleRewriteSourceChange()" style="border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem; font-weight:600; background:#F8FAFC; flex:1;">
-                  <option value="current">📄 Current Analyzed Resume</option>
-                  <option value="upload">📤 Upload New Resume File...</option>
-                </select>
-                <input type="file" id="rewriteFileInput" name="rewriteFileInput" accept=".pdf,.txt" style="display:none" onchange="handleRewriteFileSelect()">
-                <button class="btn btn-sm btn-ghost" onclick="$('rewriteFileInput').click()">📤 Upload File</button>
-              </div>
-              <div id="rewriteFileName" style="font-size:0.75rem; font-weight:600; color:var(--primary); margin-top:4px;">📎 No file selected</div>
-            </div>
-            <div>
-              <label for="rewriteJobDesc" style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:4px;">Target Job Title / Instructions (Optional)</label>
-              <input type="text" id="rewriteJobDesc" name="rewriteJobDesc" placeholder="e.g. Senior DevOps Lead, AWS, Kubernetes..." style="width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; background:#F8FAFC;">
-            </div>
-          </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid var(--border); padding-top:14px;">
-            <div>
-              <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:6px;">2. Select Optimization Mode</label>
-              <div class="tone-bar" style="margin-bottom:0;">
-                <button class="tone-btn active" onclick="selectOptimizationMode(this, 'safe')" title="Grammar, ATS & Wording — 100% Fact Preservation (Zero Metric Hallucinations)">🛡️ Safe Optimization (Default)</button>
-                <button class="tone-btn" onclick="selectOptimizationMode(this, 'role')" title="Tailor resume to target Job Description without claiming unpossessed skills">🎯 Role Optimization</button>
-                <button class="tone-btn" onclick="selectOptimizationMode(this, 'executive')" title="Leadership language & C-suite executive polish">👔 Executive Optimization</button>
-              </div>
-            </div>
-            <div style="display:flex; gap:10px; align-items:center;">
-              <button class="btn btn-primary" id="runOptimizeFullBtn" onclick="openOptimizeFullModal()" style="background:linear-gradient(135deg, #2563EB, #1D4ED8); box-shadow:0 4px 14px rgba(37,99,235,0.3); font-weight:700; padding:10px 18px; border-radius:8px;">🚀 Optimize Entire Resume</button>
-            </div>
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <p style="font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:2px;">AI Rewrite</p>
+            <h2 style="font-size:1.4rem; font-weight:700; color:var(--text); margin:0;">Side-by-Side Rewrite</h2>
           </div>
         </div>
 
-        <div id="rewriteLoading" style="display:none; text-align:center; padding:30px; background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:16px;">
+        <div class="card">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+            <div>
+              <label for="rewriteDraftSelect" style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;">Resume Source</label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <select id="rewriteDraftSelect" name="rewriteDraftSelect" onchange="handleRewriteSourceChange()" style="flex:1; border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:0.82rem; font-weight:500; background:var(--bg); color:var(--text);">
+                  <option value="current">Current Analyzed Resume</option>
+                  <option value="upload">Upload New File...</option>
+                </select>
+                <input type="file" id="rewriteFileInput" name="rewriteFileInput" accept=".pdf,.txt" style="display:none" onchange="handleRewriteFileSelect()">
+                <button class="btn btn-sm btn-ghost" onclick="$('rewriteFileInput').click()">Browse</button>
+              </div>
+              <div id="rewriteFileName" style="font-size:0.75rem; font-weight:500; color:var(--primary); margin-top:6px;"></div>
+            </div>
+            <div>
+              <label for="rewriteJobDesc" style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;">Target Job Title <span style="font-weight:400; text-transform:none;">(optional)</span></label>
+              <input type="text" id="rewriteJobDesc" name="rewriteJobDesc" placeholder="e.g. Senior DevOps Lead, AWS, Kubernetes..." style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:10px; font-size:0.85rem; background:var(--bg); color:var(--text);">
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-top:1px solid var(--border); margin-top:20px; padding-top:16px;">
+            <div>
+              <p style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Optimization Mode</p>
+              <div class="tone-bar" style="margin-bottom:0;">
+                <button class="tone-btn active" onclick="selectOptimizationMode(this, 'safe')">Safe Optimization</button>
+                <button class="tone-btn" onclick="selectOptimizationMode(this, 'role')">Role Optimization</button>
+                <button class="tone-btn" onclick="selectOptimizationMode(this, 'executive')">Executive</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="runOptimizeFullBtn" onclick="openOptimizeFullModal()">Optimize Entire Resume →</button>
+          </div>
+        </div>
+
+        <div id="rewriteLoading" style="display:none; text-align:center; padding:40px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);">
           <div style="font-size:2rem; margin-bottom:8px;">🤖</div>
-          <strong style="color:var(--text);">AI Writer is enhancing your bullet points with strong action verbs &amp; metrics…</strong>
+          <strong style="color:var(--text);">AI is enhancing your bullet points…</strong>
         </div>
 
         <div class="card">
           <div class="rewrite-grid">
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
-                <span style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Original Resume Content</span>
-                <span style="font-size:0.72rem; color:var(--primary); font-weight:600;">Level 1: Improve Selected Section Below</span>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.72rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Original</span>
+                <span style="font-size:0.7rem; color:var(--text-soft);">Select text below to improve</span>
               </div>
-              <!-- Level 1 Inline Controls -->
-              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; background:#F1F5F9; padding:6px 8px; border-radius:8px; align-items:center;">
-                <span style="font-size:0.72rem; font-weight:700; color:var(--text-muted); margin-right:4px;">✨ IMPROVE:</span>
-                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('improve_bullet')" title="Improve selected bullet or text" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">✨ Improve</button>
-                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('quantify_bullet')" title="Add metrics & business impact" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">📈 Quantify</button>
-                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('ats_polish')" title="Optimize keywords for ATS" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">🎯 ATS</button>
-                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('fix_grammar')" title="Fix grammar & spelling" style="font-size:0.75rem; padding:3px 8px; background:#FFFFFF;">✔ Grammar</button>
+              <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; background:var(--bg); padding:6px 8px; border-radius:10px; align-items:center;">
+                <span style="font-size:0.7rem; font-weight:600; color:var(--text-muted); margin-right:4px;">Improve:</span>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('improve_bullet')" style="font-size:0.72rem; padding:3px 10px;">Improve</button>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('quantify_bullet')" style="font-size:0.72rem; padding:3px 10px;">Quantify</button>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('ats_polish')" style="font-size:0.72rem; padding:3px 10px;">ATS</button>
+                <button class="btn btn-sm btn-ghost" onclick="executeInlineImprove('fix_grammar')" style="font-size:0.72rem; padding:3px 10px;">Grammar</button>
               </div>
-              <textarea class="editor-box" id="originalPreview" name="originalPreview" aria-label="Original resume content" placeholder="Upload a resume file above or paste original resume content here..." style="width:100%; border:1px solid var(--border); border-radius:8px; padding:12px; font-family:inherit; resize:vertical;"></textarea>
+              <textarea class="editor-box" id="originalPreview" name="originalPreview" aria-label="Original resume content" placeholder="Upload a resume file above or paste content here..." style="width:100%; border:1px solid var(--border); border-radius:12px; padding:14px; font-family:inherit; resize:vertical;"></textarea>
             </div>
             <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span style="font-size:0.78rem; font-weight:700; color:var(--primary); text-transform:uppercase;">AI Enhanced Version</span>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.72rem; font-weight:600; color:var(--primary); text-transform:uppercase; letter-spacing:0.05em;">AI Enhanced</span>
                 <div style="display:flex; gap:6px;">
-                  <button class="btn btn-sm btn-ghost" onclick="copyRewrittenText()">📋 Copy Text</button>
-                  <button class="btn btn-sm btn-ghost" onclick="exportDocx()">📄 Download DOCX</button>
-                  <button class="btn btn-sm btn-primary" onclick="exportRewrittenPdf()">📥 Export PDF</button>
+                  <button class="btn btn-sm btn-ghost" onclick="copyRewrittenText()">Copy</button>
+                  <button class="btn btn-sm btn-ghost" onclick="exportDocx()">DOCX</button>
+                  <button class="btn btn-sm btn-primary" onclick="exportRewrittenPdf()">PDF</button>
                 </div>
               </div>
-              <div class="editor-box" id="improvedPreview" style="border:1px solid var(--border); border-radius:8px; padding:12px; background:#F8FAFC; overflow-y:auto; font-family:inherit;">Rewritten AI version will appear here...</div>
+              <div class="editor-box" id="improvedPreview" style="border:1px solid var(--border); border-radius:12px; padding:14px; background:var(--bg); overflow-y:auto; font-family:inherit;">Rewritten AI version will appear here...</div>
             </div>
           </div>
 
-          <!-- Rationale Card -->
-          <div id="rewriteRationaleCard" style="display:none; margin-top:20px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:16px;">
-            <strong style="font-size:0.88rem; color:#166534; display:block; margin-bottom:8px;">💡 AI Improvement Rationale ("Why these changes were made")</strong>
-            <ul id="rewriteRationaleList" style="font-size:0.82rem; color:#15803D; padding-left:18px; line-height:1.6;"></ul>
+          <div id="rewriteRationaleCard" style="display:none; margin-top:20px; background:var(--good-bg); border:1px solid var(--good); border-radius:12px; padding:16px;">
+            <strong style="font-size:0.85rem; color:var(--good); display:block; margin-bottom:8px;">AI Improvement Rationale</strong>
+            <ul id="rewriteRationaleList" style="font-size:0.82rem; color:var(--text); padding-left:18px; line-height:1.6;"></ul>
           </div>
         </div>
       </div><!-- /#improvePanel -->
 
 
       <!-- ══════════════════════════════════════════════ -->
-      <!--  MODULE 4: 3-COLUMN RESUME BUILDER             -->
-      <!-- ══════════════════════════════════════════════ -->
-      <!-- ══════════════════════════════════════════════ -->
-      <!--  MODULE 4: 3-COLUMN RESUME BUILDER (CANVA × NOTION) -->
+      <!--  MODULE 4: RESUME BUILDER                     -->
       <!-- ══════════════════════════════════════════════ -->
       <div class="panel" id="builderPanel">
-        <!-- Top Draft Toolbar & Resume Library Studio -->
-        <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <p style="font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:2px;">Resume Builder</p>
+            <h2 style="font-size:1.4rem; font-weight:700; color:var(--text); margin:0;">Build Your Resume</h2>
+          </div>
+        </div>
+
+        <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
             <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:300px;">
-              <select id="builderDraftSelect" name="builderDraftSelect" aria-label="Select saved resume" onchange="loadSelectedDraft()" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#F8FAFC; color:var(--text);">
-                <option value="new">+ Create New Resume Draft</option>
+              <select id="builderDraftSelect" name="builderDraftSelect" aria-label="Select saved resume" onchange="loadSelectedDraft()" style="border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:0.85rem; font-weight:500; background:var(--bg); color:var(--text); flex:1; max-width:260px;">
+                <option value="new">+ Create New Draft</option>
               </select>
-              <input type="text" id="builderTitle" name="builderTitle" aria-label="Resume Title" value="Untitled Resume" oninput="triggerAutosave()" style="border:1px solid var(--border); border-radius:8px; padding:8px 12px; font-size:0.85rem; font-weight:700; background:#F8FAFC; color:var(--text); width:200px;">
-              <span id="autosaveStatus" style="font-size:0.75rem; font-weight:600; color:var(--good); display:flex; align-items:center; gap:4px;">
-                ✓ Autosaved
-              </span>
+              <input type="text" id="builderTitle" name="builderTitle" aria-label="Resume Title" value="Untitled Resume" oninput="triggerAutosave()" style="border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:0.85rem; font-weight:500; background:var(--bg); color:var(--text); width:180px;">
+              <span id="autosaveStatus" style="font-size:0.75rem; font-weight:500; color:var(--good);">Saved</span>
             </div>
-
-            <div style="display:flex; align-items:center; gap:8px;">
-              <button class="btn btn-sm btn-ghost" onclick="undoBuilderState()" title="Undo (Ctrl+Z)">↩️ Undo</button>
-              <button class="btn btn-sm btn-ghost" onclick="redoBuilderState()" title="Redo (Ctrl+Y)">↪️ Redo</button>
-              <button class="btn btn-sm btn-primary" onclick="saveResumeDraft()">💾 Save Draft</button>
-              <button class="btn btn-sm btn-ghost" onclick="duplicateCurrentDraft()">📄 Duplicate</button>
-              <button class="btn btn-sm btn-ghost" onclick="deleteCurrentDraft()" style="color:var(--bad);">🗑️ Delete</button>
-              <button class="btn btn-sm btn-ghost" onclick="exportBuilderPdf()">📥 Export PDF</button>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="btn btn-sm btn-ghost" onclick="undoBuilderState()">Undo</button>
+              <button class="btn btn-sm btn-ghost" onclick="redoBuilderState()">Redo</button>
+              <button class="btn btn-sm btn-primary" onclick="saveResumeDraft()">Save Draft</button>
+              <button class="btn btn-sm btn-ghost" onclick="duplicateCurrentDraft()">Duplicate</button>
+              <button class="btn btn-sm btn-ghost" onclick="deleteCurrentDraft()" style="color:var(--bad);">Delete</button>
+              <button class="btn btn-sm btn-ghost" onclick="exportBuilderPdf()">Export PDF</button>
             </div>
           </div>
         </div>
 
-        <!-- 3-Column Workstation Grid -->
-        <div style="display:grid; grid-template-columns: 220px 1fr 1.2fr; gap:16px; align-items:start;">
-
-          <!-- PANEL 1 (LEFT): Section Navigation & Reordering -->
+        <div class="builder-workspace">
           <div style="display:flex; flex-direction:column; gap:8px;">
             <div class="card" style="padding:14px;">
-              <div style="font-size:0.72rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); margin-bottom:10px;">Sections &amp; Order</div>
+              <p style="font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); margin-bottom:10px;">Sections</p>
               <div id="sectionNavList" style="display:flex; flex-direction:column; gap:4px;">
-                <button class="builder-sec-btn active" onclick="scrollToSection('secPersonalInfo')">👤 Personal Info <span id="valPersonalInfo" style="font-size:0.7rem; color:var(--good);">✓</span></button>
-                <button class="builder-sec-btn" onclick="scrollToSection('secSummary')">📝 Summary <span id="valSummary" style="font-size:0.7rem; color:var(--good);">✓</span></button>
-                <button class="builder-sec-btn" onclick="scrollToSection('secExperience')">💼 Experience <span id="valExperience" style="font-size:0.7rem; color:var(--good);">✓</span></button>
-                <button class="builder-sec-btn" onclick="scrollToSection('secEducation')">🎓 Education <span id="valEducation" style="font-size:0.7rem; color:var(--good);">✓</span></button>
-                <button class="builder-sec-btn" onclick="scrollToSection('secSkills')">🛠️ Skills <span id="valSkills" style="font-size:0.7rem; color:var(--good);">✓</span></button>
-                <button class="builder-sec-btn" onclick="scrollToSection('secProjects')">🚀 Projects</button>
-                <button class="builder-sec-btn" onclick="scrollToSection('secCertifications')">📜 Certifications</button>
+                <button class="builder-sec-btn active" onclick="scrollToSection('secPersonalInfo')">Personal Info <span id="valPersonalInfo" style="font-size:0.7rem; color:var(--good);">✓</span></button>
+                <button class="builder-sec-btn" onclick="scrollToSection('secSummary')">Summary <span id="valSummary" style="font-size:0.7rem; color:var(--good);">✓</span></button>
+                <button class="builder-sec-btn" onclick="scrollToSection('secExperience')">Experience <span id="valExperience" style="font-size:0.7rem; color:var(--good);">✓</span></button>
+                <button class="builder-sec-btn" onclick="scrollToSection('secEducation')">Education <span id="valEducation" style="font-size:0.7rem; color:var(--good);">✓</span></button>
+                <button class="builder-sec-btn" onclick="scrollToSection('secSkills')">Skills <span id="valSkills" style="font-size:0.7rem; color:var(--good);">✓</span></button>
+                <button class="builder-sec-btn" onclick="scrollToSection('secProjects')">Projects</button>
+                <button class="builder-sec-btn" onclick="scrollToSection('secCertifications')">Certifications</button>
               </div>
             </div>
           </div>
 
-          <!-- PANEL 2 (CENTER): High-Density Editor Workspace -->
           <div style="display:flex; flex-direction:column; gap:16px;">
-            
-            <!-- Personal Info Card -->
             <div class="card" id="secPersonalInfo">
-              <div class="card-title">👤 Personal Information</div>
+              <div class="card-title">Personal Information</div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div style="grid-column:span 2; display:flex; align-items:center; gap:12px; background:#F8FAFC; border:1px solid var(--border); padding:8px 12px; border-radius:8px;">
+                <div style="grid-column:span 2; display:flex; align-items:center; gap:12px; background:var(--bg); border:1px solid var(--border); padding:8px 12px; border-radius:10px;">
                   <input type="file" id="bPhotoInput" name="bPhotoInput" aria-label="Upload profile picture" accept="image/*" style="display:none" onchange="handlePhotoUpload()">
-                  <div id="bPhotoPreview" style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-weight:800; font-size:12px;">PHOTO</div>
+                  <div id="bPhotoPreview" style="width:38px; height:38px; border-radius:50%; background:var(--primary); color:#fff; display:grid; place-items:center; font-weight:700; font-size:11px;">PH</div>
                   <div>
-                    <button class="btn btn-sm btn-ghost" onclick="$('bPhotoInput').click()">📷 Upload Photo</button>
-                    <span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-top:2px;">Optional · Automatically hidden on strict ATS templates</span>
+                    <button class="btn btn-sm btn-ghost" onclick="$('bPhotoInput').click()">Upload Photo</button>
+                    <span style="font-size:0.7rem; color:var(--text-muted); display:block; margin-top:2px;">Optional</span>
                   </div>
                 </div>
-                <input type="text" id="bFullName" name="bFullName" aria-label="Full Name" placeholder="Full Name *" oninput="handleFormChange()" style="grid-column:span 2; padding:8px; border:1px solid var(--border); border-radius:6px; font-weight:600;">
-                <input type="text" id="bTargetRole" name="bTargetRole" aria-label="Target Job Title" placeholder="Target Job Title *" oninput="handleFormChange()" style="grid-column:span 2; padding:8px; border:1px solid var(--border); border-radius:6px; font-weight:600;">
-                <input type="email" id="bEmail" name="bEmail" aria-label="Email Address" placeholder="Email *" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
-                <input type="tel" id="bPhone" name="bPhone" aria-label="Phone Number" placeholder="Phone *" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
-                <input type="text" id="bLocation" name="bLocation" aria-label="Location" placeholder="Location (e.g. New York, NY)" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
-                <input type="text" id="bLinkedin" name="bLinkedin" aria-label="LinkedIn Profile URL" placeholder="LinkedIn URL" oninput="handleFormChange()" style="padding:8px; border:1px solid var(--border); border-radius:6px;">
+                <input type="text" id="bFullName" name="bFullName" aria-label="Full Name" placeholder="Full Name *" oninput="handleFormChange()" style="grid-column:span 2; padding:10px; border:1px solid var(--border); border-radius:10px; font-weight:600; font-size:0.88rem; background:var(--bg); color:var(--text);">
+                <input type="text" id="bTargetRole" name="bTargetRole" aria-label="Target Job Title" placeholder="Target Job Title *" oninput="handleFormChange()" style="grid-column:span 2; padding:10px; border:1px solid var(--border); border-radius:10px; font-weight:600; font-size:0.88rem; background:var(--bg); color:var(--text);">
+                <input type="email" id="bEmail" name="bEmail" aria-label="Email Address" placeholder="Email *" oninput="handleFormChange()" style="padding:10px; border:1px solid var(--border); border-radius:10px; font-size:0.85rem; background:var(--bg); color:var(--text);">
+                <input type="tel" id="bPhone" name="bPhone" aria-label="Phone Number" placeholder="Phone *" oninput="handleFormChange()" style="padding:10px; border:1px solid var(--border); border-radius:10px; font-size:0.85rem; background:var(--bg); color:var(--text);">
+                <input type="text" id="bLocation" name="bLocation" aria-label="Location" placeholder="Location" oninput="handleFormChange()" style="padding:10px; border:1px solid var(--border); border-radius:10px; font-size:0.85rem; background:var(--bg); color:var(--text);">
+                <input type="text" id="bLinkedin" name="bLinkedin" aria-label="LinkedIn Profile URL" placeholder="LinkedIn URL" oninput="handleFormChange()" style="padding:10px; border:1px solid var(--border); border-radius:10px; font-size:0.85rem; background:var(--bg); color:var(--text);">
               </div>
             </div>
 
-            <!-- Professional Summary Card -->
             <div class="card" id="secSummary">
               <div class="card-title" style="justify-content:space-between;">
-                <span>📝 Professional Summary</span>
+                <span>Professional Summary</span>
                 <div style="display:flex; gap:6px;">
-                  <button class="btn btn-sm btn-ghost" onclick="aiAssist('generate_summary', 'bSummary')">🤖 AI Generate</button>
-                  <button class="btn btn-sm btn-ghost" onclick="aiAssist('fix_grammar', 'bSummary')">🧹 Fix Grammar</button>
+                  <button class="btn btn-sm btn-ghost" onclick="aiAssist('generate_summary', 'bSummary')">AI Generate</button>
+                  <button class="btn btn-sm btn-ghost" onclick="aiAssist('fix_grammar', 'bSummary')">Fix Grammar</button>
                 </div>
               </div>
-              <textarea id="bSummary" name="bSummary" aria-label="Professional Summary" placeholder="Concise summary highlighting your core expertise and business impact..." oninput="handleFormChange()" style="width:100%; height:90px; padding:10px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.88rem;"></textarea>
+              <textarea id="bSummary" name="bSummary" aria-label="Professional Summary" placeholder="Concise summary highlighting your core expertise and business impact..." oninput="handleFormChange()" style="width:100%; height:90px; padding:12px; border:1px solid var(--border); border-radius:12px; font-family:inherit; font-size:0.85rem; background:var(--bg); color:var(--text); resize:vertical;"></textarea>
             </div>
 
-            <!-- Work Experience Card -->
             <div class="card" id="secExperience">
               <div class="card-title" style="justify-content:space-between;">
-                <span>💼 Work Experience</span>
-                <button class="btn btn-sm btn-primary" onclick="addExperienceRow()">+ Add Experience</button>
+                <span>Work Experience</span>
+                <button class="btn btn-sm btn-primary" onclick="addExperienceRow()">Add Experience</button>
               </div>
               <div id="experienceList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
-            <!-- Education Card -->
             <div class="card" id="secEducation">
               <div class="card-title" style="justify-content:space-between;">
-                <span>🎓 Education</span>
-                <button class="btn btn-sm btn-primary" onclick="addEducationRow()">+ Add Education</button>
+                <span>Education</span>
+                <button class="btn btn-sm btn-primary" onclick="addEducationRow()">Add Education</button>
               </div>
               <div id="educationList" style="display:flex; flex-direction:column; gap:10px;"></div>
             </div>
 
-            <!-- Skills Card -->
             <div class="card" id="secSkills">
-              <div class="card-title">🛠️ Skills &amp; Competencies</div>
-              <textarea id="bSkills" name="bSkills" aria-label="Skills & Competencies" placeholder="Python, Kubernetes, AWS, Terraform, CI/CD Pipelines, System Architecture..." oninput="handleFormChange()" style="width:100%; height:70px; padding:8px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:0.88rem;"></textarea>
+              <div class="card-title">Skills &amp; Competencies</div>
+              <textarea id="bSkills" name="bSkills" aria-label="Skills & Competencies" placeholder="Python, Kubernetes, AWS, Terraform, CI/CD Pipelines, System Architecture..." oninput="handleFormChange()" style="width:100%; height:70px; padding:12px; border:1px solid var(--border); border-radius:12px; font-family:inherit; font-size:0.85rem; background:var(--bg); color:var(--text); resize:vertical;"></textarea>
             </div>
 
-            <!-- Projects Card -->
             <div class="card" id="secProjects">
               <div class="card-title" style="justify-content:space-between;">
-                <span>🚀 Key Projects</span>
-                <button class="btn btn-sm btn-primary" onclick="addProjectRow()">+ Add Project</button>
+                <span>Key Projects</span>
+                <button class="btn btn-sm btn-primary" onclick="addProjectRow()">Add Project</button>
               </div>
               <div id="projectsList" style="display:flex; flex-direction:column; gap:10px;"></div>
             </div>
-
           </div>
 
-          <!-- PANEL 3 (RIGHT): Live Document Preview Studio -->
           <div style="position:sticky; top:80px; align-self:start; display:flex; flex-direction:column; gap:12px;">
-            
-            <!-- Formatting Studio Toolbar -->
-            <div class="card" style="padding:14px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <!-- Template Picker -->
+            <div class="card" style="padding:16px;">
+              <div style="display:flex; flex-direction:column; gap:12px;">
                 <div>
-                  <label style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:4px;">Template Style</label>
-                  <select id="builderTemplateSelect" name="builderTemplateSelect" aria-label="Select resume template" onchange="changeTemplate(this.value)" style="border:1px solid var(--border); border-radius:6px; padding:6px 10px; font-size:0.82rem; font-weight:700; color:var(--primary); background:#EFF6FF;">
-                    <option value="modern">Modern Executive 👔</option>
-                    <option value="minimal">Clean Minimalist 📄</option>
-                    <option value="tech">Tech Specialist 💻</option>
-                    <option value="corporate">Corporate Elite 🏢</option>
-                    <option value="creative">Creative Elegant 🎨</option>
-                    <option value="ats">ATS Professional 🎯</option>
+                  <label style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); display:block; margin-bottom:4px;">Template</label>
+                  <select id="builderTemplateSelect" name="builderTemplateSelect" aria-label="Select resume template" onchange="changeTemplate(this.value)" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:6px 10px; font-size:0.8rem; font-weight:500; background:var(--bg); color:var(--text);">
+                    <option value="modern">Modern Executive</option>
+                    <option value="minimal">Clean Minimalist</option>
+                    <option value="tech">Tech Specialist</option>
+                    <option value="corporate">Corporate Elite</option>
+                    <option value="creative">Creative Elegant</option>
+                    <option value="ats">ATS Professional</option>
                   </select>
                 </div>
-
-                <!-- Accent Color Picker -->
                 <div>
-                  <label style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:4px;">Accent Color</label>
+                  <label style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); display:block; margin-bottom:4px;">Accent</label>
                   <div style="display:flex; gap:6px;">
-                    <button onclick="changeAccentColor('#2563EB')" style="width:20px; height:20px; border-radius:50%; background:#2563EB; border:none; cursor:pointer;" title="Royal Blue"></button>
-                    <button onclick="changeAccentColor('#10B981')" style="width:20px; height:20px; border-radius:50%; background:#10B981; border:none; cursor:pointer;" title="Emerald Green"></button>
-                    <button onclick="changeAccentColor('#6366F1')" style="width:20px; height:20px; border-radius:50%; background:#6366F1; border:none; cursor:pointer;" title="Indigo"></button>
-                    <button onclick="changeAccentColor('#E11D48')" style="width:20px; height:20px; border-radius:50%; background:#E11D48; border:none; cursor:pointer;" title="Ruby"></button>
-                    <button onclick="changeAccentColor('#334155')" style="width:20px; height:20px; border-radius:50%; background:#334155; border:none; cursor:pointer;" title="Charcoal"></button>
+                    <button onclick="changeAccentColor('#1E3A5F')" style="width:22px; height:22px; border-radius:50%; background:#1E3A5F; border:2px solid var(--border); cursor:pointer;" title="Deep Cobalt"></button>
+                    <button onclick="changeAccentColor('#10B981')" style="width:22px; height:22px; border-radius:50%; background:#10B981; border:2px solid var(--border); cursor:pointer;" title="Emerald"></button>
+                    <button onclick="changeAccentColor('#6366F1')" style="width:22px; height:22px; border-radius:50%; background:#6366F1; border:2px solid var(--border); cursor:pointer;" title="Indigo"></button>
+                    <button onclick="changeAccentColor('#E11D48')" style="width:22px; height:22px; border-radius:50%; background:#E11D48; border:2px solid var(--border); cursor:pointer;" title="Ruby"></button>
+                    <button onclick="changeAccentColor('#334155')" style="width:22px; height:22px; border-radius:50%; background:#334155; border:2px solid var(--border); cursor:pointer;" title="Charcoal"></button>
                   </div>
                 </div>
-
-                <!-- Font Picker -->
                 <div>
-                  <label style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:4px;">Font Family</label>
-                  <select id="builderFontSelect" name="builderFontSelect" aria-label="Select font family" onchange="changeFontFamily(this.value)" style="border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-size:0.82rem; background:#F8FAFC;">
+                  <label style="font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted); display:block; margin-bottom:4px;">Font</label>
+                  <select id="builderFontSelect" name="builderFontSelect" aria-label="Select font family" onchange="changeFontFamily(this.value)" style="width:100%; border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:0.8rem; background:var(--bg); color:var(--text);">
                     <option value="Inter">Inter</option>
                     <option value="Plus Jakarta Sans">Plus Jakarta</option>
                     <option value="Roboto">Roboto</option>
-                    <option value="Merriweather">Merriweather (Serif)</option>
+                    <option value="Merriweather">Merriweather</option>
                     <option value="Space Grotesk">Space Grotesk</option>
                   </select>
                 </div>
               </div>
             </div>
 
-            <!-- Floating Metrics & Page Indicators -->
-            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-size:0.8rem; font-weight:700;">
-              <span style="color:var(--primary);" id="liveResumeScoreBadge">🎯 Score: 88/100</span>
-              <span style="color:var(--text-muted);" id="liveWordCount">Words: 0 | Chars: 0</span>
-              <span style="color:var(--good);" id="livePageIndicator">📄 Est. Pages: 1.0</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 14px; font-size:0.78rem;">
+              <span style="color:var(--primary); font-weight:600;" id="liveResumeScoreBadge">Score: 88/100</span>
+              <span style="color:var(--text-muted);" id="liveWordCount">Words: 0</span>
+              <span style="color:var(--good); font-weight:500;" id="livePageIndicator">Pages: 1.0</span>
             </div>
-            <div id="pageWarningBanner" style="display:none; background:#FFFBEB; border:1px solid #FDE68A; color:#D97706; padding:8px 12px; border-radius:8px; font-size:0.78rem; font-weight:600;">
-              ⚠️ Resume exceeds 2 pages — consider trimming bullet points for optimal ATS scoring.
-            </div>
-
-            <!-- WYSIWYG Live A4 Document Preview Canvas -->
-            <div class="preview-canvas" id="resumeDocumentPreview" style="background:#ffffff; color:#0f172a; border:1px solid var(--border); border-radius:12px; padding:36px; min-height:750px; box-shadow:var(--shadow-lg); transition:all 0.2s;">
-              <!-- Synchronized Live Document Preview -->
+            <div id="pageWarningBanner" style="display:none; background:var(--warn-bg); border:1px solid var(--warn); color:var(--warn); padding:8px 12px; border-radius:10px; font-size:0.78rem; font-weight:500;">
+              Resume exceeds 2 pages — consider trimming for optimal ATS scoring.
             </div>
 
+            <div class="preview-canvas" id="resumeDocumentPreview"></div>
           </div>
-
         </div>
       </div><!-- /#builderPanel -->
 
 
       <!-- ══════════════════════════════════════════════ -->
-      <!--  MODULE 5: EMPLOYER PORTAL PREVIEW             -->
+      <!--  MODULE 5: EMPLOYER PORTAL                    -->
       <!-- ══════════════════════════════════════════════ -->
       <div class="panel" id="employerPanel">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <p style="font-size:0.8rem; font-weight:500; color:var(--text-muted); margin-bottom:2px;">Employer</p>
+            <h2 style="font-size:1.4rem; font-weight:700; color:var(--text); margin:0;">Employer Portal</h2>
+          </div>
+        </div>
         <div class="card">
-          <div class="card-title">🏢 Candidate Search &amp; Employer Portal</div>
-          <p style="color:var(--text-muted); font-size:0.9rem;">Employer candidate search and job portal integration.</p>
+          <p style="color:var(--text-muted); font-size:0.9rem;">Candidate search and job portal integration coming soon.</p>
         </div>
       </div><!-- /#employerPanel -->
 
@@ -939,7 +939,8 @@
 
   {% if is_authenticated %}
 
-
+  <!-- ── DASHBOARD JAVASCRIPT ── -->
+  <script>
     // ── GUEST RESUME AUTOMATED HANDSHAKE ──
     document.addEventListener('DOMContentLoaded', () => {
       try {
@@ -991,8 +992,6 @@
         console.error("Handshake execution error:", err);
       }
     });
-  <!-- ── DASHBOARD JAVASCRIPT ── -->
-  <script>
     // Helper to grab DOM components
     const $ = id => document.getElementById(id);
     
@@ -1084,7 +1083,7 @@
         data: {
           datasets: [{
             data: [score, 100 - score],
-            backgroundColor: ['#2563EB', '#E2E8F0'],
+            backgroundColor: ['#1E3A5F', '#E8E4DE'],
             borderWidth: 0
           }]
         },
@@ -1115,19 +1114,19 @@
       const compGrid = $('competitivenessGrid');
       if (compGrid) {
         compGrid.innerHTML = `
-          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+          <div style="background:var(--bg); border:1px solid var(--border); padding:12px; border-radius:10px;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">JUNIOR ROLES</div>
             <div style="font-size:1.2rem; font-weight:800; color:var(--good);">${comp.junior_readiness || 90}%</div>
           </div>
-          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+          <div style="background:var(--bg); border:1px solid var(--border); padding:12px; border-radius:10px;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">MID-LEVEL ROLES</div>
             <div style="font-size:1.2rem; font-weight:800; color:var(--primary);">${comp.mid_readiness || 85}%</div>
           </div>
-          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+          <div style="background:var(--bg); border:1px solid var(--border); padding:12px; border-radius:10px;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">SENIOR ROLES</div>
             <div style="font-size:1.2rem; font-weight:800; color:var(--warn);">${comp.senior_readiness || 72}%</div>
           </div>
-          <div style="background:#F8FAFC; border:1px solid var(--border); padding:12px; border-radius:10px;">
+          <div style="background:var(--bg); border:1px solid var(--border); padding:12px; border-radius:10px;">
             <div style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">FAANG / TIER 1</div>
             <div style="font-size:1.2rem; font-weight:800; color:#8B5CF6;">${comp.faang_readiness || 68}%</div>
           </div>
@@ -1139,7 +1138,7 @@
       const palList = $('priorityActionList');
       if (palList) {
         palList.innerHTML = pal.map(item => `
-          <div style="background:#F8FAFC; border:1px solid var(--border); border-left:4px solid var(--primary); padding:12px 16px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+          <div style="background:var(--bg); border:1px solid var(--border); border-left:4px solid var(--primary); padding:12px 16px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
             <div>
               <strong style="font-size:0.88rem; color:var(--text);">Priority ${item.priority}: ${escHtml(item.recommendation)}</strong>
               <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Time: ${item.time_required || '15m'} · Difficulty: ${item.difficulty || 'Easy'}</div>
@@ -1154,7 +1153,7 @@
       const baeContainer = $('beforeAfterContainer');
       if (baeContainer) {
         baeContainer.innerHTML = bae.map(item => `
-          <div style="background:#F8FAFC; border:1px solid var(--border); padding:14px; border-radius:10px; font-size:0.85rem;">
+          <div style="background:var(--bg); border:1px solid var(--border); padding:14px; border-radius:10px; font-size:0.85rem;">
             <div style="color:var(--bad); margin-bottom:4px;"><strong>❌ Original:</strong> "${escHtml(item.original)}"</div>
             <div style="color:var(--good); margin-bottom:6px;"><strong>✅ AI Improved:</strong> "${escHtml(item.improved)}"</div>
             <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">💡 Rationale: ${escHtml(item.explanation)}</div>
@@ -1222,34 +1221,40 @@
 
     async function refreshGlobalResumeLibrary() {
       try {
+        const sidebarList = $('historyList');
+        if (!sidebarList) return;
+        sidebarList.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">Loading saved analyses…</div>';
+
         const res = await fetch('/api/resumes');
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.error('refreshGlobalResumeLibrary: API returned', res.status, res.statusText);
+          const errText = await res.text().catch(() => '');
+          console.error('Response body:', errText);
+          sidebarList.innerHTML = '<div style="font-size:0.75rem; color:var(--bad); padding:8px;">Failed to load analyses. Try refreshing the page.</div>';
+          return;
+        }
         globalResumes = await res.json();
 
-        // 1. Sidebar History List
-        const sidebarList = $('historyList');
-        if (sidebarList) {
-          sidebarList.innerHTML = '';
-          if (globalResumes.length === 0) {
-            sidebarList.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">No saved resumes yet</div>';
-          } else {
-            globalResumes.forEach(item => {
-              const div = document.createElement('div');
-              div.className = 'history-item' + (item.id === activeResumeId ? ' active' : '');
-              div.setAttribute('onclick', `selectGlobalResume(${item.id})`);
-              div.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; transition:background 0.15s;';
-              const score = item.overall_score || (item.analysis ? item.analysis.overall_score : 80);
-              div.innerHTML = `
-                <div class="history-score-badge" style="background:#EFF6FF; color:#2563EB; width:26px; height:26px; border-radius:6px; display:grid; place-items:center; font-weight:800; font-size:0.72rem; flex-shrink:0;">${score}</div>
-                <div class="history-info" style="flex:1; min-width:0;">
-                  <div class="history-name" style="font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(item.title || item.filename)}</div>
-                  <div class="history-meta" style="font-size:0.7rem; color:var(--text-muted);">${fmtDate(item.updated_at || item.created_at)}</div>
-                </div>
-                <button class="history-action-btn" onclick="deleteGlobalResume(event, ${item.id})" title="Delete saved resume" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px 6px; border-radius:4px; font-size:0.85rem;">🗑️</button>
-              `;
-              sidebarList.appendChild(div);
-            });
-          }
+        sidebarList.innerHTML = '';
+        if (globalResumes.length === 0) {
+          sidebarList.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">No saved resumes yet</div>';
+        } else {
+          globalResumes.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item' + (item.id === activeResumeId ? ' active' : '');
+            div.setAttribute('onclick', `selectGlobalResume(${item.id})`);
+            div.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; font-size:0.8rem; cursor:pointer; margin-bottom:4px; transition:background 0.15s;';
+            const score = item.overall_score || (item.analysis ? item.analysis.overall_score : 80);
+            div.innerHTML = `
+              <div class="history-score-badge" style="background:#EFF6FF; color:#2563EB; width:26px; height:26px; border-radius:6px; display:grid; place-items:center; font-weight:800; font-size:0.72rem; flex-shrink:0;">${score}</div>
+              <div class="history-info" style="flex:1; min-width:0;">
+                <div class="history-name" style="font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escHtml(item.title || item.filename)}</div>
+                <div class="history-meta" style="font-size:0.7rem; color:var(--text-muted);">${fmtDate(item.updated_at || item.created_at)}</div>
+              </div>
+              <button class="history-action-btn" onclick="deleteGlobalResume(event, ${item.id})" title="Delete saved resume" style="background:none; border:none; color:var(--text-muted); cursor:pointer; padding:4px 6px; border-radius:4px; font-size:0.85rem;">🗑️</button>
+            `;
+            sidebarList.appendChild(div);
+          });
         }
 
         // 2. Resume Builder Dropdown
@@ -1283,7 +1288,11 @@
         const dashCount = $('dashAuditCount');
         if (dashCount) dashCount.textContent = globalResumes.length;
 
-      } catch (e) {}
+      } catch (e) {
+        console.error('refreshGlobalResumeLibrary error:', e);
+        const sb = $('historyList');
+        if (sb) sb.innerHTML = '<div style="font-size:0.75rem; color:var(--bad); padding:8px;">Failed to load saved analyses.</div>';
+      }
     }
 
     async function selectGlobalResume(resumeId) {
@@ -1303,7 +1312,7 @@
           if ($('builderTitle')) $('builderTitle').value = item.title;
         }
         refreshGlobalResumeLibrary();
-      } catch (e) {}
+      } catch (e) { console.error(e); }
     }
 
     async function deleteGlobalResume(event, resumeId) {
@@ -1366,9 +1375,9 @@
               select.innerHTML += `<option value="${item.id}">📄 ${escHtml(name)}${scoreText}</option>`;
             });
           }
-        } catch (ed) {}
+        } catch (ed) { console.error(ed); }
 
-      } catch (e) {}
+      } catch (e) { console.error(e); }
     }
 
     async function handleRewriteSourceChange() {
@@ -1406,7 +1415,7 @@
             }
             $('originalPreview').value = text;
           }
-        } catch (e) {}
+        } catch (e) { console.error(e); }
       }
     }
 
@@ -1584,19 +1593,19 @@
       <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:8px;">Select Optimization Goals:</label>
       
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optAtsKeywords" checked> 🎯 ATS Keywords
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optExecutiveTone" checked> 👔 Executive Tone
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optQuantify" checked> 📈 Quantify Impact
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optActionVerbs" checked> ⚡ Action Verbs
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
           <input type="checkbox" id="optGrammar" checked> ✔ Grammar & Consistency Cleanup
         </label>
       </div>
@@ -1684,7 +1693,7 @@
       const div = document.createElement('div');
       div.className = 'builder-item-card';
       div.id = id;
-      div.style.cssText = 'background:#F8FAFC; border:1px solid var(--border); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; position:relative;';
+      div.style.cssText = 'background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px; display:flex; flex-direction:column; gap:6px; position:relative;';
       div.innerHTML = `
         <button onclick="this.parentElement.remove(); handleFormChange();" style="position:absolute; top:8px; right:8px; background:none; border:none; color:var(--bad); font-size:0.9rem; cursor:pointer;" title="Remove Entry">✕</button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding-right:24px;">
@@ -1712,7 +1721,7 @@
       const container = $('educationList');
       const div = document.createElement('div');
       div.className = 'builder-item-card';
-      div.style.cssText = 'background:#F8FAFC; border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; position:relative;';
+      div.style.cssText = 'background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; position:relative;';
       div.innerHTML = `
         <button onclick="this.parentElement.remove(); handleFormChange();" style="position:absolute; top:6px; right:6px; background:none; border:none; color:var(--bad); font-size:0.85rem; cursor:pointer;">✕</button>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding-right:20px;">
@@ -1729,7 +1738,7 @@
       const container = $('projectsList');
       const div = document.createElement('div');
       div.className = 'builder-item-card';
-      div.style.cssText = 'background:#F8FAFC; border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; position:relative;';
+      div.style.cssText = 'background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; position:relative;';
       div.innerHTML = `
         <button onclick="this.parentElement.remove(); handleFormChange();" style="position:absolute; top:6px; right:6px; background:none; border:none; color:var(--bad); font-size:0.85rem; cursor:pointer;">✕</button>
         <input type="text" class="proj-title" name="projTitle" aria-label="Project Name" placeholder="Project Name &amp; Tech Stack" value="${escHtml(data.title || '')}" oninput="handleFormChange()" style="padding:6px; border:1px solid var(--border); border-radius:4px; font-weight:600;">
@@ -2037,7 +2046,7 @@
           select.appendChild(opt);
         });
         if (currentDraftId) select.value = currentDraftId;
-      } catch (e) {}
+      } catch (e) { console.error(e); }
     }
 
     async function loadSelectedDraft() {
@@ -2058,7 +2067,7 @@
         if ($('builderTitle')) $('builderTitle').value = data.title;
         const statePayload = data.data_json ? JSON.parse(data.data_json) : {};
         restoreFormStatePayload(statePayload);
-      } catch (e) {}
+      } catch (e) { console.error(e); }
     }
 
     async function saveResumeDraft(silent = false) {
@@ -2154,19 +2163,19 @@
       <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:8px;">Select Optimization Goals:</label>
       
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optAtsKeywords" checked> 🎯 ATS Keywords
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optExecutiveTone" checked> 👔 Executive Tone
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optQuantify" checked> 📈 Quantify Impact
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
           <input type="checkbox" id="optActionVerbs" checked> ⚡ Action Verbs
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:#F8FAFC; padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
           <input type="checkbox" id="optGrammar" checked> ✔ Grammar & Consistency Cleanup
         </label>
       </div>
