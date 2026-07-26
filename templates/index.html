@@ -2157,42 +2157,40 @@
   </script>
 
   <!-- LEVEL 2: WHOLE-DOCUMENT AI OPTIMIZATION MODAL -->
-  <div id="optimizeFullModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); backdrop-filter:blur(4px); z-index:9999; display:none; place-items:center;">
-    <div style="background:#FFFFFF; border-radius:16px; width:90%; max-width:540px; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.2); animation:modalSlideUp 0.2s ease-out;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--text); display:flex; align-items:center; gap:8px;">
-          🚀 Optimize Entire Resume
-        </h3>
-        <button onclick="closeOptimizeFullModal()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+  <div class="ds-modal-backdrop" id="optimizeFullModal" style="display:none;">
+    <div class="ds-modal" style="max-width:560px;">
+      <div class="ds-modal-header">
+        <span class="ds-modal-title">🚀 Optimize Entire Resume</span>
+        <button class="ds-modal-close" onclick="closeOptimizeFullModal()">✕</button>
       </div>
 
-      <div style="background:#EFF6FF; border:1px solid #BFDBFE; padding:12px 14px; border-radius:10px; margin-bottom:16px; font-size:0.82rem; color:#1E40AF; line-height:1.5;">
-        ℹ️ <strong>Whole-Document Workflow:</strong> This will improve every section of your resume while strictly preserving all your experience, companies, and factual information.
+      <div class="ds-card" style="background:var(--primary-light); border-color:var(--primary); padding:14px 16px; margin-bottom:20px;">
+        <p style="font-size:0.82rem; color:var(--primary); line-height:1.5; margin:0;">ℹ️ <strong>Whole-Document Workflow:</strong> This will improve every section of your resume while strictly preserving all your experience, companies, and factual information.</p>
       </div>
 
-      <label style="font-size:0.78rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; display:block; margin-bottom:8px;">Select Optimization Goals:</label>
-      
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+      <div class="ds-label" style="margin-bottom:12px;">Select Optimization Goals:</div>
+
+      <div class="ds-grid-2" style="gap:10px; margin-bottom:24px;">
+        <label class="ds-flex ds-gap-sm" style="background:var(--bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); cursor:pointer; font-size:0.85rem; font-weight:600;">
           <input type="checkbox" id="optAtsKeywords" checked> 🎯 ATS Keywords
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label class="ds-flex ds-gap-sm" style="background:var(--bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); cursor:pointer; font-size:0.85rem; font-weight:600;">
           <input type="checkbox" id="optExecutiveTone" checked> 👔 Executive Tone
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label class="ds-flex ds-gap-sm" style="background:var(--bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); cursor:pointer; font-size:0.85rem; font-weight:600;">
           <input type="checkbox" id="optQuantify" checked> 📈 Quantify Impact
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer;">
+        <label class="ds-flex ds-gap-sm" style="background:var(--bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); cursor:pointer; font-size:0.85rem; font-weight:600;">
           <input type="checkbox" id="optActionVerbs" checked> ⚡ Action Verbs
         </label>
-        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; font-weight:600; background:var(--bg); padding:10px 12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; grid-column:span 2;">
+        <label class="ds-flex ds-gap-sm" style="grid-column:span 2; background:var(--bg); padding:10px 12px; border-radius:10px; border:1px solid var(--border); cursor:pointer; font-size:0.85rem; font-weight:600;">
           <input type="checkbox" id="optGrammar" checked> ✔ Grammar & Consistency Cleanup
         </label>
       </div>
 
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button class="btn btn-ghost" onclick="closeOptimizeFullModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="confirmExecuteFullDocumentOptimization()" style="background:linear-gradient(135deg, #2563EB, #1D4ED8); font-weight:700;">🚀 Run Full Optimization</button>
+      <div class="ds-modal-footer">
+        <button class="ds-btn ds-btn-secondary" onclick="closeOptimizeFullModal()">Cancel</button>
+        <button class="ds-btn ds-btn-primary" onclick="confirmExecuteFullDocumentOptimization()">🚀 Run Full Optimization</button>
       </div>
     </div>
   </div>
