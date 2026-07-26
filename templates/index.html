@@ -311,6 +311,80 @@
       border-radius: 14px; padding: 36px; min-height: 700px; box-shadow: var(--shadow-lg);
       font-family: 'Inter', sans-serif;
     }
+
+    /* ── SIDEBAR OVERLAY ── */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; z-index: 99;
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* ── TOAST ── */
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 10000;
+      display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      padding: 12px 18px; border-radius: 12px; font-size: 0.85rem; font-weight: 500;
+      box-shadow: var(--shadow-lg); pointer-events: auto;
+      animation: toastIn 0.25s ease-out; max-width: 380px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .toast-success { background: var(--good); color: #fff; }
+    .toast-error { background: var(--bad); color: #fff; }
+    .toast-info { background: var(--primary); color: #fff; }
+    .toast-warning { background: var(--warn); color: #fff; }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* ── REVEAL UP ── */
+    .reveal-up {
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.32, 1), transform 0.7s cubic-bezier(0.16, 1, 0.32, 1);
+    }
+    .reveal-up.is-visible { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .top-search-wrap { display: none; }
+      .main-panel { padding: 20px 16px; }
+      .sidebar {
+        position: fixed; top: var(--nav-h); left: 0;
+        height: calc(100vh - var(--nav-h)); z-index: 100;
+        transform: translateX(0);
+      }
+      .sidebar.hidden {
+        width: var(--sidebar-w); padding: 24px 16px;
+        transform: translateX(-100%); overflow: visible;
+      }
+      .sidebar.hidden + .sidebar-overlay.show { display: block; }
+      .dash-hero { padding: 24px 20px; }
+      .dash-hero h1 { font-size: 1.2rem; }
+      .score-overview-container { grid-template-columns: 1fr; }
+      .rewrite-grid { grid-template-columns: 1fr; }
+      .builder-workspace { grid-template-columns: 1fr; }
+      .preview-canvas { min-height: 500px; }
+      .metrics-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+      .ds-stat-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+      .ds-grid-2, .ds-grid-3 { grid-template-columns: 1fr; }
+      .nav-right .user-chip span { display: none; }
+    }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 14px; }
+      .main-panel { padding: 16px 12px; }
+      .btn-quick-new span { display: none; }
+      .btn-quick-new { padding: 7px 10px; }
+      .ds-card { padding: 16px; }
+      .ds-upload { padding: 28px 20px; }
+      .dash-hero { border-radius: 14px; }
+      .nav-right .user-chip { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .sidebar { width: 220px; }
+      .sidebar.hidden { width: 220px; }
+      .dash-hero { padding: 20px 16px; }
+      .dash-hero h1 { font-size: 1rem; }
+    }
   </style>
   {% endif %}
   
@@ -394,10 +468,11 @@
         <div id="historyList">
           <div style="font-size:0.75rem; color:var(--text-muted); padding:8px;">Loading saved analyses…</div>
         </div>
-      </div>
-    </aside>
+        </div>
+      </aside>
+      <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- ── MAIN PANEL ── -->
+      <!-- ── MAIN PANEL ── -->
     <main class="main-panel" id="mainPanel">
 
       <!-- ══════════════════════════════════════════════ -->
@@ -412,7 +487,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="ds-stat-grid">
+        <div class="ds-stat-grid reveal-up">
           <div class="ds-stat">
             <div class="ds-stat-label">Average ATS Score</div>
             <div class="ds-stat-value" id="dashAvgScore">84%</div>
@@ -431,7 +506,7 @@
         </div>
 
         <!-- Feature Cards -->
-        <div class="ds-grid-auto">
+        <div class="ds-grid-auto reveal-up">
           <div class="ds-card" onclick="switchTab('analyze')" style="cursor:pointer;">
             <div class="ds-card-title">🔍 Resume Analyzer</div>
             <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px; line-height:1.5;">Upload your resume for multi-dimension ATS scoring, keyword gap analysis, and radar mapping.</p>
@@ -505,7 +580,7 @@
             </div>
           </div>
 
-          <div class="ds-card" id="recruiterVerdictCard" style="background:var(--primary); color:#fff; border:none;">
+          <div class="ds-card reveal-up" id="recruiterVerdictCard" style="background:var(--primary); color:#fff; border:none;">
             <div class="ds-flex-between" style="border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:16px; margin-bottom:16px;">
               <div>
                 <div class="ds-eyebrow" style="color:rgba(255,255,255,0.6); margin-bottom:4px;">Recruiter Verdict</div>
@@ -1013,8 +1088,37 @@
     const fmtDate = s => s ? new Date(s).toLocaleDateString() : '';
 
     function toggleSidebar() {
-      $('sidebar').classList.toggle('hidden');
+      const sidebar = $('sidebar');
+      const overlay = $('sidebarOverlay');
+      sidebar.classList.toggle('hidden');
+      if (window.innerWidth <= 900) {
+        overlay.classList.toggle('show');
+      }
     }
+
+    function showToast(msg, type = 'info', duration = 3000) {
+      const c = $('toastContainer');
+      if (!c) return;
+      const t = document.createElement('div');
+      t.className = 'toast toast-' + type;
+      const icons = { success: '✓', error: '✕', info: 'ℹ', warning: '⚠' };
+      t.innerHTML = (icons[type] || '') + ' ' + msg;
+      c.appendChild(t);
+      setTimeout(() => { t.style.animation = 'toastOut 0.25s ease-in forwards'; setTimeout(() => t.remove(), 300); }, duration);
+    }
+
+    // ── REVEAL UP OBSERVER ──
+    document.addEventListener('DOMContentLoaded', () => {
+      const upObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            upObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('.reveal-up').forEach(el => upObserver.observe(el));
+    });
 
     function switchTab(tab) {
       ['dashboard', 'analyze', 'builder', 'improve', 'employer'].forEach(t => {
@@ -1062,7 +1166,7 @@
         lastAnalysis = data;
         renderAnalysis(data);
       } catch (err) {
-        alert("Analysis error: " + err.message);
+        showToast("Analysis error: " + err.message, 'error');
       } finally {
         $('analyzeLoading').style.display = 'none';
       }
@@ -1338,9 +1442,9 @@
         if (typeof currentDraftId !== 'undefined' && currentDraftId === resumeId) currentDraftId = null;
         
         await refreshGlobalResumeLibrary();
-        alert("Resume permanently deleted.");
+        showToast("Resume permanently deleted.", 'success');
       } catch (err) {
-        alert("Delete error: " + err.message);
+        showToast("Delete error: " + err.message, 'error');
       }
     }
 
@@ -1500,7 +1604,7 @@
         $('rewriteRationaleCard').style.display = 'block';
         $('rewriteRationaleList').innerHTML = `<li>Level 1 Inline Action (${action}): Modified selected text without altering the rest of your document.</li>`;
       } catch (err) {
-        alert("Inline improve error: " + err.message);
+        showToast("Inline improve error: " + err.message, 'error');
       } finally {
         $('rewriteLoading').style.display = 'none';
       }
@@ -1556,13 +1660,13 @@
     function copyRewrittenText() {
       const text = $('improvedPreview').innerText;
       navigator.clipboard.writeText(text);
-      alert("AI Enhanced Resume copied to clipboard!");
+      showToast("AI Enhanced Resume copied to clipboard!", 'success');
     }
 
     function exportRewrittenPdf() {
       const content = $('improvedPreview').innerHTML;
       if (!content || content.includes('Rewritten AI version will appear here')) {
-        alert("Please run an AI Rewrite first before exporting to PDF.");
+        showToast("Please run an AI Rewrite first before exporting to PDF.", 'warning');
         return;
       }
       const printWin = window.open('', '_blank');
@@ -1820,7 +1924,7 @@
         handleFormChange();
       } catch (err) {
         el.value = oldVal;
-        alert("AI Improve error: " + err.message);
+        showToast("AI Improve error: " + err.message, 'error');
       }
     }
 
@@ -2097,30 +2201,30 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
         if (!currentDraftId && data.id) currentDraftId = data.id;
-        if (!silent) alert("Resume draft saved successfully!");
+        if (!silent) showToast("Resume draft saved successfully!", 'success');
         loadResumeDrafts();
       } catch (e) {
-        if (!silent) alert("Failed to save draft: " + e.message);
+        if (!silent) showToast("Failed to save draft: " + e.message, 'error');
       }
     }
 
     async function duplicateCurrentDraft() {
-      if (!currentDraftId) { alert("Please save the draft first before duplicating."); return; }
+      if (!currentDraftId) { showToast("Please save the draft first before duplicating.", 'warning'); return; }
       try {
         const res = await fetch(`/api/resumes/${currentDraftId}/duplicate`, { method: 'POST' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
-        alert("Draft duplicated successfully!");
+        showToast("Draft duplicated successfully!", 'success');
         await loadResumeDrafts();
         if (data.id) {
           $('builderDraftSelect').value = data.id;
           loadSelectedDraft();
         }
-      } catch (err) { alert("Duplicate error: " + err.message); }
+      } catch (err) { showToast("Duplicate error: " + err.message, 'error'); }
     }
 
     async function deleteCurrentDraft() {
-      if (!currentDraftId) { alert("No saved draft selected."); return; }
+      if (!currentDraftId) { showToast("No saved draft selected.", 'warning'); return; }
       if (!confirm("Delete this resume draft?")) return;
       try {
         const res = await fetch(`/api/resumes/${currentDraftId}`, { method: 'DELETE' });
@@ -2129,7 +2233,7 @@
         loadResumeDrafts();
         $('builderDraftSelect').value = 'new';
         loadSelectedDraft();
-      } catch (err) { alert("Delete error: " + err.message); }
+      } catch (err) { showToast("Delete error: " + err.message, 'error'); }
     }
 
     function exportBuilderPdf() {
@@ -2194,6 +2298,8 @@
       </div>
     </div>
   </div>
+
+  <div class="toast-container" id="toastContainer"></div>
 
 {% endif %}
 
