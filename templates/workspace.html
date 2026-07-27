@@ -1,0 +1,2538 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JobSpike — AI Career OS</title>
+  <meta name="description" content="Premium AI-powered career workspace">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/css/workspace.css">
+  <link rel="icon" href="/static/favicon.ico">
+</head>
+<body>
+  <!-- ═══ OVERLAY (mobile) ═══ -->
+  <div class="ws-sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+  <!-- ═══ LAYOUT ═══ -->
+  <div class="ws-layout">
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="ws-sidebar" id="sidebar">
+      <div class="ws-sidebar-header">
+        <a href="/" class="ws-sidebar-brand" onclick="event.preventDefault(); switchSection('dashboard')">
+          <span class="ws-sidebar-mark navy">J</span>
+          <span class="ws-sidebar-name">JobSpike</span>
+        </a>
+        <button class="ws-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        </button>
+      </div>
+
+      <nav class="ws-sidebar-nav">
+        <div class="ws-nav-section-label">Main</div>
+        <a class="ws-nav-item active" data-section="dashboard" onclick="switchSection('dashboard')">
+          <span class="ws-nav-icon">📊</span>
+          <span class="ws-nav-label">Dashboard</span>
+        </a>
+        <a class="ws-nav-item" data-section="builder" onclick="switchSection('builder')">
+          <span class="ws-nav-icon">📝</span>
+          <span class="ws-nav-label">Builder</span>
+        </a>
+        <a class="ws-nav-item" data-section="ai-rewrite" onclick="switchSection('ai-rewrite')">
+          <span class="ws-nav-icon">✨</span>
+          <span class="ws-nav-label">AI Rewrite</span>
+        </a>
+        <a class="ws-nav-item" data-section="tracker" onclick="switchSection('tracker')">
+          <span class="ws-nav-icon">🎯</span>
+          <span class="ws-nav-label">Career Tracker</span>
+        </a>
+
+        <div class="ws-nav-section-label" style="margin-top:8px;">History</div>
+        <a class="ws-nav-item" data-section="history" onclick="switchSection('history')">
+          <span class="ws-nav-icon">📁</span>
+          <span class="ws-nav-label">History</span>
+        </a>
+
+        <div class="ws-nav-section-label" style="margin-top:8px;">Account</div>
+        <a class="ws-nav-item" data-section="profile" onclick="switchSection('profile')">
+          <span class="ws-nav-icon">👤</span>
+          <span class="ws-nav-label">Profile</span>
+        </a>
+        <a class="ws-nav-item" data-section="settings" onclick="switchSection('settings')">
+          <span class="ws-nav-icon">⚙️</span>
+          <span class="ws-nav-label">Settings</span>
+        </a>
+        <a class="ws-nav-item" data-section="billing" onclick="switchSection('billing')">
+          <span class="ws-nav-icon">💳</span>
+          <span class="ws-nav-label">Billing</span>
+          <span class="ws-nav-badge">Pro</span>
+        </a>
+      </nav>
+
+      <div class="ws-sidebar-footer">
+        <div class="ws-sidebar-user" onclick="toggleUserMenu()" id="sidebarUser">
+          <div class="ws-sidebar-avatar">{{ user_name[:1].upper() }}</div>
+          <div class="ws-sidebar-user-info">
+            <div class="ws-sidebar-user-name">{{ user_name }}</div>
+            <div class="ws-sidebar-user-email">Free plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN ═══ -->
+    <div class="ws-main">
+
+      <!-- ═══ TOPBAR ═══ -->
+      <header class="ws-topbar">
+        <div class="ws-topbar-left">
+          <button class="ws-topbar-btn" onclick="toggleMobileSidebar()" aria-label="Open menu" style="display:none;" id="mobileMenuBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+          </button>
+          <div class="ws-breadcrumb">
+            <span class="ws-breadcrumb-current" id="pageTitle">Dashboard</span>
+          </div>
+        </div>
+        <div class="ws-topbar-right">
+          <button class="ws-theme-btn" onclick="toggleTheme()" aria-label="Toggle theme" id="themeBtn">
+            <span id="themeIcon">🌙</span>
+          </button>
+          <div class="ws-user-menu" id="userMenu">
+            <div class="ws-user-trigger" onclick="toggleUserMenu()" tabindex="0" role="button" aria-haspopup="true">
+              <div class="ws-user-avatar">{{ user_name[:1].upper() }}</div>
+            </div>
+            <div class="ws-user-dropdown">
+              <div class="ws-dropdown-header">
+                <div class="ws-dropdown-header-name">{{ user_name }}</div>
+                <div class="ws-dropdown-header-email">Free Plan</div>
+              </div>
+              <div class="ws-dropdown-item" onclick="switchSection('profile')">
+                <span class="ws-dropdown-item-icon">👤</span>
+                Profile
+              </div>
+              <div class="ws-dropdown-item" onclick="switchSection('settings')">
+                <span class="ws-dropdown-item-icon">⚙️</span>
+                Settings
+              </div>
+              <div class="ws-dropdown-item" onclick="switchSection('billing')">
+                <span class="ws-dropdown-item-icon">💳</span>
+                Billing
+              </div>
+              <div class="ws-dropdown-divider"></div>
+              <form method="post" action="/logout" id="logoutForm" style="display:none;"></form>
+              <div class="ws-dropdown-item danger" onclick="document.getElementById('logoutForm').submit()">
+                <span class="ws-dropdown-item-icon">🚪</span>
+                Sign out
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ═══ CONTENT ═══ -->
+      <main class="ws-content">
+
+        <!-- ── DASHBOARD ── -->
+        <section id="section-dashboard" class="ws-section">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title" style="font-size:26px;">Welcome back, {{ user_name }}</h1>
+              <p class="ws-page-subtitle">Here's your career snapshot for today</p>
+            </div>
+            <div class="ws-page-actions">
+              <button class="ws-btn ws-btn-primary" onclick="document.getElementById('dashFileInput').click()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload Resume
+              </button>
+              <button class="ws-btn ws-btn-secondary" onclick="switchSection('builder')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                New Resume
+              </button>
+            </div>
+          </div>
+
+          <div class="ws-animate-stagger">
+
+            <!-- ── Row 1: Score Ring + Radar + Stats ── -->
+            <div class="ws-grid-3" style="margin-bottom:20px;">
+              <div class="ws-glass-card" style="display:flex;align-items:center;gap:24px;">
+                <div class="ws-score-ring" style="flex-shrink:0;">
+                  <svg width="96" height="96" viewBox="0 0 120 120">
+                    <circle class="ws-score-ring-bg" cx="60" cy="60" r="52" stroke-width="10"/>
+                    <circle class="ws-score-ring-fill" id="healthRing" cx="60" cy="60" r="52" stroke-width="10"
+                      stroke-dasharray="326.73" stroke-dashoffset="326.73"/>
+                  </svg>
+                  <span class="ws-score-ring-value" id="healthScore" style="font-size:28px;">—</span>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Resume Health</div>
+                  <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.5;">Overall quality and ATS compatibility of your best resume</div>
+                  <div id="healthChange" style="font-size:12px;font-weight:500;margin-top:8px;color:var(--ws-good);"></div>
+                </div>
+              </div>
+
+              <div class="ws-glass-card" style="display:flex;align-items:center;gap:24px;">
+                <div style="flex-shrink:0;width:96px;height:96px;" id="radarContainer">
+                  <canvas id="dashboardRadar"></canvas>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">ATS Score</div>
+                  <div style="font-size:28px;font-weight:700;letter-spacing:-0.03em;" id="avgScore">—</div>
+                  <div style="font-size:12px;color:var(--ws-text-secondary);margin-top:4px;">Multi-dimensional analysis</div>
+                </div>
+              </div>
+
+              <div class="ws-glass-card" style="display:flex;align-items:center;gap:16px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;">
+                  <div style="text-align:center;padding:8px;">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Analyses</div>
+                    <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;" id="totalAnalyses">—</div>
+                  </div>
+                  <div style="text-align:center;padding:8px;">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Applied</div>
+                    <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;" id="appCount">—</div>
+                  </div>
+                  <div style="text-align:center;padding:8px;">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Interviews</div>
+                    <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;" id="interviewCount">—</div>
+                  </div>
+                  <div style="text-align:center;padding:8px;">
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Offers</div>
+                    <div style="font-size:24px;font-weight:700;letter-spacing:-0.02em;" id="offerCount">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Row 2: Upload + AI Insight + Weekly Goals ── -->
+            <div class="ws-grid-3" style="margin-bottom:20px;">
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Quick Upload</div>
+                    <span class="ws-badge ws-badge-primary">Resume</span>
+                  </div>
+                  <div class="ws-upload-zone" id="dashboardUpload" onclick="document.getElementById('dashFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:28px 20px;">
+                    <div style="font-size:28px;margin-bottom:8px;opacity:0.5;">📄</div>
+                    <div class="ws-upload-title" style="font-size:13px;">Drop or click to upload</div>
+                    <div class="ws-upload-hint" style="font-size:11px;">PDF or TXT • Max 10MB</div>
+                    <input type="file" id="dashFileInput" accept=".pdf,.txt" style="display:none" onchange="handleFileSelect(this.files[0])">
+                  </div>
+                </div>
+              </div>
+
+              <div class="ws-glass-card">
+                <div class="ws-glass-card-body">
+                  <div class="ws-card-header">
+                    <div>
+                      <div class="ws-card-title">Today's AI Insight</div>
+                      <div class="ws-card-subtitle">Personalized recommendation</div>
+                    </div>
+                    <span class="ws-badge ws-badge-accent">AI</span>
+                  </div>
+                  <div id="aiInsight" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.7;min-height:80px;">
+                    <span style="color:var(--ws-text-tertiary);">Upload a resume to receive AI-powered career insights.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Weekly Goals</div>
+                    <span class="ws-badge ws-badge-warn">3 left</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--ws-text-secondary);">
+                      <input type="checkbox" style="width:16px;height:16px;border-radius:4px;accent-color:var(--ws-primary);"> Upload 1 resume for analysis
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--ws-text-secondary);">
+                      <input type="checkbox" style="width:16px;height:16px;border-radius:4px;accent-color:var(--ws-primary);"> Apply to 3 positions
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--ws-text-secondary);">
+                      <input type="checkbox" style="width:16px;height:16px;border-radius:4px;accent-color:var(--ws-primary);"> Optimize with AI Rewrite
+                    </label>
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--ws-text-secondary);">
+                      <input type="checkbox" style="width:16px;height:16px;border-radius:4px;accent-color:var(--ws-primary);"> Export updated resume as PDF
+                    </label>
+                  </div>
+                  <div class="ws-divider" style="margin:12px 0;"></div>
+                  <div class="ws-flex-between">
+                    <span style="font-size:12px;color:var(--ws-text-tertiary);">Progress</span>
+                    <span style="font-size:12px;font-weight:600;">1 / 4</span>
+                  </div>
+                  <div class="ws-progress ws-mt-sm">
+                    <div class="ws-progress-bar" style="width:25%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Row 3: Recent Analyses + Application Tracker ── -->
+            <div class="ws-grid-2" style="margin-bottom:20px;">
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:0;">
+                  <div style="padding:20px 20px 0;">
+                    <div class="ws-card-header">
+                      <div>
+                        <div class="ws-card-title">Recent Analyses</div>
+                        <div class="ws-card-subtitle">Latest resume reports</div>
+                      </div>
+                      <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="switchSection('history')">View all</button>
+                    </div>
+                  </div>
+                  <div class="ws-table-wrap" style="border:none;border-radius:0;">
+                    <table class="ws-table" id="recentTable">
+                      <thead><tr><th>Name</th><th>Score</th><th>Date</th><th></th></tr></thead>
+                      <tbody id="recentBody"></tbody>
+                    </table>
+                  </div>
+                  <div class="ws-empty" id="recentEmpty" style="display:none;padding:32px 20px;">
+                    <div class="ws-empty-icon">📄</div>
+                    <div class="ws-empty-title">No analyses yet</div>
+                    <div class="ws-empty-desc">Upload your first resume to get started</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:0;">
+                  <div style="padding:20px 20px 0;">
+                    <div class="ws-card-header">
+                      <div>
+                        <div class="ws-card-title">Application Tracker</div>
+                        <div class="ws-card-subtitle">Track your job hunt</div>
+                      </div>
+                      <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="switchSection('tracker')">Manage</button>
+                    </div>
+                  </div>
+                  <div style="padding:4px 20px 20px;">
+                    <div style="display:flex;gap:16px;margin-bottom:16px;">
+                      <div style="flex:1;text-align:center;padding:12px 8px;background:var(--ws-surface-hover);border-radius:var(--ws-radius-lg);">
+                        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Applied</div>
+                        <div style="font-size:20px;font-weight:700;" id="trackApplied">0</div>
+                      </div>
+                      <div style="flex:1;text-align:center;padding:12px 8px;background:var(--ws-warn-bg);border-radius:var(--ws-radius-lg);">
+                        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Interview</div>
+                        <div style="font-size:20px;font-weight:700;color:var(--ws-warn);" id="trackInterview">0</div>
+                      </div>
+                      <div style="flex:1;text-align:center;padding:12px 8px;background:var(--ws-good-bg);border-radius:var(--ws-radius-lg);">
+                        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Offer</div>
+                        <div style="font-size:20px;font-weight:700;color:var(--ws-good);" id="trackOffer">0</div>
+                      </div>
+                      <div style="flex:1;text-align:center;padding:12px 8px;background:var(--ws-bad-bg);border-radius:var(--ws-radius-lg);">
+                        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Rejected</div>
+                        <div style="font-size:20px;font-weight:700;color:var(--ws-bad);" id="trackRejected">0</div>
+                      </div>
+                    </div>
+                    <div class="ws-empty" id="trackerEmpty" style="padding:16px;">
+                      <div style="font-size:13px;color:var(--ws-text-tertiary);">Add your first application in Career Tracker</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Row 4: Career Progress ── -->
+            <div class="ws-card">
+              <div class="ws-card-body">
+                <div class="ws-card-header">
+                  <div>
+                    <div class="ws-card-title">Career Progress</div>
+                    <div class="ws-card-subtitle">Your journey at a glance</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:140px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:12px;color:var(--ws-text-secondary);">Interview Rate</span>
+                      <span style="font-size:12px;font-weight:600;" id="interviewRate">—</span>
+                    </div>
+                    <div class="ws-progress"><div class="ws-progress-bar" id="interviewRateBar" style="width:0%;"></div></div>
+                  </div>
+                  <div style="flex:1;min-width:140px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:12px;color:var(--ws-text-secondary);">Callback Rate</span>
+                      <span style="font-size:12px;font-weight:600;" id="callbackRate">—</span>
+                    </div>
+                    <div class="ws-progress"><div class="ws-progress-bar" id="callbackRateBar" style="width:0%;"></div></div>
+                  </div>
+                  <div style="flex:1;min-width:140px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:12px;color:var(--ws-text-secondary);">Offer Rate</span>
+                      <span style="font-size:12px;font-weight:600;" id="offerRate">—</span>
+                    </div>
+                    <div class="ws-progress"><div class="ws-progress-bar good" id="offerRateBar" style="width:0%;"></div></div>
+                  </div>
+                  <div style="flex:1;min-width:140px;">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                      <span style="font-size:12px;color:var(--ws-text-secondary);">Score Trend</span>
+                      <span style="font-size:12px;font-weight:600;" id="scoreTrend">—</span>
+                    </div>
+                    <div class="ws-progress"><div class="ws-progress-bar" id="scoreTrendBar" style="width:0%;"></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ── BUILDER ── -->
+        <section id="section-builder" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Resume Builder</h1>
+              <p class="ws-page-subtitle">Craft your perfect resume with AI assistance</p>
+            </div>
+            <div class="ws-page-actions">
+              <button class="ws-btn ws-btn-secondary ws-btn-sm" id="builderTemplatesBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                Templates
+              </button>
+              <button class="ws-btn ws-btn-primary ws-btn-sm" onclick="exportResume()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="saveBuilderResume()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save
+              </button>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;min-height:calc(100vh - 180px);">
+            <!-- ── Editor Panel ── -->
+            <div class="ws-card" style="display:flex;flex-direction:column;">
+              <div class="ws-tabs" style="padding:0 20px;margin:0;flex-shrink:0;">
+                <button class="ws-tab active" data-bt="personal" onclick="switchBuilderTab('personal')">Personal</button>
+                <button class="ws-tab" data-bt="experience" onclick="switchBuilderTab('experience')">Experience</button>
+                <button class="ws-tab" data-bt="education" onclick="switchBuilderTab('education')">Education</button>
+                <button class="ws-tab" data-bt="skills" onclick="switchBuilderTab('skills')">Skills</button>
+                <button class="ws-tab" data-bt="projects" onclick="switchBuilderTab('projects')">Projects</button>
+              </div>
+              <div class="ws-card-body" style="flex:1;overflow-y:auto;padding-top:16px;">
+                <!-- Personal -->
+                <div class="builder-panel" id="bpanel-personal">
+                  <div class="ws-input-group ws-mb-md">
+                    <label class="ws-input-label">Full Name</label>
+                    <input class="ws-input" id="bName" placeholder="Alex Morgan" oninput="updatePreview()" value="Your Name">
+                  </div>
+                  <div class="ws-input-group ws-mb-md">
+                    <label class="ws-input-label">Email</label>
+                    <input class="ws-input" id="bEmail" placeholder="alex@company.com" oninput="updatePreview()">
+                  </div>
+                  <div class="ws-grid-2">
+                    <div class="ws-input-group ws-mb-md">
+                      <label class="ws-input-label">Phone</label>
+                      <input class="ws-input" id="bPhone" placeholder="+1 (555) 123-4567" oninput="updatePreview()">
+                    </div>
+                    <div class="ws-input-group ws-mb-md">
+                      <label class="ws-input-label">Location</label>
+                      <input class="ws-input" id="bLocation" placeholder="San Francisco, CA" oninput="updatePreview()">
+                    </div>
+                  </div>
+                  <div class="ws-input-group ws-mb-md">
+                    <label class="ws-input-label">Professional Summary</label>
+                    <textarea class="ws-textarea" id="bSummary" rows="4" placeholder="Brief professional summary..." oninput="updatePreview()"></textarea>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm ws-mt-sm" onclick="aiAssist('summary')">✨ AI Assist</button>
+                  </div>
+                </div>
+
+                <!-- Experience -->
+                <div class="builder-panel" id="bpanel-experience" style="display:none;">
+                  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;font-weight:600;">Work Experience</span>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="addExperience()">+ Add</button>
+                  </div>
+                  <div id="experienceList"></div>
+                </div>
+
+                <!-- Education -->
+                <div class="builder-panel" id="bpanel-education" style="display:none;">
+                  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;font-weight:600;">Education</span>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="addEducation()">+ Add</button>
+                  </div>
+                  <div id="educationList"></div>
+                </div>
+
+                <!-- Skills -->
+                <div class="builder-panel" id="bpanel-skills" style="display:none;">
+                  <div class="ws-input-group ws-mb-md">
+                    <label class="ws-input-label">Skills (comma separated)</label>
+                    <textarea class="ws-textarea" id="bSkills" rows="4" placeholder="Python, JavaScript, React, AWS..." oninput="updatePreview()"></textarea>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm ws-mt-sm" onclick="aiAssist('skills')">✨ AI Suggest Skills</button>
+                  </div>
+                </div>
+
+                <!-- Projects -->
+                <div class="builder-panel" id="bpanel-projects" style="display:none;">
+                  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:13px;font-weight:600;">Projects</span>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="addProject()">+ Add</button>
+                  </div>
+                  <div id="projectList"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Preview Panel ── -->
+            <div class="ws-card" style="display:flex;flex-direction:column;">
+              <div class="ws-card-header" style="padding:16px 20px 0;flex-shrink:0;">
+                <div>
+                  <div class="ws-card-title">Live Preview</div>
+                  <div class="ws-card-subtitle">Real-time rendered resume</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                  <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="showToast('Version history coming soon', 'info')">📋 History</button>
+                </div>
+              </div>
+              <div class="ws-card-body" style="flex:1;overflow-y:auto;background:var(--ws-bg);margin:12px;border-radius:var(--ws-radius-lg);">
+                <div id="builderPreview" style="font-size:13px;line-height:1.6;padding:16px;">
+                  <div style="text-align:center;padding:48px 16px;color:var(--ws-text-tertiary);">
+                    <div style="font-size:32px;margin-bottom:8px;">📝</div>
+                    <div style="font-weight:600;color:var(--ws-text-secondary);">Start editing your resume</div>
+                    <div style="font-size:12px;margin-top:4px;">Changes appear instantly in this preview</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── AI REWRITE ── -->
+        <section id="section-ai-rewrite" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">AI Rewrite</h1>
+              <p class="ws-page-subtitle">Transform your resume with AI-powered suggestions and side-by-side diff</p>
+            </div>
+            <div class="ws-page-actions">
+              <select class="ws-select" style="width:160px;" id="rewriteMode">
+                <option value="safe">Standard Polish</option>
+                <option value="role">Role-Optimized</option>
+                <option value="executive">Executive Level</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div class="ws-card">
+              <div class="ws-card-body">
+                <div class="ws-card-header">
+                  <div class="ws-card-title">Original</div>
+                  <span class="ws-badge ws-badge-primary" id="origWordCount">0 words</span>
+                </div>
+                <textarea class="ws-textarea" id="rewriteOriginal" rows="14" placeholder="Paste your resume text, bullet points, or entire sections here..." oninput="document.getElementById('origWordCount').textContent=this.value.split(/\\s+/).filter(Boolean).length+' words'"></textarea>
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                  <button class="ws-btn ws-btn-primary" onclick="aiRewrite()" id="rewriteBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    Rewrite with AI
+                  </button>
+                  <button class="ws-btn ws-btn-ghost" onclick="document.getElementById('rewriteOriginal').value='';document.getElementById('origWordCount').textContent='0 words';document.getElementById('rewriteResult').innerHTML='';document.getElementById('rewriteExplanation').innerHTML='';document.getElementById('rewriteActions').style.display='none'">Clear</button>
+                </div>
+              </div>
+            </div>
+            <div class="ws-card">
+              <div class="ws-card-body">
+                <div class="ws-card-header">
+                  <div class="ws-card-title">Improved</div>
+                  <span class="ws-badge ws-badge-accent" id="newWordCount">0 words</span>
+                </div>
+                <div id="rewriteResult" style="font-size:13px;color:var(--ws-text-secondary);min-height:280px;white-space:pre-wrap;line-height:1.7;overflow-y:auto;padding:4px;">
+                  <div style="color:var(--ws-text-tertiary);text-align:center;padding:40px 16px;">
+                    <div style="font-size:28px;margin-bottom:8px;">✨</div>
+                    <div style="font-weight:500;">Click "Rewrite with AI" to transform your text</div>
+                    <div style="font-size:12px;margin-top:4px;">The improved version will appear here with explanations</div>
+                  </div>
+                </div>
+                <div id="rewriteActions" style="margin-top:12px;display:none;gap:8px;flex-wrap:wrap;">
+                  <button class="ws-btn ws-btn-primary ws-btn-sm" onclick="acceptRewrite()">✓ Accept</button>
+                  <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="rejectRewrite()">✕ Reject</button>
+                  <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="copyRewrite()">📋 Copy</button>
+                  <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="exportRewrite()">⬇ Export</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Explanation -->
+          <div class="ws-card" id="rewriteExplanationCard" style="display:none;">
+            <div class="ws-card-body">
+              <div class="ws-card-header">
+                <div class="ws-card-title">What Changed</div>
+                <span class="ws-badge ws-badge-accent">AI</span>
+              </div>
+              <ul id="rewriteExplanation" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+            </div>
+          </div>
+
+          <!-- Version History -->
+          <div class="ws-card ws-mt-md" id="rewriteHistoryCard" style="display:none;">
+            <div class="ws-card-body">
+              <div class="ws-card-header">
+                <div class="ws-card-title">Version History</div>
+                <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="clearRewriteHistory()">Clear All</button>
+              </div>
+              <div id="rewriteVersionList" style="display:flex;flex-direction:column;gap:4px;"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── CAREER TRACKER ── -->
+        <section id="section-tracker" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Career Tracker</h1>
+              <p class="ws-page-subtitle">Track your job applications and career milestones</p>
+            </div>
+            <div class="ws-page-actions">
+              <div class="ws-tabs" style="margin:0;border:none;gap:8px;">
+                <button class="ws-tab active" data-vt="kanban" onclick="switchTrackView('kanban')">📋 Kanban</button>
+                <button class="ws-tab" data-vt="timeline" onclick="switchTrackView('timeline')">📅 Timeline</button>
+              </div>
+              <button class="ws-btn ws-btn-primary" onclick="showAddApplication()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Application
+              </button>
+            </div>
+          </div>
+
+          <!-- Kanban Board -->
+          <div id="trackKanbanView">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;min-height:400px;">
+              <div class="ws-card" style="display:flex;flex-direction:column;">
+                <div style="padding:12px 14px;border-bottom:1px solid var(--ws-border);display:flex;align-items:center;gap:8px;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--ws-primary);"></div>
+                  <span style="font-size:12px;font-weight:600;">Applied</span>
+                  <span class="ws-badge ws-badge-primary" id="kanbanCount-applied">0</span>
+                </div>
+                <div class="ws-kanban-column" data-column="applied" style="flex:1;padding:8px;min-height:200px;overflow-y:auto;" id="kanban-applied"></div>
+              </div>
+              <div class="ws-card" style="display:flex;flex-direction:column;">
+                <div style="padding:12px 14px;border-bottom:1px solid var(--ws-border);display:flex;align-items:center;gap:8px;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--ws-warn);"></div>
+                  <span style="font-size:12px;font-weight:600;">Interview</span>
+                  <span class="ws-badge ws-badge-warn" id="kanbanCount-interview">0</span>
+                </div>
+                <div class="ws-kanban-column" data-column="interview" style="flex:1;padding:8px;min-height:200px;overflow-y:auto;" id="kanban-interview"></div>
+              </div>
+              <div class="ws-card" style="display:flex;flex-direction:column;">
+                <div style="padding:12px 14px;border-bottom:1px solid var(--ws-border);display:flex;align-items:center;gap:8px;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--ws-good);"></div>
+                  <span style="font-size:12px;font-weight:600;">Offer</span>
+                  <span class="ws-badge ws-badge-good" id="kanbanCount-offer">0</span>
+                </div>
+                <div class="ws-kanban-column" data-column="offer" style="flex:1;padding:8px;min-height:200px;overflow-y:auto;" id="kanban-offer"></div>
+              </div>
+              <div class="ws-card" style="display:flex;flex-direction:column;">
+                <div style="padding:12px 14px;border-bottom:1px solid var(--ws-border);display:flex;align-items:center;gap:8px;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--ws-bad);"></div>
+                  <span style="font-size:12px;font-weight:600;">Rejected</span>
+                  <span class="ws-badge ws-badge-bad" id="kanbanCount-rejected">0</span>
+                </div>
+                <div class="ws-kanban-column" data-column="rejected" style="flex:1;padding:8px;min-height:200px;overflow-y:auto;" id="kanban-rejected"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline View -->
+          <div id="trackTimelineView" style="display:none;">
+            <div class="ws-card">
+              <div class="ws-card-body">
+                <div style="position:relative;padding-left:24px;" id="timelineList">
+                  <div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--ws-border);"></div>
+                  <div style="text-align:center;padding:40px 16px;color:var(--ws-text-tertiary);font-size:13px;">
+                    Add applications to see your career timeline
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Application Modal -->
+          <div class="ws-modal-backdrop" id="appModal" style="display:none;">
+            <div class="ws-modal">
+              <div class="ws-modal-header">
+                <span class="ws-modal-title">Add Application</span>
+                <button class="ws-modal-close" onclick="closeAppModal()">✕</button>
+              </div>
+              <div class="ws-modal-body">
+                <div class="ws-input-group ws-mb-md">
+                  <label class="ws-input-label">Company</label>
+                  <input class="ws-input" id="appCompany" placeholder="e.g. Google">
+                </div>
+                <div class="ws-input-group ws-mb-md">
+                  <label class="ws-input-label">Role</label>
+                  <input class="ws-input" id="appRole" placeholder="e.g. Senior Software Engineer">
+                </div>
+                <div class="ws-grid-2">
+                  <div class="ws-input-group">
+                    <label class="ws-input-label">Stage</label>
+                    <select class="ws-select" id="appStage">
+                      <option value="applied">Applied</option>
+                      <option value="interview">Interview</option>
+                      <option value="offer">Offer</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                  </div>
+                  <div class="ws-input-group">
+                    <label class="ws-input-label">Date</label>
+                    <input class="ws-input" id="appDate" type="date">
+                  </div>
+                </div>
+                <div class="ws-input-group ws-mt-md">
+                  <label class="ws-input-label">Notes</label>
+                  <textarea class="ws-textarea" id="appNotes" rows="3" placeholder="Interview notes, contacts, follow-ups..."></textarea>
+                </div>
+              </div>
+              <div class="ws-modal-footer">
+                <button class="ws-btn ws-btn-ghost" onclick="closeAppModal()">Cancel</button>
+                <button class="ws-btn ws-btn-primary" onclick="saveApplication()">Add Application</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── HISTORY ── -->
+        <section id="section-history" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">History</h1>
+              <p class="ws-page-subtitle">All your analyses, resumes, and activity</p>
+            </div>
+            <div class="ws-page-actions">
+              <div style="display:flex;gap:8px;">
+                <div style="position:relative;">
+                  <input class="ws-input" style="width:200px;padding-left:32px;" placeholder="Search..." id="historySearch" oninput="filterHistory(this.value)">
+                  <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--ws-text-tertiary);">🔍</span>
+                </div>
+                <select class="ws-select" style="width:130px;" id="historySort" onchange="loadHistory()">
+                  <option value="date">Newest First</option>
+                  <option value="score">Highest Score</option>
+                  <option value="name">Name A-Z</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="ws-card">
+            <div class="ws-card-body" style="padding:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:0 20px;">
+                <div class="ws-tabs" style="margin:0;border:none;">
+                  <button class="ws-tab active" data-histab="all" onclick="switchHistTab('all')">All</button>
+                  <button class="ws-tab" data-histab="analyses" onclick="switchHistTab('analyses')">Analyses</button>
+                  <button class="ws-tab" data-histab="resumes" onclick="switchHistTab('resumes')">Resumes</button>
+                </div>
+                <span style="font-size:12px;color:var(--ws-text-tertiary);" id="historyCount"></span>
+              </div>
+              <div class="ws-table-wrap" style="border:none;border-radius:0;">
+                <table class="ws-table" id="historyTable">
+                  <thead>
+                    <tr><th>Name</th><th>Type</th><th>Score</th><th>Date</th><th></th></tr>
+                  </thead>
+                  <tbody id="historyBody"></tbody>
+                </table>
+              </div>
+              <div class="ws-empty" id="historyEmpty">
+                <div class="ws-empty-icon">📁</div>
+                <div class="ws-empty-title">No history yet</div>
+                <div class="ws-empty-desc">Your resume analyses and versions will appear here</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Delete Confirmation Modal -->
+          <div class="ws-modal-backdrop" id="deleteModal" style="display:none;">
+            <div class="ws-modal" style="max-width:380px;">
+              <div class="ws-modal-body" style="text-align:center;padding:28px 24px;">
+                <div style="font-size:36px;margin-bottom:12px;">🗑️</div>
+                <div class="ws-modal-title" style="margin-bottom:8px;">Delete this item?</div>
+                <p style="font-size:13px;color:var(--ws-text-secondary);">This action cannot be undone. The analysis and associated resume will be permanently removed.</p>
+              </div>
+              <div class="ws-modal-footer" style="justify-content:center;gap:12px;padding:0 24px 20px;">
+                <button class="ws-btn ws-btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="ws-btn" id="confirmDeleteBtn" style="background:var(--ws-bad);color:#fff;" onclick="confirmDelete()">Delete</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── PROFILE ── -->
+        <section id="section-profile" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Profile</h1>
+              <p class="ws-page-subtitle">Manage your account information and connected services</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px;">
+            <div>
+              <div class="ws-card ws-mb-lg">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Personal Information</div>
+                  </div>
+                  <form id="profileForm">
+                    <div class="ws-input-group ws-mb-md">
+                      <label class="ws-input-label">Full Name</label>
+                      <input class="ws-input" id="profileName" value="{{ user_name }}" required>
+                    </div>
+                    <div class="ws-input-group ws-mb-md">
+                      <label class="ws-input-label">Email</label>
+                      <input class="ws-input" id="profileEmail" disabled style="opacity:0.6;">
+                    </div>
+                    <div class="ws-input-group ws-mb-md">
+                      <label class="ws-input-label">New Password (leave blank to keep current)</label>
+                      <input class="ws-input" id="profilePassword" type="password" placeholder="••••••••" minlength="8">
+                    </div>
+                    <button class="ws-btn ws-btn-primary" type="submit">Save Changes</button>
+                  </form>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Usage</div>
+                  </div>
+                  <div style="font-size:13px;color:var(--ws-text-secondary);">
+                    <div class="ws-flex-between ws-mb-sm">
+                      <span>Total Analyses</span>
+                      <span class="ws-font-semibold" id="usageAnalyses">—</span>
+                    </div>
+                    <div class="ws-flex-between ws-mb-sm">
+                      <span>Plan</span>
+                      <span class="ws-badge ws-badge-primary">Free</span>
+                    </div>
+                    <div class="ws-flex-between">
+                      <span>Applications Tracked</span>
+                      <span class="ws-font-semibold" id="usageApps">0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="ws-card ws-mb-lg">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Connected Accounts</div>
+                  </div>
+                  <div class="ws-flex-between" style="padding:8px 0;border-bottom:1px solid var(--ws-border-light);">
+                    <div class="ws-flex-center" style="gap:10px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/></svg>
+                      <span style="font-size:13px;">Google</span>
+                    </div>
+                    <span class="ws-badge ws-badge-good">Connected</span>
+                  </div>
+                  <div class="ws-flex-between" style="padding:8px 0;">
+                    <div class="ws-flex-center" style="gap:10px;">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                      <span style="font-size:13px;">Email & Password</span>
+                    </div>
+                    <span class="ws-badge ws-badge-primary">Active</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Quick Actions</div>
+                  </div>
+                  <button class="ws-btn ws-btn-secondary ws-btn-block ws-mb-sm" onclick="switchSection('billing')">
+                    💳 Manage Subscription
+                  </button>
+                  <button class="ws-btn ws-btn-secondary ws-btn-block" onclick="switchSection('settings')">
+                    ⚙️ Workspace Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── ATS REPORT ── -->
+        <section id="section-report" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div class="ws-flex-center" style="gap:12px;">
+              <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="closeReport()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back
+              </button>
+              <div>
+                <h1 class="ws-page-title" id="reportTitle" style="font-size:20px;">ATS Report</h1>
+                <p class="ws-page-subtitle" id="reportSubtitle">Analysis for <span id="reportFilename"></span></p>
+              </div>
+            </div>
+            <div class="ws-page-actions">
+              <button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="showToast('Download coming soon', 'info')">⬇ Download PDF</button>
+              <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="showToast('Compare coming in Phase 5', 'info')">↔ Compare</button>
+            </div>
+          </div>
+
+          <div class="ws-animate-stagger">
+            <div class="ws-grid-3" style="margin-bottom:20px;">
+              <div class="ws-glass-card" style="display:flex;align-items:center;gap:20px;">
+                <div class="ws-score-ring" style="flex-shrink:0;">
+                  <svg width="110" height="110" viewBox="0 0 120 120">
+                    <circle class="ws-score-ring-bg" cx="60" cy="60" r="52" stroke-width="8"/>
+                    <circle class="ws-score-ring-fill" id="reportScoreRing" cx="60" cy="60" r="52" stroke-width="8"
+                      stroke-dasharray="326.73" stroke-dashoffset="326.73" style="stroke:var(--ws-primary);"/>
+                  </svg>
+                  <span class="ws-score-ring-value" id="reportScoreValue" style="font-size:30px;">—</span>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Overall ATS Score</div>
+                  <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.5;" id="reportScoreLabel">Multi-dimensional compatibility analysis</div>
+                </div>
+              </div>
+
+              <div class="ws-glass-card" style="display:flex;align-items:center;gap:20px;">
+                <div style="flex-shrink:0;width:100px;height:100px;" id="reportRadarContainer">
+                  <canvas id="reportRadar"></canvas>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Dimension Breakdown</div>
+                  <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.5;">Scores across 6 ATS dimensions</div>
+                </div>
+              </div>
+
+              <div class="ws-glass-card" style="display:flex;flex-direction:column;gap:12px;padding:20px;">
+                <div>
+                  <div class="ws-flex-between" style="margin-bottom:4px;">
+                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);">Readability</span>
+                    <span style="font-size:13px;font-weight:600;" id="reportReadability">—</span>
+                  </div>
+                  <div class="ws-progress"><div class="ws-progress-bar" id="reportReadabilityBar" style="width:0%;"></div></div>
+                </div>
+                <div>
+                  <div class="ws-flex-between" style="margin-bottom:4px;">
+                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);">Formatting</span>
+                    <span style="font-size:13px;font-weight:600;" id="reportFormatting">—</span>
+                  </div>
+                  <div class="ws-progress"><div class="ws-progress-bar" id="reportFormattingBar" style="width:0%;"></div></div>
+                </div>
+                <div>
+                  <div class="ws-flex-between" style="margin-bottom:4px;">
+                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);">Impact</span>
+                    <span style="font-size:13px;font-weight:600;" id="reportImpact">—</span>
+                  </div>
+                  <div class="ws-progress"><div class="ws-progress-bar good" id="reportImpactBar" style="width:0%;"></div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ws-grid-2" style="margin-bottom:20px;">
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div>
+                      <div class="ws-card-title">Keyword Match</div>
+                      <div class="ws-card-subtitle">Matched and missing keywords</div>
+                    </div>
+                  </div>
+                  <div style="margin-bottom:12px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--ws-good);margin-bottom:6px;">✅ Matched Keywords</div>
+                    <div id="reportMatchedKeywords" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                  </div>
+                  <div>
+                    <div style="font-size:12px;font-weight:600;color:var(--ws-bad);margin-bottom:6px;">❌ Missing Keywords</div>
+                    <div id="reportMissingKeywords" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div>
+                      <div class="ws-card-title">Strengths & Weaknesses</div>
+                    </div>
+                  </div>
+                  <div style="margin-bottom:12px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--ws-good);margin-bottom:4px;">💪 Strengths</div>
+                    <ul id="reportStrengths" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+                  </div>
+                  <div>
+                    <div style="font-size:12px;font-weight:600;color:var(--ws-bad);margin-bottom:4px;">🔧 Improvements</div>
+                    <ul id="reportWeaknesses" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ws-card">
+              <div class="ws-card-body">
+                <div class="ws-card-header">
+                  <div>
+                    <div class="ws-card-title">AI Summary</div>
+                    <div class="ws-card-subtitle">Overall assessment and recommendations</div>
+                  </div>
+                  <span class="ws-badge ws-badge-accent">AI</span>
+                </div>
+                <div id="reportSummary" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.7;"></div>
+              </div>
+            </div>
+
+            <div class="ws-card ws-mt-md">
+              <div class="ws-card-body">
+                <div class="ws-card-header">
+                  <div>
+                    <div class="ws-card-title">Suggested Improvements</div>
+                  </div>
+                </div>
+                <ul id="reportSuggestions" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SETTINGS ── -->
+        <section id="section-settings" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Settings</h1>
+              <p class="ws-page-subtitle">Customize your workspace preferences</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:720px;">
+            <div>
+              <div class="ws-card ws-mb-lg">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Appearance</div>
+                  </div>
+                  <div class="ws-flex-between">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:var(--ws-text);">Dark Mode</div>
+                      <div style="font-size:12px;color:var(--ws-text-tertiary);">Switch between light and dark themes</div>
+                    </div>
+                    <label class="ws-toggle">
+                      <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                      <span class="ws-toggle-slider"></span>
+                    </label>
+                  </div>
+                  <div class="ws-divider"></div>
+                  <div class="ws-flex-between">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:var(--ws-text);">Sidebar Mini</div>
+                      <div style="font-size:12px;color:var(--ws-text-tertiary);">Collapse sidebar for more space</div>
+                    </div>
+                    <label class="ws-toggle">
+                      <input type="checkbox" id="sidebarToggle" onchange="toggleSidebar()">
+                      <span class="ws-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Notifications</div>
+                  </div>
+                  <div class="ws-flex-between ws-mb-sm">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:var(--ws-text);">Email Reports</div>
+                      <div style="font-size:12px;color:var(--ws-text-tertiary);">Receive analysis summaries via email</div>
+                    </div>
+                    <label class="ws-toggle">
+                      <input type="checkbox" checked>
+                      <span class="ws-toggle-slider"></span>
+                    </label>
+                  </div>
+                  <div class="ws-flex-between">
+                    <div>
+                      <div style="font-size:13px;font-weight:600;color:var(--ws-text);">Weekly Digest</div>
+                      <div style="font-size:12px;color:var(--ws-text-tertiary);">Weekly career progress summary</div>
+                    </div>
+                    <label class="ws-toggle">
+                      <input type="checkbox" checked>
+                      <span class="ws-toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="ws-card ws-mb-lg">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Data & Privacy</div>
+                  </div>
+                  <div class="ws-flex-between ws-mb-sm">
+                    <span style="font-size:13px;">Export all data</span>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm">Download</button>
+                  </div>
+                  <div class="ws-flex-between">
+                    <span style="font-size:13px;">Clear application history</span>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="localStorage.removeItem('ws-apps');showToast('Applications cleared','info');">Clear</button>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-card" style="border:1px solid var(--ws-bad);">
+                <div class="ws-card-body">
+                  <div class="ws-card-header">
+                    <div style="color:var(--ws-bad);" class="ws-card-title">Danger Zone</div>
+                  </div>
+                  <p style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:12px;">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                  <button class="ws-btn ws-btn-block" style="border:1px solid var(--ws-bad);color:var(--ws-bad);background:transparent;" onclick="if(confirm('Are you absolutely sure? This will delete all your analyses, resumes, and account data.')){showToast('Account deletion would be processed by admin','info');}">
+                    🗑 Delete Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── BILLING ── -->
+        <section id="section-billing" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Billing</h1>
+              <p class="ws-page-subtitle">Manage your subscription and invoices</p>
+            </div>
+          </div>
+          <div class="ws-grid-3" style="max-width:720px;">
+            <div class="ws-card" style="border:2px solid var(--ws-border);">
+              <div class="ws-card-body" style="text-align:center;">
+                <div style="font-size:32px;margin-bottom:8px;">📄</div>
+                <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Free</div>
+                <div style="font-size:28px;font-weight:700;margin-bottom:12px;">$0</div>
+                <ul style="font-size:13px;color:var(--ws-text-secondary);line-height:2;">
+                  <li>5 analyses / month</li>
+                  <li>Basic ATS scoring</li>
+                  <li>Standard templates</li>
+                </ul>
+                <button class="ws-btn ws-btn-secondary ws-btn-block ws-mt-md" disabled>Current Plan</button>
+              </div>
+            </div>
+            <div class="ws-glass-card" style="border:2px solid var(--ws-accent);">
+              <div class="ws-glass-card-body" style="text-align:center;position:relative;">
+                <span class="ws-badge ws-badge-accent" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);">Popular</span>
+                <div style="font-size:32px;margin-bottom:8px;">⚡</div>
+                <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Pro</div>
+                <div style="font-size:28px;font-weight:700;margin-bottom:4px;">$19</div>
+                <div style="font-size:12px;color:var(--ws-text-tertiary);margin-bottom:12px;">per month</div>
+                <ul style="font-size:13px;color:var(--ws-text-secondary);line-height:2;">
+                  <li>Unlimited analyses</li>
+                  <li>Premium AI Rewrites</li>
+                  <li>All templates + custom</li>
+                  <li>Priority support</li>
+                </ul>
+                <button class="ws-btn ws-btn-accent ws-btn-block ws-mt-md">Upgrade to Pro</button>
+              </div>
+            </div>
+            <div class="ws-card" style="border:2px solid var(--ws-border);">
+              <div class="ws-card-body" style="text-align:center;">
+                <div style="font-size:32px;margin-bottom:8px;">🏢</div>
+                <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Enterprise</div>
+                <div style="font-size:28px;font-weight:700;margin-bottom:12px;">Custom</div>
+                <ul style="font-size:13px;color:var(--ws-text-secondary);line-height:2;">
+                  <li>Everything in Pro</li>
+                  <li>Team workspace</li>
+                  <li>API access</li>
+                  <li>Dedicated support</li>
+                </ul>
+                <button class="ws-btn ws-btn-secondary ws-btn-block ws-mt-md">Contact Sales</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ═══ UPLOAD MODAL ═══ -->
+  <div class="ws-modal-backdrop" id="uploadModal" style="display:none;">
+    <div class="ws-modal" style="max-width:440px;text-align:center;padding:36px 32px;">
+      <div class="ws-flex-center" style="margin-bottom:16px;">
+        <div style="width:56px;height:56px;border-radius:16px;background:var(--ws-primary-subtle);display:grid;place-items:center;font-size:24px;" id="uploadIcon">📄</div>
+      </div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:4px;" id="uploadTitle">Uploading...</div>
+      <div style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:20px;" id="uploadFilename"></div>
+
+      <div class="ws-progress" style="height:4px;margin-bottom:24px;">
+        <div class="ws-progress-bar" id="uploadProgressBar" style="width:0%;"></div>
+      </div>
+
+      <div id="uploadSteps" style="text-align:left;">
+        <div class="ws-flex-between ws-mb-sm" style="font-size:12px;color:var(--ws-text-tertiary);" data-step="parsing">
+          <span>📖 Parsing resume content</span>
+          <span class="ws-step-status">⏳</span>
+        </div>
+        <div class="ws-flex-between ws-mb-sm" style="font-size:12px;color:var(--ws-text-tertiary);" data-step="ats">
+          <span>🔍 Reading ATS dimensions</span>
+          <span class="ws-step-status">⏳</span>
+        </div>
+        <div class="ws-flex-between ws-mb-sm" style="font-size:12px;color:var(--ws-text-tertiary);" data-step="keywords">
+          <span>🎯 Matching keywords</span>
+          <span class="ws-step-status">⏳</span>
+        </div>
+        <div class="ws-flex-between ws-mb-sm" style="font-size:12px;color:var(--ws-text-tertiary);" data-step="suggestions">
+          <span>✨ Generating AI suggestions</span>
+          <span class="ws-step-status">⏳</span>
+        </div>
+        <div class="ws-flex-between ws-mb-sm" style="font-size:12px;color:var(--ws-text-tertiary);" data-step="formatting">
+          <span>📐 Analyzing formatting</span>
+          <span class="ws-step-status">⏳</span>
+        </div>
+        <div class="ws-flex-between" style="font-size:12px;color:var(--ws-text-tertiary);" data-step="report">
+          <span>📊 Preparing report</span>
+          <span class="ws-step-status">⏳</span>
+        </div>
+      </div>
+
+      <div id="uploadComplete" style="display:none;margin-top:8px;">
+        <div style="font-size:40px;margin-bottom:8px;">🎉</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Analysis Complete!</div>
+        <div style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:16px;" id="uploadResultScore"></div>
+        <div class="ws-flex-center" style="gap:8px;">
+          <button class="ws-btn ws-btn-primary" onclick="closeUploadModal(); loadDashboard();">View Dashboard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TOAST CONTAINER ═══ -->
+  <div class="ws-toast-container" id="toastContainer"></div>
+
+  <!-- ═══ JAVASCRIPT ═══ -->
+  <script>
+    /* ── State ── */
+    const state = {
+      currentSection: 'dashboard',
+      analyses: [],
+      resumes: [],
+      theme: localStorage.getItem('ws-theme') || 'light',
+      sidebarCollapsed: localStorage.getItem('ws-sidebar') === 'true',
+      mobileOpen: false,
+    };
+
+    /* ── Theme ── */
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('ws-theme', theme);
+      document.getElementById('themeIcon').textContent = theme === 'dark' ? '☀️' : '🌙';
+      const toggle = document.getElementById('themeToggle');
+      if (toggle) toggle.checked = theme === 'dark';
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+      applyTheme(state.theme);
+    }
+    applyTheme(state.theme);
+
+    /* ── Sidebar ── */
+    function toggleSidebar() {
+      state.sidebarCollapsed = !state.sidebarCollapsed;
+      const sidebar = document.getElementById('sidebar');
+      sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
+      localStorage.setItem('ws-sidebar', state.sidebarCollapsed);
+      const toggle = document.getElementById('sidebarToggle');
+      if (toggle) toggle.checked = state.sidebarCollapsed;
+    }
+
+    function toggleMobileSidebar() {
+      state.mobileOpen = !state.mobileOpen;
+      document.getElementById('sidebar').classList.toggle('mobile-open', state.mobileOpen);
+      document.getElementById('sidebarOverlay').classList.toggle('visible', state.mobileOpen);
+    }
+
+    // Show mobile menu button on small screens
+    if (window.innerWidth <= 768) {
+      document.getElementById('mobileMenuBtn').style.display = 'grid';
+    }
+    window.addEventListener('resize', function() {
+      const btn = document.getElementById('mobileMenuBtn');
+      if (window.innerWidth <= 768) {
+        btn.style.display = 'grid';
+      } else {
+        btn.style.display = 'none';
+      }
+    });
+
+    // Apply initial sidebar state
+    if (state.sidebarCollapsed) {
+      document.getElementById('sidebar').classList.add('collapsed');
+      const toggle = document.getElementById('sidebarToggle');
+      if (toggle) toggle.checked = true;
+    }
+
+    /* ── Navigation ── */
+    function switchSection(section) {
+      // Hide all sections
+      document.querySelectorAll('.ws-section').forEach(function(el) {
+        el.style.display = 'none';
+      });
+
+      // Show target section
+      const target = document.getElementById('section-' + section);
+      if (target) {
+        target.style.display = 'block';
+        target.classList.add('ws-animate-in');
+      }
+
+      // Update nav pills
+      document.querySelectorAll('.ws-nav-item').forEach(function(item) {
+        item.classList.toggle('active', item.dataset.section === section);
+      });
+
+      // Update breadcrumb
+      const titles = {
+        dashboard: 'Dashboard', builder: 'Builder', 'ai-rewrite': 'AI Rewrite',
+        tracker: 'Career Tracker', history: 'History', profile: 'Profile',
+        settings: 'Settings', billing: 'Billing'
+      };
+      document.getElementById('pageTitle').textContent = titles[section] || section;
+
+      state.currentSection = section;
+
+      // Close user menu and mobile sidebar
+      document.getElementById('userMenu').classList.remove('open');
+      if (state.mobileOpen) toggleMobileSidebar();
+
+      // Load section data
+      if (section === 'dashboard') loadDashboard();
+      if (section === 'history') loadHistory();
+      if (section === 'profile') loadProfile();
+    }
+
+    /* ── User Menu ── */
+    function toggleUserMenu() {
+      document.getElementById('userMenu').classList.toggle('open');
+    }
+
+    // Close menu on outside click
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('userMenu');
+      if (!menu.contains(e.target)) {
+        menu.classList.remove('open');
+      }
+    });
+
+    /* ── Toast ── */
+    function showToast(message, type) {
+      type = type || 'info';
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'ws-toast ws-toast-' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(function() {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(16px)';
+        toast.style.transition = 'all 0.2s ease';
+        setTimeout(function() { toast.remove(); }, 300);
+      }, 3000);
+    }
+
+    /* ── API Helpers ── */
+    async function apiFetch(url, options) {
+      options = options || {};
+      options.headers = options.headers || {};
+      if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+        options.body = JSON.stringify(options.body);
+        options.headers['Content-Type'] = 'application/json';
+      }
+      options.credentials = 'same-origin';
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        const err = await res.json().catch(function() { return {error: res.statusText}; });
+        throw new Error(err.error || 'Request failed');
+      }
+      return res.json();
+    }
+
+    /* ── File Upload ── */
+    function handleFileSelect(file) {
+      if (!file) return;
+      const validTypes = ['.pdf', '.txt'];
+      const ext = '.' + file.name.split('.').pop().toLowerCase();
+      if (!validTypes.includes(ext)) {
+        showToast('Please upload a PDF or TXT file', 'error');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        showToast('File size exceeds 10 MB limit', 'error');
+        return;
+      }
+      uploadResume(file);
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('dragging');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFileSelect(file);
+    }
+
+    /* ── Premium Upload Flow ── */
+    function showUploadModal(fileName) {
+      const modal = document.getElementById('uploadModal');
+      modal.style.display = 'grid';
+      document.getElementById('uploadFilename').textContent = fileName;
+      document.getElementById('uploadIcon').textContent = '📄';
+      document.getElementById('uploadTitle').textContent = 'Analyzing your resume...';
+      document.getElementById('uploadComplete').style.display = 'none';
+      document.getElementById('uploadSteps').style.display = 'block';
+      document.getElementById('uploadProgressBar').style.width = '0%';
+
+      // Reset all steps
+      document.querySelectorAll('[data-step]').forEach(function(el) {
+        el.style.color = 'var(--ws-text-tertiary)';
+        el.querySelector('.ws-step-status').textContent = '⏳';
+      });
+    }
+
+    function setStepComplete(step) {
+      const el = document.querySelector('[data-step="' + step + '"]');
+      if (el) {
+        el.style.color = 'var(--ws-good)';
+        el.querySelector('.ws-step-status').textContent = '✅';
+      }
+    }
+
+    function closeUploadModal() {
+      document.getElementById('uploadModal').style.display = 'none';
+    }
+
+    async function uploadResume(file) {
+      showUploadModal(file.name);
+      const formData = new FormData();
+      formData.append('resume', file);
+
+      // Simulate sequential processing steps
+      setStepComplete('parsing');
+      await new Promise(function(r) { setTimeout(r, 400); });
+      document.getElementById('uploadProgressBar').style.width = '20%';
+
+      setStepComplete('ats');
+      await new Promise(function(r) { setTimeout(r, 300); });
+      document.getElementById('uploadProgressBar').style.width = '35%';
+
+      setStepComplete('keywords');
+      await new Promise(function(r) { setTimeout(r, 300); });
+      document.getElementById('uploadProgressBar').style.width = '50%';
+
+      try {
+        const result = await apiFetch('/api/analyze', {method: 'POST', body: formData});
+
+        setStepComplete('suggestions');
+        document.getElementById('uploadProgressBar').style.width = '70%';
+        await new Promise(function(r) { setTimeout(r, 200); });
+
+        setStepComplete('formatting');
+        document.getElementById('uploadProgressBar').style.width = '85%';
+        await new Promise(function(r) { setTimeout(r, 200); });
+
+        setStepComplete('report');
+        document.getElementById('uploadProgressBar').style.width = '100%';
+        await new Promise(function(r) { setTimeout(r, 300); });
+
+        // Show complete state
+        document.getElementById('uploadIcon').textContent = '🎉';
+        document.getElementById('uploadTitle').textContent = 'Analysis Complete!';
+        document.getElementById('uploadResultScore').textContent = 'ATS Score: ' + result.overall_score + '%';
+        document.getElementById('uploadComplete').style.display = 'block';
+        document.getElementById('uploadSteps').style.display = 'none';
+
+        loadDashboard();
+        loadHistory();
+      } catch (err) {
+        document.getElementById('uploadIcon').textContent = '⚠️';
+        document.getElementById('uploadTitle').textContent = 'Analysis Failed';
+        document.getElementById('uploadFilename').textContent = err.message || 'Upload failed';
+        document.getElementById('uploadComplete').style.display = 'block';
+        document.getElementById('uploadComplete').querySelector('button').textContent = 'Try Again';
+        document.getElementById('uploadSteps').style.display = 'none';
+      }
+    }
+
+    /* ── Dashboard ── */
+    let radarChart = null;
+
+    function animateRing(elementId, percent) {
+      const ring = document.getElementById(elementId);
+      if (!ring) return;
+      const circumference = 326.73;
+      const offset = circumference - (percent / 100) * circumference;
+      ring.style.strokeDashoffset = circumference;
+      setTimeout(function() {
+        ring.style.transition = 'stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1)';
+        ring.style.strokeDashoffset = offset;
+      }, 200);
+    }
+
+    function animateCounter(elementId, target) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      if (target === '—' || target == null) { el.textContent = '—'; return; }
+      const duration = 1000;
+      const steps = 30;
+      const stepTime = duration / steps;
+      let current = 0;
+      const increment = target / steps;
+      const timer = setInterval(function() {
+        current += increment;
+        if (current >= target) {
+          el.textContent = target + '%';
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.round(current) + '%';
+        }
+      }, stepTime);
+    }
+
+    async function loadDashboard() {
+      try {
+        const analyses = await apiFetch('/api/analyses');
+        state.analyses = analyses;
+        document.getElementById('totalAnalyses').textContent = analyses.length;
+
+        const recentBody = document.getElementById('recentBody');
+        const recentEmpty = document.getElementById('recentEmpty');
+        recentBody.innerHTML = '';
+
+        if (analyses.length === 0) {
+          recentEmpty.style.display = 'flex';
+          document.getElementById('avgScore').textContent = '—';
+          document.getElementById('healthScore').textContent = '—';
+          if (radarChart) { radarChart.destroy(); radarChart = null; }
+          return;
+        }
+
+        recentEmpty.style.display = 'none';
+        const recent = analyses.slice(0, 5);
+        recent.forEach(function(a) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td style="font-weight:500;">' + a.filename + '</td>' +
+            '<td><span class="ws-badge ws-badge-' + (a.overall_score >= 70 ? 'good' : a.overall_score >= 40 ? 'warn' : 'bad') + '">' + a.overall_score + '%</span></td>' +
+            '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(a.created_at).toLocaleDateString() + '</td>' +
+            '<td><button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="viewReport(' + a.id + ')">View</button></td>';
+          recentBody.appendChild(tr);
+        });
+
+        const avg = Math.round(analyses.reduce(function(s, a) { return s + a.overall_score; }, 0) / analyses.length);
+        const best = Math.max.apply(Math, analyses.map(function(a) { return a.overall_score; }));
+
+        // Animate score ring
+        animateRing('healthRing', best);
+        animateCounter('healthScore', best);
+        setTimeout(function() {
+          document.getElementById('avgScore').textContent = avg + '%';
+        }, 400);
+        document.getElementById('healthChange').textContent = '↑ Best of ' + analyses.length + ' analyses';
+
+        // Try to get dimension scores from most recent analysis for radar
+        try {
+          const latestId = analyses[0].id;
+          const detail = await apiFetch('/api/analyses/' + latestId);
+          if (detail && detail.dimension_scores && radarChart) {
+            updateRadar(detail.dimension_scores);
+          } else if (detail && detail.dimension_scores) {
+            createRadar(detail.dimension_scores);
+          }
+        } catch (e) {
+          // Fallback: create default radar
+          if (!radarChart) createRadar({});
+        }
+
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+      }
+    }
+
+    function createRadar(scores) {
+      const canvas = document.getElementById('dashboardRadar');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const labels = ['Keywords', 'Formatting', 'Experience', 'Education', 'Skills', 'Impact'];
+      const defaultScores = [65, 70, 60, 75, 68, 55];
+      const data = labels.map(function(l, i) {
+        return scores[l] != null ? scores[l] : defaultScores[i];
+      });
+
+      if (radarChart) { radarChart.destroy(); }
+
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+      const labelColor = isDark ? '#8B8B92' : '#6B6560';
+
+      radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            backgroundColor: 'rgba(30,58,95,0.08)',
+            borderColor: '#1E3A5F',
+            borderWidth: 2,
+            pointBackgroundColor: '#1E3A5F',
+            pointRadius: 2,
+            pointHoverRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            r: {
+              beginAtZero: true,
+              max: 100,
+              ticks: { display: false, stepSize: 20 },
+              grid: { color: gridColor },
+              angleLines: { color: gridColor },
+              pointLabels: { color: labelColor, font: { size: 9, family: 'Inter' } }
+            }
+          }
+        }
+      });
+    }
+
+    function updateRadar(scores) {
+      if (!radarChart) { createRadar(scores); return; }
+      const labels = ['Keywords', 'Formatting', 'Experience', 'Education', 'Skills', 'Impact'];
+      const data = labels.map(function(l) { return scores[l] != null ? scores[l] : 50; });
+      radarChart.data.datasets[0].data = data;
+      radarChart.update();
+    }
+
+    /* ── History ── */
+    let historyTab = 'all';
+
+    function switchHistTab(tab) {
+      historyTab = tab;
+      document.querySelectorAll('[data-histab]').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.histab === tab);
+      });
+      renderHistory();
+    }
+
+    function filterHistory(query) {
+      renderHistory(query);
+    }
+
+    async function loadHistory() {
+      try {
+        const [analyses, resumes] = await Promise.all([
+          apiFetch('/api/analyses'),
+          apiFetch('/api/resumes')
+        ]);
+        state.analyses = analyses || [];
+        state.resumes = resumes || [];
+        renderHistory();
+      } catch (err) {
+        console.error('History load error:', err);
+      }
+    }
+
+    var deleteTarget = null;
+
+    function renderHistory(query) {
+      query = query || (document.getElementById('historySearch') ? document.getElementById('historySearch').value : '');
+      const sortBy = document.getElementById('historySort') ? document.getElementById('historySort').value : 'date';
+      const items = [];
+
+      if (historyTab === 'all' || historyTab === 'analyses') {
+        state.analyses.forEach(function(a) {
+          items.push({type: 'analysis', name: a.filename, score: a.overall_score, date: a.created_at, id: a.id});
+        });
+      }
+      if (historyTab === 'all' || historyTab === 'resumes') {
+        state.resumes.forEach(function(r) {
+          items.push({type: 'resume', name: r.title || r.filename, score: r.overall_score, date: r.updated_at || r.created_at, id: r.id});
+        });
+      }
+
+      const filtered = items.filter(function(item) {
+        return !query || item.name.toLowerCase().includes(query.toLowerCase());
+      });
+
+      filtered.sort(function(a, b) {
+        if (sortBy === 'score') return (b.score || 0) - (a.score || 0);
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        return new Date(b.date) - new Date(a.date);
+      });
+
+      const body = document.getElementById('historyBody');
+      const empty = document.getElementById('historyEmpty');
+      const countEl = document.getElementById('historyCount');
+      body.innerHTML = '';
+
+      if (countEl) countEl.textContent = filtered.length + ' item' + (filtered.length !== 1 ? 's' : '');
+
+      if (filtered.length === 0) {
+        empty.style.display = 'flex';
+        return;
+      }
+
+      empty.style.display = 'none';
+      filtered.forEach(function(item) {
+        const tr = document.createElement('tr');
+        const scoreBadge = item.score != null
+          ? '<span class="ws-badge ws-badge-' + (item.score >= 70 ? 'good' : item.score >= 40 ? 'warn' : 'bad') + '">' + item.score + '%</span>'
+          : '<span class="ws-badge ws-badge-primary">Draft</span>';
+        const viewAction = item.type === 'analysis'
+          ? 'viewReport(' + item.id + ')'
+          : 'switchSection(\'builder\')';
+        tr.innerHTML =
+          '<td style="font-weight:500;">' + item.name + '</td>' +
+          '<td><span class="ws-badge ws-badge-' + (item.type === 'analysis' ? 'primary' : 'accent') + '">' + item.type + '</span></td>' +
+          '<td>' + scoreBadge + '</td>' +
+          '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
+          '<td style="display:flex;gap:4px;">' +
+            '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="' + viewAction + '">' + (item.type === 'analysis' ? 'View' : 'Edit') + '</button>' +
+            '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="openDeleteModal(' + item.id + ',\'' + item.type + '\')" style="color:var(--ws-bad);">🗑</button>' +
+          '</td>';
+        body.appendChild(tr);
+      });
+    }
+
+    function openDeleteModal(id, type) {
+      deleteTarget = {id: id, type: type};
+      document.getElementById('deleteModal').style.display = 'grid';
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      deleteTarget = null;
+    }
+
+    async function confirmDelete() {
+      if (!deleteTarget) return;
+      var btn = document.getElementById('confirmDeleteBtn');
+      btn.disabled = true;
+      btn.textContent = 'Deleting...';
+      try {
+        if (deleteTarget.type === 'analysis') {
+          await apiFetch('/api/analyses/' + deleteTarget.id, {method: 'DELETE'});
+        } else {
+          await apiFetch('/api/resumes/' + deleteTarget.id, {method: 'DELETE'});
+        }
+        showToast('Deleted successfully', 'success');
+        closeDeleteModal();
+        loadHistory();
+      } catch (err) {
+        showToast(err.message || 'Delete failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+    }
+
+    /* ── Career Tracker ── */
+    var applications = JSON.parse(localStorage.getItem('ws-apps') || '[]');
+
+    function switchTrackView(view) {
+      document.querySelectorAll('[data-vt]').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.vt === view);
+      });
+      document.getElementById('trackKanbanView').style.display = view === 'kanban' ? 'block' : 'none';
+      document.getElementById('trackTimelineView').style.display = view === 'timeline' ? 'block' : 'none';
+    }
+
+    function renderKanban() {
+      var columns = {applied: [], interview: [], offer: [], rejected: []};
+      applications.forEach(function(app) {
+        var stage = app.stage || 'applied';
+        if (columns[stage]) columns[stage].push(app);
+      });
+
+      Object.keys(columns).forEach(function(col) {
+        var el = document.getElementById('kanban-' + col);
+        var countEl = document.getElementById('kanbanCount-' + col);
+        var items = columns[col];
+        if (countEl) countEl.textContent = items.length;
+        if (!el) return;
+
+        if (items.length === 0) {
+          el.innerHTML = '<div style="font-size:12px;color:var(--ws-text-tertiary);text-align:center;padding:24px 8px;">No applications</div>';
+          return;
+        }
+
+        el.innerHTML = '';
+        items.forEach(function(app, i) {
+          var card = document.createElement('div');
+          card.draggable = true;
+          card.className = 'ws-card';
+          card.style.cssText = 'padding:10px 12px;margin-bottom:6px;cursor:grab;border:1px solid var(--ws-border-light);border-radius:var(--ws-radius-lg);';
+          card.dataset.appId = app.id;
+          card.innerHTML =
+            '<div style="font-size:13px;font-weight:600;">' + app.company + '</div>' +
+            '<div style="font-size:12px;color:var(--ws-text-secondary);">' + app.role + '</div>' +
+            (app.date ? '<div style="font-size:11px;color:var(--ws-text-tertiary);margin-top:4px;">' + app.date + '</div>' : '') +
+            '<div style="display:flex;gap:4px;margin-top:6px;">' +
+              '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="moveApplication(\'' + app.id + '\',\'interview\')" style="font-size:10px;padding:2px 6px;">→</button>' +
+              '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="deleteApplication(\'' + app.id + '\')" style="font-size:10px;padding:2px 6px;">✕</button>' +
+            '</div>';
+
+          // Drag events
+          card.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', app.id);
+            this.style.opacity = '0.5';
+          });
+          card.addEventListener('dragend', function() {
+            this.style.opacity = '1';
+          });
+
+          el.appendChild(card);
+        });
+      });
+
+      updateDashboardStats();
+    }
+
+    // Column drop zones
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('.ws-kanban-column').forEach(function(col) {
+        col.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          this.style.background = 'var(--ws-primary-glass)';
+        });
+        col.addEventListener('dragleave', function() {
+          this.style.background = '';
+        });
+        col.addEventListener('drop', function(e) {
+          e.preventDefault();
+          this.style.background = '';
+          var appId = e.dataTransfer.getData('text/plain');
+          var newStage = this.dataset.column;
+          var app = applications.find(function(a) { return a.id === appId; });
+          if (app) {
+            app.stage = newStage;
+            localStorage.setItem('ws-apps', JSON.stringify(applications));
+            renderKanban();
+            renderTimeline();
+            showToast('Moved to ' + newStage, 'info');
+          }
+        });
+      });
+      renderKanban();
+    });
+
+    function showAddApplication() {
+      document.getElementById('appModal').style.display = 'grid';
+      document.getElementById('appDate').value = new Date().toISOString().split('T')[0];
+    }
+
+    function closeAppModal() {
+      document.getElementById('appModal').style.display = 'none';
+    }
+
+    function saveApplication() {
+      var company = document.getElementById('appCompany').value.trim();
+      var role = document.getElementById('appRole').value.trim();
+      if (!company || !role) { showToast('Company and role required', 'warning'); return; }
+      var app = {
+        id: 'app_' + Date.now(),
+        company: company,
+        role: role,
+        stage: document.getElementById('appStage').value,
+        date: document.getElementById('appDate').value,
+        notes: document.getElementById('appNotes').value.trim()
+      };
+      applications.unshift(app);
+      localStorage.setItem('ws-apps', JSON.stringify(applications));
+      renderKanban();
+      renderTimeline();
+      closeAppModal();
+      document.getElementById('appCompany').value = '';
+      document.getElementById('appRole').value = '';
+      document.getElementById('appNotes').value = '';
+      showToast('Application added', 'success');
+    }
+
+    function moveApplication(id, stage) {
+      var app = applications.find(function(a) { return a.id === id; });
+      if (app) {
+        app.stage = stage;
+        localStorage.setItem('ws-apps', JSON.stringify(applications));
+        renderKanban();
+        renderTimeline();
+      }
+    }
+
+    function deleteApplication(id) {
+      applications = applications.filter(function(a) { return a.id !== id; });
+      localStorage.setItem('ws-apps', JSON.stringify(applications));
+      renderKanban();
+      renderTimeline();
+      showToast('Application removed', 'info');
+    }
+
+    function renderTimeline() {
+      var el = document.getElementById('timelineList');
+      if (applications.length === 0) {
+        el.innerHTML = '<div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--ws-border);"></div><div style="text-align:center;padding:40px 16px;color:var(--ws-text-tertiary);font-size:13px;">Add applications to see your career timeline</div>';
+        return;
+      }
+      var sorted = [].concat(applications).sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+      var html = '<div style="position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--ws-border);"></div>';
+      sorted.forEach(function(app) {
+        var stageColors = {applied: 'var(--ws-primary)', interview: 'var(--ws-warn)', offer: 'var(--ws-good)', rejected: 'var(--ws-bad)'};
+        html += '<div style="margin-bottom:12px;position:relative;">' +
+          '<div style="position:absolute;left:-20px;top:4px;width:12px;height:12px;border-radius:50%;background:' + (stageColors[app.stage] || 'var(--ws-primary)') + ';border:2px solid var(--ws-surface);"></div>' +
+          '<div style="font-size:13px;font-weight:600;">' + app.company + ' — ' + app.role + '</div>' +
+          '<div style="font-size:12px;color:var(--ws-text-secondary);display:flex;gap:8px;">' +
+            '<span class="ws-badge ws-badge-' + (app.stage === 'applied' ? 'primary' : app.stage === 'interview' ? 'warn' : app.stage === 'offer' ? 'good' : 'bad') + '">' + app.stage + '</span>' +
+            (app.date ? '<span style="color:var(--ws-text-tertiary);">' + app.date + '</span>' : '') +
+          '</div>' +
+          (app.notes ? '<div style="font-size:12px;color:var(--ws-text-tertiary);margin-top:4px;">' + app.notes + '</div>' : '') +
+        '</div>';
+      });
+      el.innerHTML = html;
+    }
+
+    function updateDashboardStats() {
+      var counts = {applied: 0, interview: 0, offer: 0, rejected: 0};
+      applications.forEach(function(a) {
+        if (counts[a.stage] != null) counts[a.stage]++;
+      });
+      document.getElementById('appCount').textContent = applications.length;
+      document.getElementById('interviewCount').textContent = counts.interview;
+      document.getElementById('offerCount').textContent = counts.offer;
+      document.getElementById('trackApplied').textContent = counts.applied;
+      document.getElementById('trackInterview').textContent = counts.interview;
+      document.getElementById('trackOffer').textContent = counts.offer;
+      document.getElementById('trackRejected').textContent = counts.rejected;
+
+      // Calculate rates
+      var total = applications.length;
+      if (total > 0) {
+        document.getElementById('interviewRate').textContent = Math.round((counts.interview / total) * 100) + '%';
+        document.getElementById('interviewRateBar').style.width = (counts.interview / total) * 100 + '%';
+        document.getElementById('callbackRate').textContent = Math.round(((counts.interview + counts.offer) / total) * 100) + '%';
+        document.getElementById('callbackRateBar').style.width = ((counts.interview + counts.offer) / total) * 100 + '%';
+        document.getElementById('offerRate').textContent = Math.round((counts.offer / total) * 100) + '%';
+        document.getElementById('offerRateBar').style.width = (counts.offer / total) * 100 + '%';
+      } else {
+        ['interviewRate', 'callbackRate', 'offerRate', 'scoreTrend'].forEach(function(id) {
+          document.getElementById(id).textContent = '—';
+        });
+      }
+    }
+
+    /* ── AI Rewrite ── */
+    var rewriteVersions = [];
+    var currentRewriteVersion = null;
+
+    async function aiRewrite() {
+      var text = document.getElementById('rewriteOriginal').value.trim();
+      if (!text) {
+        showToast('Paste some text to rewrite first', 'warning');
+        return;
+      }
+      var btn = document.getElementById('rewriteBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span style="display:inline-block;animation:ws-shimmer 0.8s linear infinite;">⏳</span> Rewriting...';
+      var mode = document.getElementById('rewriteMode').value;
+
+      try {
+        var result;
+        if (mode === 'role' || mode === 'executive') {
+          // Use the improve-with-diff API for advanced modes
+          var formData = new FormData();
+          var blob = new Blob([text], {type: 'text/plain'});
+          formData.append('resume', blob, 'resume.txt');
+          formData.append('mode', mode);
+          formData.append('instructions', 'Optimize this resume section');
+          result = await apiFetch('/api/generate/improve-with-diff', {method: 'POST', body: formData});
+        } else {
+          result = await apiFetch('/api/builder/ai-assist', {
+            method: 'POST',
+            body: {action: 'improve_bullet', text: text}
+          });
+        }
+
+        var improved = result.result || result.resume || '';
+        document.getElementById('rewriteResult').innerHTML = improved;
+        document.getElementById('newWordCount').textContent = improved.split(/\s+/).filter(Boolean).length + ' words';
+        document.getElementById('rewriteActions').style.display = 'flex';
+        document.getElementById('rewriteActions').style.display = 'flex';
+
+        // Show explanation
+        var improvements = result.improvements || [
+          'Enhanced bullet points with stronger action verbs',
+          'Improved clarity and professional tone',
+          'Optimized for ATS keyword matching',
+          'Added impact-driven language'
+        ];
+        var explEl = document.getElementById('rewriteExplanation');
+        explEl.innerHTML = '';
+        improvements.forEach(function(imp) {
+          var li = document.createElement('li');
+          li.textContent = imp;
+          explEl.appendChild(li);
+        });
+        document.getElementById('rewriteExplanationCard').style.display = 'block';
+
+        // Track version
+        currentRewriteVersion = {
+          id: Date.now(),
+          original: text,
+          improved: improved,
+          timestamp: new Date().toLocaleString()
+        };
+        rewriteVersions.unshift(currentRewriteVersion);
+        renderRewriteHistory();
+        document.getElementById('rewriteHistoryCard').style.display = 'block';
+
+        showToast('Rewrite complete', 'success');
+      } catch (err) {
+        showToast(err.message || 'Rewrite failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Rewrite with AI';
+      }
+    }
+
+    function acceptRewrite() {
+      var improved = document.getElementById('rewriteResult').textContent;
+      document.getElementById('rewriteOriginal').value = improved;
+      document.getElementById('origWordCount').textContent = improved.split(/\s+/).filter(Boolean).length + ' words';
+      document.getElementById('rewriteResult').innerHTML = '';
+      document.getElementById('rewriteActions').style.display = 'none';
+      document.getElementById('rewriteExplanationCard').style.display = 'none';
+      showToast('Changes accepted ✓', 'success');
+    }
+
+    function rejectRewrite() {
+      document.getElementById('rewriteResult').innerHTML = '';
+      document.getElementById('rewriteActions').style.display = 'none';
+      document.getElementById('rewriteExplanationCard').style.display = 'none';
+      showToast('Changes rejected', 'info');
+    }
+
+    function copyRewrite() {
+      var text = document.getElementById('rewriteResult').textContent;
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('Copied to clipboard', 'success');
+      }).catch(function() {
+        showToast('Failed to copy', 'error');
+      });
+    }
+
+    function exportRewrite() {
+      var text = document.getElementById('rewriteResult').textContent;
+      if (!text) { showToast('No content to export', 'warning'); return; }
+      fetch('/api/export/docx', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({text: text, title: 'AI_Rewritten_Resume'})
+      }).then(function(r) { return r.blob(); }).then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'AI_Rewritten_Resume.docx';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Exported successfully', 'success');
+      }).catch(function() { showToast('Export failed', 'error'); });
+    }
+
+    function renderRewriteHistory() {
+      var list = document.getElementById('rewriteVersionList');
+      list.innerHTML = '';
+      rewriteVersions.forEach(function(v) {
+        var item = document.createElement('div');
+        item.className = 'ws-flex-between';
+        item.style.cssText = 'padding:8px 10px;border-radius:var(--ws-radius-sm);cursor:pointer;font-size:12px;';
+        item.onmouseover = function() { this.style.background = 'var(--ws-surface-hover)'; };
+        item.onmouseout = function() { this.style.background = 'transparent'; };
+        item.innerHTML =
+          '<div><span style="font-weight:600;">v' + (rewriteVersions.indexOf(v) + 1) + '</span> — ' + v.timestamp + '</div>' +
+          '<div style="display:flex;gap:4px;">' +
+            '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="restoreRewriteVersion(' + v.id + ')">Restore</button>' +
+            '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="deleteRewriteVersion(' + v.id + ')">✕</button>' +
+          '</div>';
+        list.appendChild(item);
+      });
+    }
+
+    function restoreRewriteVersion(id) {
+      var v = rewriteVersions.find(function(x) { return x.id === id; });
+      if (v) {
+        document.getElementById('rewriteOriginal').value = v.improved;
+        document.getElementById('origWordCount').textContent = v.improved.split(/\s+/).filter(Boolean).length + ' words';
+        showToast('Version restored', 'success');
+      }
+    }
+
+    function deleteRewriteVersion(id) {
+      rewriteVersions = rewriteVersions.filter(function(x) { return x.id !== id; });
+      renderRewriteHistory();
+      if (rewriteVersions.length === 0) document.getElementById('rewriteHistoryCard').style.display = 'none';
+    }
+
+    function clearRewriteHistory() {
+      rewriteVersions = [];
+      renderRewriteHistory();
+      document.getElementById('rewriteHistoryCard').style.display = 'none';
+    }
+
+    /* ── Profile ── */
+    async function loadProfile() {
+      try {
+        const data = await apiFetch('/api/user/profile');
+        document.getElementById('profileEmail').value = data.user.email;
+        document.getElementById('usageAnalyses').textContent = data.total_analyses;
+        var apps = JSON.parse(localStorage.getItem('ws-apps') || '[]');
+        document.getElementById('usageApps').textContent = apps.length;
+      } catch (err) {
+        console.error('Profile load error:', err);
+      }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('profileName').value.trim();
+      const password = document.getElementById('profilePassword').value;
+      const body = {};
+      if (name) body.name = name;
+      if (password && password.length >= 8) body.password = password;
+      try {
+        await apiFetch('/api/user/profile', {method: 'PUT', body: body});
+        showToast('Profile updated successfully', 'success');
+      } catch (err) {
+        showToast(err.message || 'Update failed', 'error');
+      }
+    });
+
+    /* ── ATS Report ── */
+    let reportRadarChart = null;
+
+    function closeReport() {
+      switchSection(state.previousSection || 'dashboard');
+    }
+
+    function openReportSection() {
+      state.previousSection = state.currentSection;
+      document.querySelectorAll('.ws-section').forEach(function(el) { el.style.display = 'none'; });
+      document.getElementById('section-report').style.display = 'block';
+      document.getElementById('pageTitle').textContent = 'ATS Report';
+      document.querySelectorAll('.ws-nav-item').forEach(function(el) { el.classList.remove('active'); });
+    }
+
+    async function viewReport(analysisId) {
+      openReportSection();
+      showToast('Loading report...', 'info');
+      try {
+        const data = await apiFetch('/api/analyses/' + analysisId);
+        renderReport(data);
+      } catch (err) {
+        showToast('Failed to load report: ' + err.message, 'error');
+      }
+    }
+
+    function renderReport(data) {
+      const score = data.overall_score || 0;
+      document.getElementById('reportFilename').textContent = data.filename || 'Untitled';
+      document.getElementById('reportScoreValue').textContent = score + '%';
+      document.getElementById('reportScoreLabel').textContent = score >= 80 ? 'Excellent — well optimized for ATS'
+        : score >= 60 ? 'Good — some room for improvement'
+        : score >= 40 ? 'Fair — needs significant work'
+        : 'Poor — requires major improvements';
+
+      // Animate score ring
+      const ring = document.getElementById('reportScoreRing');
+      if (ring) {
+        const circumference = 326.73;
+        const offset = circumference - (score / 100) * circumference;
+        ring.style.strokeDashoffset = circumference;
+        setTimeout(function() {
+          ring.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1)';
+          ring.style.strokeDashoffset = offset;
+        }, 200);
+      }
+
+      // Dimension scores
+      const dims = data.dimension_scores || {};
+      const labels = ['Keywords', 'Formatting', 'Experience', 'Education', 'Skills', 'Impact'];
+      const values = labels.map(function(l) { return dims[l] || 50; });
+
+      document.getElementById('reportReadability').textContent = (dims.Readability || values[0]) + '%';
+      document.getElementById('reportReadabilityBar').style.width = (dims.Readability || values[0]) + '%';
+      document.getElementById('reportFormatting').textContent = (dims.Formatting || values[1]) + '%';
+      document.getElementById('reportFormattingBar').style.width = (dims.Formatting || values[1]) + '%';
+      document.getElementById('reportImpact').textContent = (dims.Impact || values[5]) + '%';
+      document.getElementById('reportImpactBar').style.width = (dims.Impact || values[5]) + '%';
+
+      // Radar chart
+      const canvas = document.getElementById('reportRadar');
+      if (canvas) {
+        if (reportRadarChart) reportRadarChart.destroy();
+        const ctx = canvas.getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        reportRadarChart = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: values,
+              backgroundColor: 'rgba(30,58,95,0.08)',
+              borderColor: '#1E3A5F',
+              borderWidth: 2,
+              pointBackgroundColor: '#1E3A5F',
+              pointRadius: 2,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+              r: {
+                beginAtZero: true, max: 100,
+                ticks: { display: false, stepSize: 20 },
+                grid: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' },
+                angleLines: { color: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' },
+                pointLabels: { color: isDark ? '#8B8B92' : '#6B6560', font: { size: 9, family: 'Inter' } }
+              }
+            }
+          }
+        });
+      }
+
+      // Keywords
+      const matchedContainer = document.getElementById('reportMatchedKeywords');
+      const missingContainer = document.getElementById('reportMissingKeywords');
+      matchedContainer.innerHTML = '';
+      missingContainer.innerHTML = '';
+
+      const keywords = data.suggested_keywords || [];
+      const matched = keywords.slice(0, Math.floor(keywords.length / 2));
+      const missing = keywords.slice(Math.floor(keywords.length / 2));
+
+      matched.forEach(function(k) {
+        const badge = document.createElement('span');
+        badge.className = 'ws-badge ws-badge-good';
+        badge.textContent = k;
+        matchedContainer.appendChild(badge);
+      });
+      missing.forEach(function(k) {
+        const badge = document.createElement('span');
+        badge.className = 'ws-badge ws-badge-bad';
+        badge.textContent = k;
+        missingContainer.appendChild(badge);
+      });
+
+      // Strengths & Weaknesses
+      const strengthsEl = document.getElementById('reportStrengths');
+      const weaknessesEl = document.getElementById('reportWeaknesses');
+      strengthsEl.innerHTML = '';
+      weaknessesEl.innerHTML = '';
+      (data.strengths || []).forEach(function(s) {
+        var li = document.createElement('li'); li.textContent = s; strengthsEl.appendChild(li);
+      });
+      (data.weaknesses || []).forEach(function(w) {
+        var li = document.createElement('li'); li.textContent = w; weaknessesEl.appendChild(li);
+      });
+
+      // Summary
+      document.getElementById('reportSummary').textContent = data.summary || 'No AI summary available.';
+
+      // Suggestions
+      const suggestionsEl = document.getElementById('reportSuggestions');
+      suggestionsEl.innerHTML = '';
+      (data.suggestions || []).forEach(function(s) {
+        var li = document.createElement('li'); li.textContent = s; suggestionsEl.appendChild(li);
+      });
+    }
+
+    /* ── Builder ── */
+    let builderData = { experience: [], education: [], projects: [] };
+    let builderResumeId = null;
+
+    function switchBuilderTab(tab) {
+      document.querySelectorAll('[data-bt]').forEach(function(el) {
+        el.classList.toggle('active', el.dataset.bt === tab);
+      });
+      document.querySelectorAll('.builder-panel').forEach(function(el) {
+        el.style.display = 'none';
+      });
+      var panel = document.getElementById('bpanel-' + tab);
+      if (panel) panel.style.display = 'block';
+    }
+
+    function addExperience() {
+      var list = document.getElementById('experienceList');
+      var idx = builderData.experience.length;
+      builderData.experience.push({company: '', role: '', dates: '', bullets: ['']});
+      var div = document.createElement('div');
+      div.className = 'ws-card';
+      div.style.cssText = 'padding:12px;margin-bottom:8px;border:1px solid var(--ws-border);border-radius:var(--ws-radius-lg);';
+      div.dataset.idx = idx;
+      div.innerHTML =
+        '<div class="ws-grid-2" style="margin-bottom:8px;">' +
+          '<div class="ws-input-group"><input class="ws-input" placeholder="Company" oninput="builderData.experience[' + idx + '].company=this.value;updatePreview()"></div>' +
+          '<div class="ws-input-group"><input class="ws-input" placeholder="Role" oninput="builderData.experience[' + idx + '].role=this.value;updatePreview()"></div>' +
+        '</div>' +
+        '<div class="ws-input-group ws-mb-sm"><input class="ws-input" placeholder="Dates (e.g. Jan 2020 - Present)" oninput="builderData.experience[' + idx + '].dates=this.value;updatePreview()"></div>' +
+        '<textarea class="ws-textarea" rows="2" placeholder="Bullet points (one per line)" oninput="builderData.experience[' + idx + '].bullets=this.value.split(\'\\n\');updatePreview()"></textarea>' +
+        '<div style="margin-top:6px;display:flex;gap:4px;">' +
+          '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="aiAssist(\'bullet\',this)">✨ Improve</button>' +
+          '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="this.closest(\'.ws-card\').remove();builderData.experience.splice(' + idx + ',1);updatePreview()">🗑 Remove</button>' +
+        '</div>';
+      list.appendChild(div);
+      updatePreview();
+    }
+
+    function addEducation() {
+      var list = document.getElementById('educationList');
+      var idx = builderData.education.length;
+      builderData.education.push({school: '', degree: '', dates: ''});
+      var div = document.createElement('div');
+      div.className = 'ws-card';
+      div.style.cssText = 'padding:12px;margin-bottom:8px;border:1px solid var(--ws-border);border-radius:var(--ws-radius-lg);';
+      div.innerHTML =
+        '<div class="ws-grid-2" style="margin-bottom:8px;">' +
+          '<div class="ws-input-group"><input class="ws-input" placeholder="School" oninput="builderData.education[' + idx + '].school=this.value;updatePreview()"></div>' +
+          '<div class="ws-input-group"><input class="ws-input" placeholder="Degree" oninput="builderData.education[' + idx + '].degree=this.value;updatePreview()"></div>' +
+        '</div>' +
+        '<div class="ws-input-group"><input class="ws-input" placeholder="Dates" oninput="builderData.education[' + idx + '].dates=this.value;updatePreview()"></div>';
+      list.appendChild(div);
+      updatePreview();
+    }
+
+    function addProject() {
+      var list = document.getElementById('projectList');
+      var idx = builderData.projects.length;
+      builderData.projects.push({name: '', desc: '', tech: ''});
+      var div = document.createElement('div');
+      div.className = 'ws-card';
+      div.style.cssText = 'padding:12px;margin-bottom:8px;border:1px solid var(--ws-border);border-radius:var(--ws-radius-lg);';
+      div.innerHTML =
+        '<div class="ws-input-group ws-mb-sm"><input class="ws-input" placeholder="Project Name" oninput="builderData.projects[' + idx + '].name=this.value;updatePreview()"></div>' +
+        '<div class="ws-input-group ws-mb-sm"><textarea class="ws-textarea" rows="2" placeholder="Description" oninput="builderData.projects[' + idx + '].desc=this.value;updatePreview()"></textarea></div>' +
+        '<div class="ws-input-group"><input class="ws-input" placeholder="Technologies used" oninput="builderData.projects[' + idx + '].tech=this.value;updatePreview()"></div>';
+      list.appendChild(div);
+      updatePreview();
+    }
+
+    function updatePreview() {
+      var name = document.getElementById('bName').value || 'Your Name';
+      var email = document.getElementById('bEmail').value || '';
+      var phone = document.getElementById('bPhone').value || '';
+      var loc = document.getElementById('bLocation').value || '';
+      var summary = document.getElementById('bSummary').value || '';
+      var skills = document.getElementById('bSkills').value || '';
+
+      var html = '';
+      // Header
+      html += '<div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--ws-primary);">';
+      html += '<div style="font-size:18px;font-weight:700;letter-spacing:-0.02em;">' + name + '</div>';
+      var contacts = [email, phone, loc].filter(Boolean).join('  •  ');
+      if (contacts) html += '<div style="font-size:11px;color:var(--ws-text-secondary);margin-top:4px;">' + contacts + '</div>';
+      html += '</div>';
+
+      // Summary
+      if (summary) {
+        html += '<div style="margin-bottom:14px;">';
+        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Summary</div>';
+        html += '<div style="font-size:12px;color:var(--ws-text-secondary);line-height:1.6;">' + summary + '</div>';
+        html += '</div>';
+      }
+
+      // Experience
+      var exps = builderData.experience || [];
+      if (exps.length > 0 && exps.some(function(e) { return e.company || e.role; })) {
+        html += '<div style="margin-bottom:14px;">';
+        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Experience</div>';
+        exps.forEach(function(e) {
+          if (!e.company && !e.role) return;
+          html += '<div style="margin-bottom:10px;">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:baseline;">';
+          html += '<span style="font-size:13px;font-weight:600;">' + (e.role || '') + '</span>';
+          html += '<span style="font-size:11px;color:var(--ws-text-tertiary);">' + (e.dates || '') + '</span>';
+          html += '</div>';
+          if (e.company) html += '<div style="font-size:12px;color:var(--ws-text-secondary);">' + e.company + '</div>';
+          if (e.bullets && e.bullets.length > 0 && e.bullets[0]) {
+            html += '<ul style="margin:4px 0 0 14px;padding:0;">';
+            e.bullets.forEach(function(b) {
+              if (b.trim()) html += '<li style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + b + '</li>';
+            });
+            html += '</ul>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Education
+      var educ = builderData.education || [];
+      if (educ.length > 0 && educ.some(function(e) { return e.school || e.degree; })) {
+        html += '<div style="margin-bottom:14px;">';
+        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Education</div>';
+        educ.forEach(function(e) {
+          if (!e.school && !e.degree) return;
+          html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">';
+          html += '<span style="font-size:12px;font-weight:600;">' + (e.school || '') + ' — ' + (e.degree || '') + '</span>';
+          html += '<span style="font-size:11px;color:var(--ws-text-tertiary);">' + (e.dates || '') + '</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Skills
+      if (skills) {
+        html += '<div style="margin-bottom:14px;">';
+        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Skills</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+        skills.split(',').forEach(function(s) {
+          s = s.trim();
+          if (s) html += '<span style="font-size:11px;background:var(--ws-primary-subtle);color:var(--ws-primary);padding:2px 8px;border-radius:4px;font-weight:500;">' + s + '</span>';
+        });
+        html += '</div></div>';
+      }
+
+      // Projects
+      var projs = builderData.projects || [];
+      if (projs.length > 0 && projs.some(function(p) { return p.name; })) {
+        html += '<div style="margin-bottom:14px;">';
+        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Projects</div>';
+        projs.forEach(function(p) {
+          if (!p.name) return;
+          html += '<div style="margin-bottom:8px;">';
+          html += '<div style="font-size:13px;font-weight:600;">' + p.name + '</div>';
+          if (p.desc) html += '<div style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + p.desc + '</div>';
+          if (p.tech) html += '<div style="font-size:11px;color:var(--ws-text-tertiary);margin-top:2px;">' + p.tech + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      if (!html) {
+        html = '<div style="text-align:center;padding:48px 16px;color:var(--ws-text-tertiary);">' +
+          '<div style="font-size:32px;margin-bottom:8px;">📝</div>' +
+          '<div style="font-weight:600;color:var(--ws-text-secondary);">Edit your resume to see preview</div></div>';
+      }
+
+      document.getElementById('builderPreview').innerHTML = html;
+    }
+
+    async function aiAssist(mode, btn) {
+      var text = '';
+      if (mode === 'summary') {
+        text = document.getElementById('bSummary').value || 'Write a professional summary for a software engineer';
+        btn = document.querySelector('#bpanel-personal .ws-btn-ghost');
+      } else if (mode === 'skills') {
+        text = document.getElementById('bSkills').value || 'Suggest relevant skills for a software engineer';
+        btn = document.querySelector('#bpanel-skills .ws-btn-ghost');
+      } else if (mode === 'bullet') {
+        var ta = btn.closest('.ws-card').querySelector('textarea');
+        text = ta ? ta.value : '';
+        if (!text) { showToast('Enter some text first', 'warning'); return; }
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ AI...';
+      try {
+        var result = await apiFetch('/api/builder/ai-assist', {
+          method: 'POST',
+          body: { action: mode === 'summary' ? 'generate_summary' : mode === 'skills' ? 'ats_polish' : 'improve_bullet', text: text }
+        });
+        if (mode === 'summary') {
+          document.getElementById('bSummary').value = result.result;
+        } else if (mode === 'skills') {
+          document.getElementById('bSkills').value = result.result;
+        } else if (mode === 'bullet') {
+          var ta = btn.closest('.ws-card').querySelector('textarea');
+          if (ta) ta.value = result.result;
+        }
+        updatePreview();
+        showToast('AI enhancement applied', 'success');
+      } catch (err) {
+        showToast(err.message || 'AI assist failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ AI Assist';
+      }
+    }
+
+    async function saveBuilderResume() {
+      var data = {
+        fullName: document.getElementById('bName').value,
+        email: document.getElementById('bEmail').value,
+        phone: document.getElementById('bPhone').value,
+        location: document.getElementById('bLocation').value,
+        summary: document.getElementById('bSummary').value,
+        skills: document.getElementById('bSkills').value,
+        experience: builderData.experience,
+        education: builderData.education,
+        projects: builderData.projects
+      };
+      try {
+        var payload = {
+          title: data.fullName + ' - Resume',
+          template: 'modern',
+          data: data
+        };
+        var result = await apiFetch(builderResumeId ? '/api/resumes/' + builderResumeId : '/api/resumes', {
+          method: builderResumeId ? 'PUT' : 'POST',
+          body: payload
+        });
+        if (result.id) builderResumeId = result.id;
+        showToast('Resume saved successfully', 'success');
+      } catch (err) {
+        showToast(err.message || 'Save failed', 'error');
+      }
+    }
+
+    /* ── Export ── */
+    function exportResume() {
+      var preview = document.getElementById('builderPreview').textContent;
+      if (!preview || preview.length < 20) {
+        showToast('Build a resume first', 'warning');
+        return;
+      }
+      showToast('Exporting...', 'info');
+      var name = document.getElementById('bName').value || 'Resume';
+      var text = document.getElementById('builderPreview').innerText;
+      fetch('/api/export/docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, title: name + '_Resume' })
+      }).then(function(res) {
+        if (!res.ok) throw new Error('Export failed');
+        return res.blob();
+      }).then(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = name + '_Resume.docx';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Exported successfully', 'success');
+      }).catch(function(err) {
+        showToast(err.message || 'Export failed', 'error');
+      });
+    }
+
+    /* ── Init ── */
+    document.addEventListener('DOMContentLoaded', function() {
+      // Create default radar chart
+      createRadar({});
+      loadDashboard();
+    });
+
+    // Listen for theme changes to update radar colors
+    const origApply = applyTheme;
+    applyTheme = function(theme) {
+      origApply(theme);
+      if (radarChart) {
+        const isDark = theme === 'dark';
+        const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+        const labelColor = isDark ? '#8B8B92' : '#6B6560';
+        radarChart.options.scales.r.grid.color = gridColor;
+        radarChart.options.scales.r.angleLines.color = gridColor;
+        radarChart.options.scales.r.pointLabels.color = labelColor;
+        radarChart.update();
+      }
+    };
+  </script>
+
+</body>
+</html>
