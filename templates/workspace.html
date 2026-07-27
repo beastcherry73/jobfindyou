@@ -8,6 +8,100 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="stylesheet" href="/static/css/workspace.css">
   <link rel="icon" href="/static/favicon.ico">
+  <style>
+    .ws-nav-sub-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px 6px 32px;
+      border-radius: var(--ws-radius-md);
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--ws-text-secondary);
+      cursor: pointer;
+      transition: all var(--ws-duration) var(--ws-ease);
+      white-space: nowrap;
+      text-decoration: none;
+      margin-top: 2px;
+      user-select: none;
+    }
+    .ws-nav-sub-item:hover {
+      background: var(--ws-surface-hover);
+      color: var(--ws-text);
+    }
+    .ws-nav-sub-item.active {
+      background: var(--ws-primary-subtle);
+      color: var(--ws-primary);
+      font-weight: 600;
+    }
+    .ws-sidebar.collapsed .ws-nav-sub-item {
+      padding: 8px 12px;
+      justify-content: center;
+    }
+    .ws-sidebar.collapsed .ws-nav-sub-item .ws-nav-label {
+      display: none;
+    }
+    
+    /* Level 5 Report Styling */
+    .report-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--ws-border);
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 1px;
+      scrollbar-width: none;
+    }
+    .report-tabs::-webkit-scrollbar {
+      display: none;
+    }
+    .report-tab-btn {
+      padding: 10px 16px;
+      border: none;
+      background: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--ws-text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .report-tab-btn:hover {
+      color: var(--ws-text);
+    }
+    .report-tab-btn.active {
+      color: var(--ws-primary);
+      border-bottom-color: var(--ws-primary);
+      font-weight: 600;
+    }
+    .report-tab-content {
+      display: none;
+    }
+    .report-tab-content.active {
+      display: block;
+    }
+
+    /* Print styling */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #builderPreview, #builderPreview *, #section-report, #section-report * {
+        visibility: visible;
+      }
+      #builderPreview, #section-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- ═══ OVERLAY (mobile) ═══ -->
@@ -29,30 +123,100 @@
       </div>
 
       <nav class="ws-sidebar-nav">
-        <div class="ws-nav-section-label">Main</div>
+        <!-- Dashboard -->
         <a class="ws-nav-item active" data-section="dashboard" onclick="switchSection('dashboard')">
           <span class="ws-nav-icon">📊</span>
           <span class="ws-nav-label">Dashboard</span>
         </a>
-        <a class="ws-nav-item" data-section="builder" onclick="switchSection('builder')">
-          <span class="ws-nav-icon">📝</span>
-          <span class="ws-nav-label">Builder</span>
-        </a>
-        <a class="ws-nav-item" data-section="ai-rewrite" onclick="switchSection('ai-rewrite')">
-          <span class="ws-nav-icon">✨</span>
-          <span class="ws-nav-label">AI Rewrite</span>
-        </a>
-        <a class="ws-nav-item" data-section="tracker" onclick="switchSection('tracker')">
-          <span class="ws-nav-icon">🎯</span>
-          <span class="ws-nav-label">Career Tracker</span>
-        </a>
 
-        <div class="ws-nav-section-label" style="margin-top:8px;">History</div>
-        <a class="ws-nav-item" data-section="history" onclick="switchSection('history')">
+        <!-- Resume Analysis Section -->
+        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Analysis</div>
+        <a class="ws-nav-sub-item" data-section="analysis-upload" onclick="switchSection('analysis-upload')">
+          <span class="ws-nav-icon">📤</span>
+          <span class="ws-nav-label">Upload Resume</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="history" onclick="switchSection('history')">
           <span class="ws-nav-icon">📁</span>
-          <span class="ws-nav-label">History</span>
+          <span class="ws-nav-label">Previous Analyses</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="report" onclick="switchSection('report')" id="nav-detailed-report" style="display:none;">
+          <span class="ws-nav-icon">📄</span>
+          <span class="ws-nav-label">Detailed Reports</span>
         </a>
 
+        <!-- Resume Builder Section -->
+        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Builder</div>
+        <a class="ws-nav-sub-item" data-section="builder" onclick="switchSection('builder')">
+          <span class="ws-nav-icon">📝</span>
+          <span class="ws-nav-label">Build Resume</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="builder-templates" onclick="switchSection('builder-templates')">
+          <span class="ws-nav-icon">🎨</span>
+          <span class="ws-nav-label">Templates</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="builder-versions" onclick="switchSection('builder-versions')">
+          <span class="ws-nav-icon">🗂️</span>
+          <span class="ws-nav-label">Versions</span>
+        </a>
+
+        <!-- Enhance Resume Section -->
+        <div class="ws-nav-section-label" style="margin-top:8px;">Enhance Resume</div>
+        <a class="ws-nav-sub-item" data-section="enhance-improve" onclick="switchSection('enhance-improve')">
+          <span class="ws-nav-icon">⚡</span>
+          <span class="ws-nav-label">AI Resume Enhancement</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="enhance-rewrite" onclick="switchSection('enhance-rewrite')">
+          <span class="ws-nav-icon">✍️</span>
+          <span class="ws-nav-label">AI Resume Rewrite</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="enhance-keywords" onclick="switchSection('enhance-keywords')">
+          <span class="ws-nav-icon">🔑</span>
+          <span class="ws-nav-label">Keyword Optimization</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="enhance-grammar" onclick="switchSection('enhance-grammar')">
+          <span class="ws-nav-icon">✏️</span>
+          <span class="ws-nav-label">Grammar & Style</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="enhance-ats" onclick="switchSection('enhance-ats')">
+          <span class="ws-nav-icon">📈</span>
+          <span class="ws-nav-label">ATS Optimization</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="enhance-bullets" onclick="switchSection('enhance-bullets')">
+          <span class="ws-nav-icon">🎯</span>
+          <span class="ws-nav-label">Bullet Point Enhancement</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="enhance-skills" onclick="switchSection('enhance-skills')">
+          <span class="ws-nav-icon">💡</span>
+          <span class="ws-nav-label">Skills Enhancement</span>
+        </a>
+
+        <!-- Career Workspace Section -->
+        <div class="ws-nav-section-label" style="margin-top:8px;">Career Workspace</div>
+        <a class="ws-nav-sub-item" data-section="workspace-insights" onclick="switchSection('workspace-insights')">
+          <span class="ws-nav-icon">💡</span>
+          <span class="ws-nav-label">Career Insights</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="workspace-progress" onclick="switchSection('workspace-progress')">
+          <span class="ws-nav-icon">📊</span>
+          <span class="ws-nav-label">Progress</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="workspace-goals" onclick="switchSection('workspace-goals')">
+          <span class="ws-nav-icon">✅</span>
+          <span class="ws-nav-label">Weekly Goals</span>
+        </a>
+
+        <!-- Applications Section -->
+        <div class="ws-nav-section-label" style="margin-top:8px;">Applications</div>
+        <a class="ws-nav-sub-item" data-section="tracker" onclick="switchSection('tracker')">
+          <span class="ws-nav-icon">🎯</span>
+          <span class="ws-nav-label">Job Tracker</span>
+        </a>
+        <a class="ws-nav-sub-item" data-section="applications-calendar" onclick="switchSection('applications-calendar')">
+          <span class="ws-nav-icon">📅</span>
+          <span class="ws-nav-label">Calendar</span>
+        </a>
+
+        <!-- Account Section -->
         <div class="ws-nav-section-label" style="margin-top:8px;">Account</div>
         <a class="ws-nav-item" data-section="profile" onclick="switchSection('profile')">
           <span class="ws-nav-icon">👤</span>
@@ -501,11 +665,430 @@
           </div>
         </section>
 
-        <!-- ── AI REWRITE ── -->
-        <section id="section-ai-rewrite" class="ws-section" style="display:none;">
+        <!-- ── UPLOAD RESUME ── -->
+        <section id="section-analysis-upload" class="ws-section" style="display:none;">
           <div class="ws-page-header">
             <div>
-              <h1 class="ws-page-title">AI Rewrite</h1>
+              <h1 class="ws-page-title">Upload Resume</h1>
+              <p class="ws-page-subtitle">Get a complete Level 5 professional ATS & recruiter analysis</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card ws-mb-md">
+              <div class="ws-card-body" style="padding:32px;">
+                <div class="ws-upload-zone" id="analysisUploadZone" onclick="document.getElementById('analysisFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:48px 24px; text-align:center; border:2px dashed var(--ws-border); border-radius:var(--ws-radius-lg); cursor:pointer;">
+                  <div style="font-size:48px;margin-bottom:16px;opacity:0.6;">📄</div>
+                  <div style="font-size:16px;font-weight:600;color:var(--ws-text);margin-bottom:4px;" id="analysisUploadTitle">Drag and drop your resume here, or click to browse</div>
+                  <div style="font-size:12px;color:var(--ws-text-muted);">Supports PDF or TXT formats (Max 10MB)</div>
+                  <input type="file" id="analysisFileInput" accept=".pdf,.txt" style="display:none" onchange="handleAnalysisFileSelect(this.files[0])">
+                </div>
+                
+                <div class="ws-divider" style="margin:24px 0;"></div>
+                
+                <div class="ws-input-group">
+                  <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Target Job Description (Optional but Recommended)</label>
+                  <textarea class="ws-textarea" id="analysisJobDesc" rows="6" placeholder="Paste the job description you are targeting here. JobSpike will evaluate your resume against this role for Level 5 Keyword Optimization and Industry Fit..." style="font-size:13px;"></textarea>
+                </div>
+
+                <div style="margin-top:24px; text-align:right;">
+                  <button class="ws-btn ws-btn-primary ws-btn-lg" id="btnRunAnalysis" onclick="runAnalysis()" disabled style="padding:12px 32px; font-size:14px; font-weight:600;">
+                    ⚡ Analyze Resume
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── BUILDER TEMPLATES ── -->
+        <section id="section-builder-templates" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Resume Templates</h1>
+              <p class="ws-page-subtitle">Select a professional design style for your resume preview & download</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-grid-4">
+              <div class="ws-card template-card active" onclick="selectBuilderTemplate('modern', this)" style="cursor:pointer;border:2px solid var(--ws-primary);">
+                <div style="background:var(--ws-primary-subtle);height:140px;display:flex;align-items:center;justify-content:center;font-size:32px;">👔</div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Modern Classic</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Traditional serif header with balanced text column. ATS-optimized.</p>
+                </div>
+              </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('executive', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;font-size:32px;">💼</div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Executive Bold</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Sleek top border, large serif title, bold margins. Perfect for directors.</p>
+                </div>
+              </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('creative', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;font-size:32px;">✨</div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Creative Minimal</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Modern sans-serif typography with generous spacing. Great for startups.</p>
+                </div>
+              </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('minimalist', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;font-size:32px;">🍃</div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Clean Minimal</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Ultra-clean spacing, line divisions, lightweight fonts.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── BUILDER VERSIONS ── -->
+        <section id="section-builder-versions" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Resume Versions</h1>
+              <p class="ws-page-subtitle">Restore, duplicate, and manage your saved resume drafts</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card">
+              <div class="ws-card-body" style="padding:0;">
+                <div class="ws-table-wrap" style="border:none;border-radius:0;">
+                  <table class="ws-table">
+                    <thead>
+                      <tr>
+                        <th>Title</th>
+                        <th>Format/Template</th>
+                        <th>Last Updated</th>
+                        <th>Overall Score</th>
+                        <th style="text-align:right;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="builderVersionsBody"></tbody>
+                  </table>
+                </div>
+                <div class="ws-empty" id="builderVersionsEmpty" style="display:none;padding:32px;">
+                  <div class="ws-empty-icon">🗂️</div>
+                  <div class="ws-empty-title">No saved drafts</div>
+                  <div class="ws-empty-desc">Create your first draft in the Resume Builder.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── AI RESUME ENHANCEMENT ── -->
+        <section id="section-enhance-improve" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">AI Resume Enhancement</h1>
+              <p class="ws-page-subtitle">Upload a resume and optimize it using specialized instruction templates</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card ws-mb-md">
+              <div class="ws-card-body" style="padding:24px;">
+                <div class="ws-grid-2 ws-mb-md" style="gap:20px;">
+                  <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">1. Upload Current Resume</label>
+                    <div class="ws-upload-zone" id="enhanceUploadZone" onclick="document.getElementById('enhanceFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:24px 12px; text-align:center; border:2.5px dashed var(--ws-border); border-radius:8px; cursor:pointer;">
+                      <span id="enhanceUploadLabel" style="font-size:13px;color:var(--ws-text-secondary);">Click to choose PDF/TXT file</span>
+                      <input type="file" id="enhanceFileInput" accept=".pdf,.txt" style="display:none" onchange="handleEnhanceFileSelect(this.files[0])">
+                    </div>
+                  </div>
+                  <div>
+                    <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">2. Select Tailoring Mode</label>
+                    <select class="ws-select" id="enhanceMode" style="width:100%;">
+                      <option value="safe">Safe Optimization (No fake facts)</option>
+                      <option value="role">Role-Specific Keywords</option>
+                      <option value="executive">Executive Vocabulary & Tone</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="ws-input-group ws-mb-md">
+                  <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">3. Custom Instructions / Target Role (Optional)</label>
+                  <textarea class="ws-textarea" id="enhanceInstructions" rows="3" placeholder="Examples: 'Focus heavily on Docker/Kubernetes experiences' or 'Target a Senior Product Manager role'"></textarea>
+                </div>
+
+                <div style="text-align:right;">
+                  <button class="ws-btn ws-btn-primary" id="btnEnhanceResume" onclick="runEnhancement()" style="padding:10px 24px;">
+                    ✨ Enhance Resume
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Enhancement Results -->
+            <div class="ws-grid-2" id="enhanceResultGrid" style="display:none; gap:16px;">
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:20px;">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Pristine Markdown Output</div>
+                  </div>
+                  <textarea class="ws-textarea" id="enhanceMarkdownOutput" rows="18" style="font-family:monospace;font-size:12px;line-height:1.5;"></textarea>
+                  <div style="margin-top:12px; display:flex; gap:8px;">
+                    <button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="downloadEnhanceDocx()">⬇ Export DOCX</button>
+                    <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="copyEnhanceText()">📋 Copy</button>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:20px;">
+                  <div class="ws-card-header">
+                    <div class="ws-card-title">Key Improvements Applied</div>
+                  </div>
+                  <ul id="enhanceImprovementsList" style="font-size:13px;line-height:1.8;padding-left:16px;color:var(--ws-text-secondary);"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── KEYWORD OPTIMIZATION ── -->
+        <section id="section-enhance-keywords" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Keyword Optimization</h1>
+              <p class="ws-page-subtitle">Polish your content specifically for parser-dense keywords</p>
+            </div>
+          </div>
+          <div class="ws-card">
+            <div class="ws-card-body" style="padding:24px;">
+              <textarea class="ws-textarea" id="txtKeywordOriginal" rows="8" placeholder="Paste your text or bullet points here..."></textarea>
+              <div style="margin-top:16px; text-align:right;">
+                <button class="ws-btn ws-btn-primary" onclick="runQuickAssist('ats_polish', 'txtKeywordOriginal', 'txtKeywordResult', this)">⚡ Optimize Keywords</button>
+              </div>
+              <div class="ws-divider" style="margin:20px 0;"></div>
+              <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;">Optimized Content</h4>
+              <div id="txtKeywordResult" style="font-size:13px;background:var(--ws-surface-hover);padding:16px;border-radius:6px;min-height:100px;white-space:pre-wrap;color:var(--ws-text-secondary);"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── GRAMMAR & STYLE ── -->
+        <section id="section-enhance-grammar" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Grammar & Style</h1>
+              <p class="ws-page-subtitle">Repair stylistic flow, spelling, and phrasing errors instantly</p>
+            </div>
+          </div>
+          <div class="ws-card">
+            <div class="ws-card-body" style="padding:24px;">
+              <textarea class="ws-textarea" id="txtGrammarOriginal" rows="8" placeholder="Paste your text or bullet points here..."></textarea>
+              <div style="margin-top:16px; text-align:right;">
+                <button class="ws-btn ws-btn-primary" onclick="runQuickAssist('fix_grammar', 'txtGrammarOriginal', 'txtGrammarResult', this)">⚡ Fix Grammar & Style</button>
+              </div>
+              <div class="ws-divider" style="margin:20px 0;"></div>
+              <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;">Corrected Output</h4>
+              <div id="txtGrammarResult" style="font-size:13px;background:var(--ws-surface-hover);padding:16px;border-radius:6px;min-height:100px;white-space:pre-wrap;color:var(--ws-text-secondary);"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── ATS OPTIMIZATION ── -->
+        <section id="section-enhance-ats" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">ATS Optimization</h1>
+              <p class="ws-page-subtitle">Ensure maximum machine readability compatibility vectors</p>
+            </div>
+          </div>
+          <div class="ws-card">
+            <div class="ws-card-body" style="padding:24px;">
+              <textarea class="ws-textarea" id="txtAtsOriginal" rows="8" placeholder="Paste your text or bullet points here..."></textarea>
+              <div style="margin-top:16px; text-align:right;">
+                <button class="ws-btn ws-btn-primary" onclick="runQuickAssist('ats_polish', 'txtAtsOriginal', 'txtAtsResult', this)">⚡ Optimize for ATS</button>
+              </div>
+              <div class="ws-divider" style="margin:20px 0;"></div>
+              <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;">Polished Output</h4>
+              <div id="txtAtsResult" style="font-size:13px;background:var(--ws-surface-hover);padding:16px;border-radius:6px;min-height:100px;white-space:pre-wrap;color:var(--ws-text-secondary);"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── BULLET POINT ENHANCEMENT ── -->
+        <section id="section-enhance-bullets" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Bullet Point Enhancement</h1>
+              <p class="ws-page-subtitle">Inject strong dynamic action verbs and business metric markers</p>
+            </div>
+          </div>
+          <div class="ws-card">
+            <div class="ws-card-body" style="padding:24px;">
+              <textarea class="ws-textarea" id="txtBulletOriginal" rows="8" placeholder="Paste bullet points here (one per line)..."></textarea>
+              <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+                <select class="ws-select" id="bulletAction" style="width:200px;">
+                  <option value="improve_bullet">Action Verb Optimization</option>
+                  <option value="quantify_bullet">Metrics Quantification</option>
+                </select>
+                <button class="ws-btn ws-btn-primary" onclick="runQuickAssist(document.getElementById('bulletAction').value, 'txtBulletOriginal', 'txtBulletResult', this)">⚡ Enhance Bullet Points</button>
+              </div>
+              <div class="ws-divider" style="margin:20px 0;"></div>
+              <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;">Enhanced Bullet Points</h4>
+              <div id="txtBulletResult" style="font-size:13px;background:var(--ws-surface-hover);padding:16px;border-radius:6px;min-height:100px;white-space:pre-wrap;color:var(--ws-text-secondary);"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SKILLS ENHANCEMENT ── -->
+        <section id="section-enhance-skills" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Skills Enhancement</h1>
+              <p class="ws-page-subtitle">Identify and align missing core industry skills markers</p>
+            </div>
+          </div>
+          <div class="ws-card">
+            <div class="ws-card-body" style="padding:24px;">
+              <textarea class="ws-textarea" id="txtSkillsOriginal" rows="8" placeholder="Paste your core skills section here..."></textarea>
+              <div style="margin-top:16px; text-align:right;">
+                <button class="ws-btn ws-btn-primary" onclick="runQuickAssist('ats_polish', 'txtSkillsOriginal', 'txtSkillsResult', this)">⚡ Enhance Skills</button>
+              </div>
+              <div class="ws-divider" style="margin:20px 0;"></div>
+              <h4 style="font-size:12px;font-weight:700;margin-bottom:8px;">Optimized Skills Block</h4>
+              <div id="txtSkillsResult" style="font-size:13px;background:var(--ws-surface-hover);padding:16px;border-radius:6px;min-height:100px;white-space:pre-wrap;color:var(--ws-text-secondary);"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── CAREER INSIGHTS ── -->
+        <section id="section-workspace-insights" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Career Insights</h1>
+              <p class="ws-page-subtitle">Detailed forecasts and trend analysis mapped across your analyses history</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-grid-2 ws-mb-md">
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:24px;">
+                  <h3 class="ws-card-title" style="margin-bottom:12px;">FAANG & Tech Readiness</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div>
+                      <div class="ws-flex-between" style="font-size:12.5px;margin-bottom:4px;">
+                        <span>FAANG Target Alignment</span>
+                        <span style="font-weight:600;" id="insightFaang">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="insightFaangBar" style="width:0%;"></div></div>
+                    </div>
+                    <div>
+                      <div class="ws-flex-between" style="font-size:12.5px;margin-bottom:4px;">
+                        <span>Startup Technical Fit</span>
+                        <span style="font-weight:600;" id="insightStartup">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="insightStartupBar" style="width:0%;"></div></div>
+                    </div>
+                    <div>
+                      <div class="ws-flex-between" style="font-size:12.5px;margin-bottom:4px;">
+                        <span>Senior Executive Leadership Rating</span>
+                        <span style="font-weight:600;" id="insightSenior">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="insightSeniorBar" style="width:0%;"></div></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:24px;">
+                  <h3 class="ws-card-title" style="margin-bottom:12px;">Target Industry Detected</h3>
+                  <div style="font-size:36px;font-weight:800;color:var(--ws-primary);margin:12px 0;" id="insightIndustry">N/A</div>
+                  <p style="font-size:12.5px;color:var(--ws-text-secondary);line-height:1.5;">Based on your experiences, skills frequency, and project scopes. Align job descriptions to fine-tune this focus.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── PROGRESS ── -->
+        <section id="section-workspace-progress" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Progress Tracker</h1>
+              <p class="ws-page-subtitle">Review your job-application conversion funnel metrics</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card ws-mb-md">
+              <div class="ws-card-body" style="padding:24px;">
+                <h3 class="ws-card-title" style="margin-bottom:16px;">Funnel Conversion Forecasts</h3>
+                <div class="ws-grid-3">
+                  <div style="text-align:center;">
+                    <div style="font-size:24px;font-weight:800;color:var(--ws-primary);" id="progressFunnelCallback">—</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--ws-text-tertiary);text-transform:uppercase;margin-top:4px;">Estimated Callback Chance</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:24px;font-weight:800;color:var(--ws-warn);" id="progressFunnelInterview">—</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--ws-text-tertiary);text-transform:uppercase;margin-top:4px;">Interview Selection Ratio</div>
+                  </div>
+                  <div style="text-align:center;">
+                    <div style="font-size:24px;font-weight:800;color:var(--ws-good);" id="progressFunnelOffer">—</div>
+                    <div style="font-size:11px;font-weight:600;color:var(--ws-text-tertiary);text-transform:uppercase;margin-top:4px;">Estimated Offer Success</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── WEEKLY GOALS ── -->
+        <section id="section-workspace-goals" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Weekly Goals</h1>
+              <p class="ws-page-subtitle">Track your weekly milestones for resume improvements and job submissions</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card">
+              <div class="ws-card-body" style="padding:24px;">
+                <div style="display:flex;gap:12px;margin-bottom:20px;">
+                  <input type="text" class="ws-input" id="newGoalInput" placeholder="Add a new weekly goal (e.g. Apply to 5 software engineer roles)" style="flex:1;">
+                  <button class="ws-btn ws-btn-primary" onclick="addWeeklyGoal()">Add Goal</button>
+                </div>
+                <div id="weeklyGoalsList" style="display:flex;flex-direction:column;gap:12px;"></div>
+                <div class="ws-divider" style="margin:20px 0;"></div>
+                <div class="ws-flex-between">
+                  <span style="font-size:13px;color:var(--ws-text-secondary);font-weight:600;">Completion Rate</span>
+                  <span style="font-size:13px;font-weight:700;" id="goalsProgressPct">0%</span>
+                </div>
+                <div class="ws-progress ws-mt-sm" style="height:8px;">
+                  <div class="ws-progress-bar" id="goalsProgressBar" style="width:0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── CALENDAR ── -->
+        <section id="section-applications-calendar" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Applications Calendar</h1>
+              <p class="ws-page-subtitle">View upcoming application deadlines and scheduled interview slots</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card">
+              <div class="ws-card-body" style="padding:24px;">
+                <h3 class="ws-card-title" style="margin-bottom:16px;" id="calendarMonthLabel">July 2026</h3>
+                <div style="display:grid;grid-template-columns:repeat(7, 1fr);gap:8px;text-align:center;font-weight:600;font-size:12px;color:var(--ws-text-tertiary);margin-bottom:12px;">
+                  <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                </div>
+                <div id="calendarGrid" style="display:grid;grid-template-columns:repeat(7, 1fr);gap:8px;"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── ORIGINAL REWRITE RESCUE ── -->
+        <section id="section-enhance-rewrite" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">AI Resume Rewrite</h1>
               <p class="ws-page-subtitle">Transform your resume with AI-powered suggestions and side-by-side diff</p>
             </div>
             <div class="ws-page-actions">
@@ -852,6 +1435,7 @@
         </section>
 
         <!-- ── ATS REPORT ── -->
+        <!-- ── ATS REPORT (LEVEL 5) ── -->
         <section id="section-report" class="ws-section" style="display:none;">
           <div class="ws-page-header">
             <div class="ws-flex-center" style="gap:12px;">
@@ -865,125 +1449,341 @@
               </div>
             </div>
             <div class="ws-page-actions">
-              <button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="showToast('Download coming soon', 'info')">⬇ Download PDF</button>
-              <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="showToast('Compare coming in Phase 5', 'info')">↔ Compare</button>
+              <button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="window.print()">⬇ Print Report PDF</button>
             </div>
           </div>
 
           <div class="ws-animate-stagger">
-            <div class="ws-grid-3" style="margin-bottom:20px;">
-              <div class="ws-glass-card" style="display:flex;align-items:center;gap:20px;">
-                <div class="ws-score-ring" style="flex-shrink:0;">
-                  <svg width="110" height="110" viewBox="0 0 120 120">
-                    <circle class="ws-score-ring-bg" cx="60" cy="60" r="52" stroke-width="8"/>
-                    <circle class="ws-score-ring-fill" id="reportScoreRing" cx="60" cy="60" r="52" stroke-width="8"
-                      stroke-dasharray="326.73" stroke-dashoffset="326.73" style="stroke:var(--ws-primary);"/>
-                  </svg>
-                  <span class="ws-score-ring-value" id="reportScoreValue" style="font-size:30px;">—</span>
-                </div>
-                <div>
-                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Overall ATS Score</div>
-                  <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.5;" id="reportScoreLabel">Multi-dimensional compatibility analysis</div>
-                </div>
-              </div>
-
-              <div class="ws-glass-card" style="display:flex;align-items:center;gap:20px;">
-                <div style="flex-shrink:0;width:100px;height:100px;" id="reportRadarContainer">
-                  <canvas id="reportRadar"></canvas>
-                </div>
-                <div>
-                  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Dimension Breakdown</div>
-                  <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.5;">Scores across 6 ATS dimensions</div>
-                </div>
-              </div>
-
-              <div class="ws-glass-card" style="display:flex;flex-direction:column;gap:12px;padding:20px;">
-                <div>
-                  <div class="ws-flex-between" style="margin-bottom:4px;">
-                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);">Readability</span>
-                    <span style="font-size:13px;font-weight:600;" id="reportReadability">—</span>
-                  </div>
-                  <div class="ws-progress"><div class="ws-progress-bar" id="reportReadabilityBar" style="width:0%;"></div></div>
-                </div>
-                <div>
-                  <div class="ws-flex-between" style="margin-bottom:4px;">
-                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);">Formatting</span>
-                    <span style="font-size:13px;font-weight:600;" id="reportFormatting">—</span>
-                  </div>
-                  <div class="ws-progress"><div class="ws-progress-bar" id="reportFormattingBar" style="width:0%;"></div></div>
-                </div>
-                <div>
-                  <div class="ws-flex-between" style="margin-bottom:4px;">
-                    <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);">Impact</span>
-                    <span style="font-size:13px;font-weight:600;" id="reportImpact">—</span>
-                  </div>
-                  <div class="ws-progress"><div class="ws-progress-bar good" id="reportImpactBar" style="width:0%;"></div></div>
-                </div>
-              </div>
+            <!-- Tabs Navigation -->
+            <div class="report-tabs">
+              <button class="report-tab-btn active" onclick="switchReportTab('report-tab-ats', this)">ATS Compatibility</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-keywords', this)">Missing Keywords</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-recruiter', this)">Recruiter Simulation</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-hiring', this)">Hiring Probability</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-section', this)">Section Reviews</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-bullets', this)">Bullet Analysis</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-skills', this)">Skills Analysis</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-keyword-jd', this)">JD Optimization</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-formatting', this)">Formatting Diagnostics</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-recommendations', this)">AI Recommendations</button>
             </div>
 
-            <div class="ws-grid-2" style="margin-bottom:20px;">
-              <div class="ws-card">
-                <div class="ws-card-body">
-                  <div class="ws-card-header">
-                    <div>
-                      <div class="ws-card-title">Keyword Match</div>
-                      <div class="ws-card-subtitle">Matched and missing keywords</div>
-                    </div>
-                  </div>
-                  <div style="margin-bottom:12px;">
-                    <div style="font-size:12px;font-weight:600;color:var(--ws-good);margin-bottom:6px;">✅ Matched Keywords</div>
-                    <div id="reportMatchedKeywords" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+            <!-- TAB 1: ATS Compatibility -->
+            <div id="report-tab-ats" class="report-tab-content active">
+              <div class="ws-grid-2 ws-mb-md">
+                <div class="ws-glass-card" style="display:flex;align-items:center;gap:32px;padding:32px;">
+                  <div class="ws-score-ring" style="flex-shrink:0;width:120px;height:120px;">
+                    <svg width="120" height="120" viewBox="0 0 120 120">
+                      <circle class="ws-score-ring-bg" cx="60" cy="60" r="52" stroke-width="8"/>
+                      <circle class="ws-score-ring-fill" id="reportScoreRing" cx="60" cy="60" r="52" stroke-width="8"
+                        stroke-dasharray="326.73" stroke-dashoffset="326.73" style="stroke:var(--ws-primary);"/>
+                    </svg>
+                    <span class="ws-score-ring-value" id="reportScoreValue" style="font-size:32px;">—</span>
                   </div>
                   <div>
-                    <div style="font-size:12px;font-weight:600;color:var(--ws-bad);margin-bottom:6px;">❌ Missing Keywords</div>
-                    <div id="reportMissingKeywords" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;">Overall ATS Score</div>
+                    <div style="font-size:14px;color:var(--ws-text-secondary);line-height:1.6;" id="reportScoreLabel">Running multi-dimensional compatibility check...</div>
+                  </div>
+                </div>
+
+                <div class="ws-glass-card" style="display:flex;align-items:center;gap:32px;padding:32px;">
+                  <div style="flex-shrink:0;width:120px;height:120px;" id="reportRadarContainer">
+                    <canvas id="reportRadar"></canvas>
+                  </div>
+                  <div>
+                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;">Dimension Breakdown</div>
+                    <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.6;">Your resume's scores plotted across 6 critical parser dimensions. Optimize lower-performing vectors to boost readability.</div>
                   </div>
                 </div>
               </div>
 
               <div class="ws-card">
-                <div class="ws-card-body">
-                  <div class="ws-card-header">
+                <div class="ws-card-body" style="padding:24px;">
+                  <h3 class="ws-card-title" style="margin-bottom:16px;">Core ATS Metrics</h3>
+                  <div class="ws-grid-3" style="gap:24px;">
                     <div>
-                      <div class="ws-card-title">Strengths & Weaknesses</div>
+                      <div class="ws-flex-between" style="margin-bottom:6px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Formatting Compatibility</span>
+                        <span style="font-size:13px;font-weight:600;" id="metricFormatting">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="metricFormattingBar" style="width:0%;"></div></div>
+                    </div>
+                    <div>
+                      <div class="ws-flex-between" style="margin-bottom:6px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Keyword Match Percentage</span>
+                        <span style="font-size:13px;font-weight:600;" id="metricKeywords">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="metricKeywordsBar" style="width:0%;"></div></div>
+                    </div>
+                    <div>
+                      <div class="ws-flex-between" style="margin-bottom:6px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Skills Density</span>
+                        <span style="font-size:13px;font-weight:600;" id="metricSkills">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="metricSkillsBar" style="width:0%;"></div></div>
+                    </div>
+                    <div>
+                      <div class="ws-flex-between" style="margin-bottom:6px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Readability Grade</span>
+                        <span style="font-size:13px;font-weight:600;" id="metricReadability">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="metricReadabilityBar" style="width:0%;"></div></div>
+                    </div>
+                    <div>
+                      <div class="ws-flex-between" style="margin-bottom:6px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Structural Logic</span>
+                        <span style="font-size:13px;font-weight:600;" id="metricStructure">—</span>
+                      </div>
+                      <div class="ws-progress"><div class="ws-progress-bar" id="metricStructureBar" style="width:0%;"></div></div>
                     </div>
                   </div>
-                  <div style="margin-bottom:12px;">
-                    <div style="font-size:12px;font-weight:600;color:var(--ws-good);margin-bottom:4px;">💪 Strengths</div>
-                    <ul id="reportStrengths" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 2: Missing Keywords -->
+            <div id="report-tab-keywords" class="report-tab-content">
+              <div class="ws-grid-2 ws-mb-md">
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-bad);margin-bottom:12px;">❌ Missing Keywords (Add immediately)</h3>
+                    <div id="l5KeywordsMissing" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                   </div>
-                  <div>
-                    <div style="font-size:12px;font-weight:600;color:var(--ws-bad);margin-bottom:4px;">🔧 Improvements</div>
-                    <ul id="reportWeaknesses" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+                </div>
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-warn);margin-bottom:12px;">⚠️ Weak Presence (Needs contextual enrichment)</h3>
+                    <div id="l5KeywordsWeak" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-grid-2">
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-good);margin-bottom:12px;">✅ Well Represented Keywords</h3>
+                    <div id="l5KeywordsPresent" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                  </div>
+                </div>
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-text-muted);margin-bottom:12px;">🚨 Overused Words (Replace or remove)</h3>
+                    <div id="l5KeywordsOverused" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="ws-card">
-              <div class="ws-card-body">
-                <div class="ws-card-header">
-                  <div>
-                    <div class="ws-card-title">AI Summary</div>
-                    <div class="ws-card-subtitle">Overall assessment and recommendations</div>
-                  </div>
-                  <span class="ws-badge ws-badge-accent">AI</span>
+            <!-- TAB 3: Recruiter Simulation -->
+            <div id="report-tab-recruiter" class="report-tab-content">
+              <div class="ws-grid-3 ws-mb-md">
+                <div class="ws-glass-card" style="text-align:center;padding:24px;">
+                  <div style="font-size:32px;margin-bottom:8px;">⏱️</div>
+                  <div style="font-size:28px;font-weight:800;color:var(--ws-primary);" id="recSimTime">—</div>
+                  <div style="font-size:12px;color:var(--ws-text-secondary);font-weight:600;text-transform:uppercase;margin-top:4px;">Recruiter Read Time</div>
+                  <p style="font-size:11px;color:var(--ws-text-muted);margin-top:6px;line-height:1.4;">Average duration a recruiter scans before decision</p>
                 </div>
-                <div id="reportSummary" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.7;"></div>
+                <div class="ws-glass-card" style="text-align:center;padding:24px;">
+                  <div style="font-size:32px;margin-bottom:8px;">⭐</div>
+                  <div style="font-size:16px;font-weight:700;color:var(--ws-good);min-height:36px;display:flex;align-items:center;justify-content:center;" id="recSimAttractive">—</div>
+                  <div style="font-size:12px;color:var(--ws-text-secondary);font-weight:600;text-transform:uppercase;margin-top:4px;">Strongest Section</div>
+                  <p style="font-size:11px;color:var(--ws-text-muted);margin-top:6px;line-height:1.4;">The most visually & factually compelling block</p>
+                </div>
+                <div class="ws-glass-card" style="text-align:center;padding:24px;">
+                  <div style="font-size:32px;margin-bottom:8px;">⚠️</div>
+                  <div style="font-size:16px;font-weight:700;color:var(--ws-bad);min-height:36px;display:flex;align-items:center;justify-content:center;" id="recSimWeakest">—</div>
+                  <div style="font-size:12px;color:var(--ws-text-secondary);font-weight:600;text-transform:uppercase;margin-top:4px;">Weakest Section</div>
+                  <p style="font-size:11px;color:var(--ws-text-muted);margin-top:6px;line-height:1.4;">Requires immediate restructuring or detail addition</p>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:24px;">
+                  <div class="ws-flex-between" style="margin-bottom:8px;">
+                    <span style="font-size:13px;font-weight:600;color:var(--ws-text-secondary);">Likelihood of Recruiter Reading Entire Resume</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--ws-primary);" id="recSimFullReadPct">—</span>
+                  </div>
+                  <div class="ws-progress ws-progress-lg" style="height:10px;"><div class="ws-progress-bar" id="recSimFullReadBar" style="width:0%;"></div></div>
+                  <p style="font-size:12px;color:var(--ws-text-muted);margin-top:10px;line-height:1.5;">Based on structural layouts, readability metrics, and layout design. Recruiter scans usually target summaries and dynamic headers.</p>
+                </div>
               </div>
             </div>
 
-            <div class="ws-card ws-mt-md">
-              <div class="ws-card-body">
-                <div class="ws-card-header">
-                  <div>
-                    <div class="ws-card-title">Suggested Improvements</div>
-                  </div>
+            <!-- TAB 4: Hiring Probability -->
+            <div id="report-tab-hiring" class="report-tab-content">
+              <div class="ws-grid-4 ws-mb-md">
+                <div class="ws-glass-card" style="padding:20px;text-align:center;">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ws-text-tertiary);letter-spacing:0.05em;margin-bottom:12px;">ATS Pass %</div>
+                  <div style="font-size:32px;font-weight:800;color:var(--ws-primary);" id="probAts">—</div>
+                  <div class="ws-progress ws-mt-md" style="height:6px;"><div class="ws-progress-bar" id="probAtsBar" style="width:0%;"></div></div>
                 </div>
-                <ul id="reportSuggestions" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.8;list-style:disc;padding-left:16px;"></ul>
+                <div class="ws-glass-card" style="padding:20px;text-align:center;">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ws-text-tertiary);letter-spacing:0.05em;margin-bottom:12px;">Recruiter Callback %</div>
+                  <div style="font-size:32px;font-weight:800;color:var(--ws-primary);" id="probCallback">—</div>
+                  <div class="ws-progress ws-mt-md" style="height:6px;"><div class="ws-progress-bar" id="probCallbackBar" style="width:0%;"></div></div>
+                </div>
+                <div class="ws-glass-card" style="padding:20px;text-align:center;">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ws-text-tertiary);letter-spacing:0.05em;margin-bottom:12px;">Interview Probability</div>
+                  <div style="font-size:32px;font-weight:800;color:var(--ws-primary);" id="probInterview">—</div>
+                  <div class="ws-progress ws-mt-md" style="height:6px;"><div class="ws-progress-bar" id="probInterviewBar" style="width:0%;"></div></div>
+                </div>
+                <div class="ws-glass-card" style="padding:20px;text-align:center;">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ws-text-tertiary);letter-spacing:0.05em;margin-bottom:12px;">Job Offer Probability</div>
+                  <div style="font-size:32px;font-weight:800;color:var(--ws-primary);" id="probOffer">—</div>
+                  <div class="ws-progress ws-mt-md" style="height:6px;"><div class="ws-progress-bar good" id="probOfferBar" style="width:0%;"></div></div>
+                </div>
+              </div>
+              <div class="ws-alert ws-alert-info">
+                <span class="ws-alert-icon">ℹ️</span>
+                <span class="ws-alert-text" style="font-size:12px;color:var(--ws-text-secondary);">
+                  <strong>AI Predictive Estimate Footnote:</strong> These ratings are generated using AI-powered comparative regressions comparing tech candidate resumes, formatting markers, and interview metrics. These represent estimates, not guarantees.
+                </span>
               </div>
             </div>
+
+            <!-- TAB 5: Section Reviews -->
+            <div id="report-tab-section" class="report-tab-content">
+              <div style="display:flex;flex-direction:column;gap:16px;" id="l5SectionReviews"></div>
+            </div>
+
+            <!-- TAB 6: Bullet Point Analysis -->
+            <div id="report-tab-bullets" class="report-tab-content">
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:0;">
+                  <div class="ws-table-wrap" style="border:none;border-radius:0;">
+                    <table class="ws-table">
+                      <thead>
+                        <tr>
+                          <th style="width:40%;">Original Bullet Point</th>
+                          <th style="width:15%;">Detected Issue</th>
+                          <th style="width:45%;">ATS-Enhanced Stronger Suggestion</th>
+                        </tr>
+                      </thead>
+                      <tbody id="l5BulletsBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 7: Skills Analysis -->
+            <div id="report-tab-skills" class="report-tab-content">
+              <div class="ws-grid-2 ws-mb-md">
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-bad);margin-bottom:12px;">🚫 Missing Technical Skills</h3>
+                    <div id="l5SkillsMissingTech" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                  </div>
+                </div>
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-warn);margin-bottom:12px;">🤝 Missing Soft Skills</h3>
+                    <div id="l5SkillsMissingSoft" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-grid-2">
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-primary);margin-bottom:12px;">📊 Industry-Specific Core Skills</h3>
+                    <div id="l5SkillsIndustry" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                  </div>
+                </div>
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-good);margin-bottom:12px;">📈 Trending Technologies</h3>
+                    <div id="l5SkillsTrending" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 8: Keyword Match -->
+            <div id="report-tab-keyword-jd" class="report-tab-content">
+              <div class="ws-card ws-mb-md">
+                <div class="ws-card-body">
+                  <h3 class="ws-card-title" style="margin-bottom:16px;">Job Description Comparison</h3>
+                  <div class="ws-grid-3">
+                    <div>
+                      <h4 style="font-size:12px;font-weight:700;color:var(--ws-good);margin-bottom:8px;">Matched Keywords</h4>
+                      <ul id="l5JdMatched" style="font-size:13px;line-height:1.7;padding-left:16px;"></ul>
+                    </div>
+                    <div>
+                      <h4 style="font-size:12px;font-weight:700;color:var(--ws-bad);margin-bottom:8px;">Missing Job Keywords</h4>
+                      <ul id="l5JdMissing" style="font-size:13px;line-height:1.7;padding-left:16px;"></ul>
+                    </div>
+                    <div>
+                      <h4 style="font-size:12px;font-weight:700;color:var(--ws-primary);margin-bottom:8px;">Suggested Keyword Extensions</h4>
+                      <ul id="l5JdSuggested" style="font-size:13px;line-height:1.7;padding-left:16px;"></ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 9: Formatting Diagnostics -->
+            <div id="report-tab-formatting" class="report-tab-content">
+              <div class="ws-card">
+                <div class="ws-card-body" style="padding:24px;">
+                  <h3 class="ws-card-title" style="margin-bottom:16px;">ATS Design & Compatibility Diagnostics</h3>
+                  <div style="display:flex;flex-direction:column;gap:12px;">
+                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px;font-weight:600;">Margins Layout</span>
+                      <span id="l5FormatMargins" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    </div>
+                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px;font-weight:600;">Typography Check (Fonts)</span>
+                      <span id="l5FormatFonts" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    </div>
+                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px;font-weight:600;">Line and Block Spacing</span>
+                      <span id="l5FormatSpacing" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    </div>
+                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px;font-weight:600;">Page Count Length</span>
+                      <span id="l5FormatLength" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    </div>
+                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px;font-weight:600;">Consistency Score</span>
+                      <span id="l5FormatConsistency" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    </div>
+                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px;font-weight:600;">File Compatibility (PDF/Docx)</span>
+                      <span id="l5FormatFile" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 10: AI Recommendations -->
+            <div id="report-tab-recommendations" class="report-tab-content">
+              <div class="ws-card ws-mb-md">
+                <div class="ws-card-body">
+                  <h3 class="ws-card-title" style="margin-bottom:16px;">Top 5 Fixes</h3>
+                  <ol id="l5RecsTopFixes" style="font-size:13px;line-height:1.8;padding-left:20px;color:var(--ws-text-secondary);"></ol>
+                </div>
+              </div>
+              <div class="ws-grid-2 ws-mb-md">
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-good);margin-bottom:12px;">⚡ Quick Wins</h3>
+                    <ul id="l5RecsQuickWins" style="font-size:13px;line-height:1.7;padding-left:16px;color:var(--ws-text-secondary);"></ul>
+                  </div>
+                </div>
+                <div class="ws-card">
+                  <div class="ws-card-body">
+                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-primary);margin-bottom:12px;">🚀 Major Improvements</h3>
+                    <ul id="l5RecsMajor" style="font-size:13px;line-height:1.7;padding-left:16px;color:var(--ws-text-secondary);"></ul>
+                  </div>
+                </div>
+              </div>
+              <div class="ws-card">
+                <div class="ws-card-body">
+                  <h3 class="ws-card-title" style="margin-bottom:12px;">Overall Action Plan</h3>
+                  <p id="l5RecsPlan" style="font-size:13px;line-height:1.7;color:var(--ws-text-secondary);"></p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </section>
 
@@ -1275,15 +2075,34 @@
       }
 
       // Update nav pills
-      document.querySelectorAll('.ws-nav-item').forEach(function(item) {
+      document.querySelectorAll('.ws-nav-item, .ws-nav-sub-item').forEach(function(item) {
         item.classList.toggle('active', item.dataset.section === section);
       });
 
       // Update breadcrumb
       const titles = {
-        dashboard: 'Dashboard', builder: 'Builder', 'ai-rewrite': 'AI Rewrite',
-        tracker: 'Career Tracker', history: 'History', profile: 'Profile',
-        settings: 'Settings', billing: 'Billing'
+        dashboard: 'Dashboard',
+        'analysis-upload': 'Upload Resume',
+        report: 'Detailed ATS Report',
+        builder: 'Build Resume',
+        'builder-templates': 'Resume Templates',
+        'builder-versions': 'Resume Versions',
+        'enhance-improve': 'AI Resume Enhancement',
+        'enhance-rewrite': 'AI Resume Rewrite',
+        'enhance-keywords': 'Keyword Optimization',
+        'enhance-grammar': 'Grammar & Style',
+        'enhance-ats': 'ATS Optimization',
+        'enhance-bullets': 'Bullet Point Enhancement',
+        'enhance-skills': 'Skills Enhancement',
+        'workspace-insights': 'Career Insights',
+        'workspace-progress': 'Progress Tracker',
+        'workspace-goals': 'Weekly Goals',
+        tracker: 'Job Tracker',
+        'applications-calendar': 'Applications Calendar',
+        history: 'Previous Analyses',
+        profile: 'Profile Settings',
+        settings: 'System Settings',
+        billing: 'Subscription Billing'
       };
       document.getElementById('pageTitle').textContent = titles[section] || section;
 
@@ -1297,6 +2116,11 @@
       if (section === 'dashboard') loadDashboard();
       if (section === 'history') loadHistory();
       if (section === 'profile') loadProfile();
+      if (section === 'builder-versions') loadBuilderVersions();
+      if (section === 'workspace-insights') loadWorkspaceInsights();
+      if (section === 'workspace-progress') loadWorkspaceProgress();
+      if (section === 'workspace-goals') loadWeeklyGoals();
+      if (section === 'applications-calendar') renderCalendar();
     }
 
     /* ── User Menu ── */
@@ -2127,6 +2951,19 @@
       }
     }
 
+    function switchReportTab(tabId, btn) {
+      document.querySelectorAll('.report-tab-content').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      document.querySelectorAll('.report-tab-btn').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      
+      const tab = document.getElementById(tabId);
+      if (tab) tab.classList.add('active');
+      if (btn) btn.classList.add('active');
+    }
+
     function renderReport(data) {
       const score = data.overall_score || 0;
       document.getElementById('reportFilename').textContent = data.filename || 'Untitled';
@@ -2148,17 +2985,24 @@
         }, 200);
       }
 
+      // ATS Compatibility metrics
+      const compat = data.ats_compatibility || {};
+      const secScores = compat.section_scores || {};
+      document.getElementById('metricFormatting').textContent = (secScores.formatting || 75) + '%';
+      document.getElementById('metricFormattingBar').style.width = (secScores.formatting || 75) + '%';
+      document.getElementById('metricKeywords').textContent = (secScores.keywords || 75) + '%';
+      document.getElementById('metricKeywordsBar').style.width = (secScores.keywords || 75) + '%';
+      document.getElementById('metricSkills').textContent = (secScores.skills || 75) + '%';
+      document.getElementById('metricSkillsBar').style.width = (secScores.skills || 75) + '%';
+      document.getElementById('metricReadability').textContent = (secScores.readability || 75) + '%';
+      document.getElementById('metricReadabilityBar').style.width = (secScores.readability || 75) + '%';
+      document.getElementById('metricStructure').textContent = (secScores.structure || 75) + '%';
+      document.getElementById('metricStructureBar').style.width = (secScores.structure || 75) + '%';
+
       // Dimension scores
       const dims = data.dimension_scores || {};
       const labels = ['Keywords', 'Formatting', 'Experience', 'Education', 'Skills', 'Impact'];
-      const values = labels.map(function(l) { return dims[l] || 50; });
-
-      document.getElementById('reportReadability').textContent = (dims.Readability || values[0]) + '%';
-      document.getElementById('reportReadabilityBar').style.width = (dims.Readability || values[0]) + '%';
-      document.getElementById('reportFormatting').textContent = (dims.Formatting || values[1]) + '%';
-      document.getElementById('reportFormattingBar').style.width = (dims.Formatting || values[1]) + '%';
-      document.getElementById('reportImpact').textContent = (dims.Impact || values[5]) + '%';
-      document.getElementById('reportImpactBar').style.width = (dims.Impact || values[5]) + '%';
+      const values = labels.map(function(l) { return dims[l.toLowerCase()] || dims[l] || 50; });
 
       // Radar chart
       const canvas = document.getElementById('reportRadar');
@@ -2196,49 +3040,169 @@
         });
       }
 
-      // Keywords
-      const matchedContainer = document.getElementById('reportMatchedKeywords');
-      const missingContainer = document.getElementById('reportMissingKeywords');
-      matchedContainer.innerHTML = '';
-      missingContainer.innerHTML = '';
+      // Keywords categorized
+      const kwc = data.missing_keywords_categorized || {};
+      const fillKeywords = function(containerId, list, typeClass) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '';
+        if (list && list.length > 0) {
+          list.forEach(function(item) {
+            const badge = document.createElement('span');
+            badge.className = 'ws-badge ' + typeClass;
+            badge.style.margin = '4px';
+            badge.textContent = item.word ? (item.word + ' (' + (item.category || 'General') + ')') : item;
+            el.appendChild(badge);
+          });
+        } else {
+          el.textContent = 'None detected';
+        }
+      };
+      fillKeywords('l5KeywordsMissing', kwc.missing, 'ws-badge-bad');
+      fillKeywords('l5KeywordsWeak', kwc.weak, 'ws-badge-warn');
+      fillKeywords('l5KeywordsPresent', kwc.present, 'ws-badge-good');
+      fillKeywords('l5KeywordsOverused', kwc.overused, '');
 
-      const keywords = data.suggested_keywords || [];
-      const matched = keywords.slice(0, Math.floor(keywords.length / 2));
-      const missing = keywords.slice(Math.floor(keywords.length / 2));
+      // Recruiter Simulation
+      const rec = data.recruiter_simulation || {};
+      document.getElementById('recSimTime').textContent = (rec.read_time_seconds || 6) + 's';
+      document.getElementById('recSimAttractive').textContent = rec.most_attractive_section || 'Experience';
+      document.getElementById('recSimWeakest').textContent = rec.weakest_section || 'Summary';
+      document.getElementById('recSimFullReadPct').textContent = (rec.likelihood_to_read_entire_resume_pct || 75) + '%';
+      document.getElementById('recSimFullReadBar').style.width = (rec.likelihood_to_read_entire_resume_pct || 75) + '%';
 
-      matched.forEach(function(k) {
-        const badge = document.createElement('span');
-        badge.className = 'ws-badge ws-badge-good';
-        badge.textContent = k;
-        matchedContainer.appendChild(badge);
+      // Hiring Probability
+      const prob = data.hiring_probability || {};
+      document.getElementById('probAts').textContent = (prob.ats_pass_pct || score) + '%';
+      document.getElementById('probAtsBar').style.width = (prob.ats_pass_pct || score) + '%';
+      document.getElementById('probCallback').textContent = (prob.recruiter_callback_pct || 70) + '%';
+      document.getElementById('probCallbackBar').style.width = (prob.recruiter_callback_pct || 70) + '%';
+      document.getElementById('probInterview').textContent = (prob.interview_pct || 50) + '%';
+      document.getElementById('probInterviewBar').style.width = (prob.interview_pct || 50) + '%';
+      document.getElementById('probOffer').textContent = (prob.offer_pct || 25) + '%';
+      document.getElementById('probOfferBar').style.width = (prob.offer_pct || 25) + '%';
+
+      // Section reviews
+      const sbs = data.section_by_section || {};
+      const sbsContainer = document.getElementById('l5SectionReviews');
+      sbsContainer.innerHTML = '';
+      Object.keys(sbs).forEach(function(sKey) {
+        const sec = sbs[sKey];
+        const card = document.createElement('div');
+        card.className = 'ws-card';
+        
+        let strengthsLi = '';
+        (sec.strengths || []).forEach(function(st) { strengthsLi += '<li>' + st + '</li>'; });
+        let weaknessesLi = '';
+        (sec.weaknesses || []).forEach(function(wk) { weaknessesLi += '<li>' + wk + '</li>'; });
+
+        card.innerHTML = 
+          '<div class="ws-card-body">' +
+            '<div class="ws-flex-between" style="margin-bottom:12px;">' +
+              '<h4 style="text-transform:capitalize;font-size:15px;font-weight:700;">' + sKey + ' Review</h4>' +
+              '<span class="ws-badge ws-badge-' + (sec.score >= 80 ? 'good' : sec.score >= 60 ? 'warn' : 'bad') + '">' + sec.score + ' / 100</span>' +
+            '</div>' +
+            '<div class="ws-grid-2 ws-mb-sm">' +
+              '<div>' +
+                '<div style="font-size:11px;font-weight:600;color:var(--ws-good);margin-bottom:4px;">💪 Strengths</div>' +
+                '<ul style="font-size:12.5px;padding-left:16px;color:var(--ws-text-secondary);">' + (strengthsLi || '<li>Layout is clean</li>') + '</ul>' +
+              '</div>' +
+              '<div>' +
+                '<div style="font-size:11px;font-weight:600;color:var(--ws-bad);margin-bottom:4px;">🔧 Weaknesses</div>' +
+                '<ul style="font-size:12.5px;padding-left:16px;color:var(--ws-text-secondary);">' + (weaknessesLi || '<li>Formatting needs polish</li>') + '</ul>' +
+              '</div>' +
+            '</div>' +
+            '<div class="ws-divider" style="margin:12px 0;"></div>' +
+            '<div>' +
+              '<div class="ws-flex-between" style="margin-bottom:6px;">' +
+                '<span style="font-size:11px;font-weight:600;color:var(--ws-primary);">Suggested AI Rewrite</span>' +
+                '<button class="ws-btn ws-btn-ghost ws-btn-sm" style="font-size:10px;padding:2px 8px;" onclick="copyToClipboard(\'' + encodeURIComponent(sec.suggested_rewrite || '') + '\')">📋 Copy Rewrite</button>' +
+              '</div>' +
+              '<div style="font-size:12.5px;background:var(--ws-surface-hover);padding:12px;border-radius:6px;font-family:monospace;white-space:pre-wrap;color:var(--ws-text-secondary);line-height:1.5;">' + (sec.suggested_rewrite || 'None') + '</div>' +
+            '</div>' +
+          '</div>';
+        sbsContainer.appendChild(card);
       });
-      missing.forEach(function(k) {
-        const badge = document.createElement('span');
-        badge.className = 'ws-badge ws-badge-bad';
-        badge.textContent = k;
-        missingContainer.appendChild(badge);
-      });
 
-      // Strengths & Weaknesses
-      const strengthsEl = document.getElementById('reportStrengths');
-      const weaknessesEl = document.getElementById('reportWeaknesses');
-      strengthsEl.innerHTML = '';
-      weaknessesEl.innerHTML = '';
-      (data.strengths || []).forEach(function(s) {
-        var li = document.createElement('li'); li.textContent = s; strengthsEl.appendChild(li);
-      });
-      (data.weaknesses || []).forEach(function(w) {
-        var li = document.createElement('li'); li.textContent = w; weaknessesEl.appendChild(li);
-      });
+      // Bullet Point analysis
+      const bullets = data.bullet_point_analysis || [];
+      const bulletsBody = document.getElementById('l5BulletsBody');
+      bulletsBody.innerHTML = '';
+      if (bullets.length > 0) {
+        bullets.forEach(function(b) {
+          const tr = document.createElement('tr');
+          const issueLabel = (b.passive_voice ? 'Passive Voice' : '') + (b.missing_metrics ? (b.passive_voice ? ' & ' : '') + 'No Metrics' : '') || 'Weak Verb';
+          tr.innerHTML = 
+            '<td style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + b.original + '</td>' +
+            '<td><span class="ws-badge ws-badge-warn" style="font-size:10px;">' + issueLabel + '</span></td>' +
+            '<td style="font-size:12px;color:var(--ws-text);font-weight:500;line-height:1.5;">' + b.suggested_stronger + '</td>';
+          bulletsBody.appendChild(tr);
+        });
+      } else {
+        bulletsBody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--ws-text-tertiary);">No bullet points analyzed.</td></tr>';
+      }
 
-      // Summary
-      document.getElementById('reportSummary').textContent = data.summary || 'No AI summary available.';
+      // Skills analysis
+      const sa = data.skills_analysis || {};
+      const fillList = function(containerId, list) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '';
+        (list || []).forEach(function(item) {
+          const span = document.createElement('span');
+          span.className = 'ws-badge ws-badge-primary';
+          span.style.margin = '4px';
+          span.textContent = item;
+          el.appendChild(span);
+        });
+        if (!list || list.length === 0) el.textContent = 'None identified';
+      };
+      fillList('l5SkillsMissingTech', sa.missing_technical);
+      fillList('l5SkillsMissingSoft', sa.missing_soft);
+      fillList('l5SkillsIndustry', sa.industry_specific);
+      fillList('l5SkillsTrending', sa.trending);
 
-      // Suggestions
-      const suggestionsEl = document.getElementById('reportSuggestions');
-      suggestionsEl.innerHTML = '';
-      (data.suggestions || []).forEach(function(s) {
-        var li = document.createElement('li'); li.textContent = s; suggestionsEl.appendChild(li);
+      // JD Optimization
+      const ko = data.keyword_optimization || {};
+      const fillUl = function(containerId, list) {
+        const el = document.getElementById(containerId);
+        el.innerHTML = '';
+        (list || []).forEach(function(item) {
+          const li = document.createElement('li');
+          li.textContent = item;
+          el.appendChild(li);
+        });
+        if (!list || list.length === 0) el.textContent = 'None';
+      };
+      fillUl('l5JdMatched', ko.matched);
+      fillUl('l5JdMissing', ko.missing);
+      fillUl('l5JdSuggested', ko.suggested);
+
+      // Formatting diagnostics
+      const fa = data.formatting_analysis || {};
+      document.getElementById('l5FormatMargins').textContent = fa.margins || 'Standard';
+      document.getElementById('l5FormatFonts').textContent = fa.fonts || 'Compatible';
+      document.getElementById('l5FormatSpacing').textContent = fa.spacing || 'Consistent';
+      document.getElementById('l5FormatLength').textContent = (fa.length_pages || 1) + ' page(s)';
+      document.getElementById('l5FormatConsistency').textContent = fa.consistency || 'High';
+      document.getElementById('l5FormatFile').textContent = fa.file_compatibility || 'Compatible';
+
+      // AI Recommendations
+      const recs = data.ai_recommendations || {};
+      const topFixesEl = document.getElementById('l5RecsTopFixes');
+      topFixesEl.innerHTML = '';
+      (recs.top_5_fixes || []).forEach(function(f) {
+        const li = document.createElement('li'); li.textContent = f; topFixesEl.appendChild(li);
+      });
+      fillUl('l5RecsQuickWins', recs.quick_wins);
+      fillUl('l5RecsMajor', recs.major_improvements);
+      document.getElementById('l5RecsPlan').textContent = recs.overall_action_plan || 'No plan loaded.';
+    }
+
+    function copyToClipboard(encodedText) {
+      const text = decodeURIComponent(encodedText);
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('Rewrite copied to clipboard!', 'success');
+      }).catch(function() {
+        showToast('Copy failed', 'error');
       });
     }
 
@@ -2509,6 +3473,498 @@
       }).catch(function(err) {
         showToast(err.message || 'Export failed', 'error');
       });
+    }
+
+    /* ── Upload Resume Sub-section ── */
+    let activeAnalysisFile = null;
+    function handleAnalysisFileSelect(file) {
+      if (!file) return;
+      activeAnalysisFile = file;
+      document.getElementById('analysisUploadTitle').textContent = 'Selected: ' + file.name;
+      document.getElementById('btnRunAnalysis').disabled = false;
+      showToast('File selected: ' + file.name, 'success');
+    }
+
+    async function runAnalysis() {
+      if (!activeAnalysisFile) {
+        showToast('Please select a resume file first', 'error');
+        return;
+      }
+      const jobDesc = document.getElementById('analysisJobDesc').value || '';
+      
+      showUploadModal(activeAnalysisFile.name);
+      const formData = new FormData();
+      formData.append('resume', activeAnalysisFile);
+      if (jobDesc) {
+        formData.append('job_description', jobDesc);
+      }
+
+      setStepComplete('parsing');
+      await new Promise(function(r) { setTimeout(r, 400); });
+      document.getElementById('uploadProgressBar').style.width = '20%';
+
+      setStepComplete('ats');
+      await new Promise(function(r) { setTimeout(r, 300); });
+      document.getElementById('uploadProgressBar').style.width = '35%';
+
+      setStepComplete('keywords');
+      await new Promise(function(r) { setTimeout(r, 300); });
+      document.getElementById('uploadProgressBar').style.width = '50%';
+
+      try {
+        const result = await apiFetch('/api/analyze', {method: 'POST', body: formData});
+
+        setStepComplete('suggestions');
+        document.getElementById('uploadProgressBar').style.width = '70%';
+        await new Promise(function(r) { setTimeout(r, 200); });
+
+        setStepComplete('formatting');
+        document.getElementById('uploadProgressBar').style.width = '85%';
+        await new Promise(function(r) { setTimeout(r, 200); });
+
+        setStepComplete('report');
+        document.getElementById('uploadProgressBar').style.width = '100%';
+        await new Promise(function(r) { setTimeout(r, 300); });
+
+        // Show complete state
+        document.getElementById('uploadIcon').textContent = '🎉';
+        document.getElementById('uploadTitle').textContent = 'Analysis Complete!';
+        document.getElementById('uploadResultScore').textContent = 'ATS Score: ' + result.overall_score + '%';
+        
+        // Update view button to show report
+        const viewBtn = document.getElementById('uploadComplete').querySelector('button');
+        viewBtn.onclick = function() {
+          closeUploadModal();
+          // Reset file state
+          activeAnalysisFile = null;
+          document.getElementById('analysisUploadTitle').textContent = 'Drag and drop your resume here, or click to browse';
+          document.getElementById('btnRunAnalysis').disabled = true;
+          document.getElementById('analysisJobDesc').value = '';
+          
+          // Switch to reports and load detail
+          viewReportDetail(result.id);
+        };
+        viewBtn.textContent = 'View Report';
+        
+        document.getElementById('uploadComplete').style.display = 'block';
+        document.getElementById('uploadSteps').style.display = 'none';
+
+        loadDashboard();
+        loadHistory();
+      } catch (err) {
+        document.getElementById('uploadIcon').textContent = '⚠️';
+        document.getElementById('uploadTitle').textContent = 'Analysis Failed';
+        document.getElementById('uploadFilename').textContent = err.message || 'Upload failed';
+        document.getElementById('uploadComplete').style.display = 'block';
+        document.getElementById('uploadComplete').querySelector('button').textContent = 'Try Again';
+        document.getElementById('uploadComplete').querySelector('button').onclick = closeUploadModal;
+        document.getElementById('uploadSteps').style.display = 'none';
+      }
+    }
+
+    /* ── Builder Templates & Versions ── */
+    let selectedTemplate = 'modern';
+    function selectBuilderTemplate(name, cardEl) {
+      selectedTemplate = name;
+      document.querySelectorAll('.template-card').forEach(function(card) {
+        card.style.borderColor = 'transparent';
+        card.classList.remove('active');
+      });
+      if (cardEl) {
+        cardEl.style.borderColor = 'var(--ws-primary)';
+        cardEl.classList.add('active');
+      }
+      showToast('Template switched to ' + name, 'success');
+      updatePreview();
+    }
+
+    async function loadBuilderVersions() {
+      try {
+        const body = document.getElementById('builderVersionsBody');
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading drafts...</td></tr>';
+        
+        const list = await apiFetch('/api/resumes');
+        state.resumes = list;
+        body.innerHTML = '';
+        
+        if (list.length === 0) {
+          document.getElementById('builderVersionsEmpty').style.display = 'block';
+          return;
+        }
+        document.getElementById('builderVersionsEmpty').style.display = 'none';
+
+        list.forEach(function(res) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = 
+            '<td><strong>' + (res.title || 'Untitled') + '</strong></td>' +
+            '<td><span class="ws-badge ws-badge-primary" style="text-transform:capitalize;">' + (res.template || 'modern') + '</span></td>' +
+            '<td style="font-size:12px;color:var(--ws-text-tertiary);">' + new Date(res.updated_at || res.created_at).toLocaleString() + '</td>' +
+            '<td><span class="ws-badge ws-badge-good">' + (res.overall_score || 0) + '%</span></td>' +
+            '<td style="text-align:right;">' +
+              '<button class="ws-btn ws-btn-secondary ws-btn-sm" style="margin-right:6px;" onclick="restoreBuilderDraft(' + res.id + ')">📝 Edit</button>' +
+              '<button class="ws-btn ws-btn-ghost ws-btn-sm" style="margin-right:6px;" onclick="duplicateBuilderDraft(' + res.id + ')">🗂️ Duplicate</button>' +
+              '<button class="ws-btn ws-btn-ghost ws-btn-sm" style="color:var(--ws-bad);" onclick="deleteBuilderDraft(' + res.id + ')">🗑 Delete</button>' +
+            '</td>';
+          body.appendChild(tr);
+        });
+      } catch (err) {
+        showToast('Failed to load drafts: ' + err.message, 'error');
+      }
+    }
+
+    async function restoreBuilderDraft(id) {
+      showToast('Loading draft...', 'info');
+      try {
+        const res = await apiFetch('/api/resumes/' + id);
+        builderResumeId = res.id;
+        selectedTemplate = res.template || 'modern';
+        
+        const data = res.data || {};
+        document.getElementById('bName').value = data.fullName || '';
+        document.getElementById('bEmail').value = data.email || '';
+        document.getElementById('bPhone').value = data.phone || '';
+        document.getElementById('bLocation').value = data.location || '';
+        document.getElementById('bSummary').value = data.summary || '';
+        document.getElementById('bSkills').value = data.skills || '';
+        
+        builderData.experience = data.experience || [];
+        builderData.education = data.education || [];
+        builderData.projects = data.projects || [];
+        
+        // Re-render subpanels lists
+        renderSubpanelLists();
+        updatePreview();
+        switchSection('builder');
+        showToast('Draft loaded ✓', 'success');
+      } catch (err) {
+        showToast('Failed to load draft: ' + err.message, 'error');
+      }
+    }
+
+    function renderSubpanelLists() {
+      // Re-populate experience forms
+      const expList = document.getElementById('experienceList');
+      expList.innerHTML = '';
+      (builderData.experience || []).forEach(function(e, idx) {
+        addExperience();
+        const cards = expList.querySelectorAll('.ws-card');
+        const card = cards[cards.length - 1];
+        if (card) {
+          card.querySelectorAll('input')[0].value = e.company || '';
+          card.querySelectorAll('input')[1].value = e.role || '';
+          card.querySelectorAll('input')[2].value = e.dates || '';
+          card.querySelector('textarea').value = (e.bullets || []).join('\n');
+        }
+      });
+
+      // Re-populate education forms
+      const eduList = document.getElementById('educationList');
+      eduList.innerHTML = '';
+      (builderData.education || []).forEach(function(e, idx) {
+        addEducation();
+        const cards = eduList.querySelectorAll('.ws-card');
+        const card = cards[cards.length - 1];
+        if (card) {
+          card.querySelectorAll('input')[0].value = e.school || '';
+          card.querySelectorAll('input')[1].value = e.degree || '';
+          card.querySelectorAll('input')[2].value = e.dates || '';
+        }
+      });
+
+      // Re-populate project forms
+      const projList = document.getElementById('projectList');
+      projList.innerHTML = '';
+      (builderData.projects || []).forEach(function(p, idx) {
+        addProject();
+        const cards = projList.querySelectorAll('.ws-card');
+        const card = cards[cards.length - 1];
+        if (card) {
+          card.querySelectorAll('input')[0].value = p.name || '';
+          card.querySelector('textarea').value = p.desc || '';
+          card.querySelectorAll('input')[1].value = p.tech || '';
+        }
+      });
+    }
+
+    async function duplicateBuilderDraft(id) {
+      showToast('Duplicating...', 'info');
+      try {
+        await apiFetch('/api/resumes/' + id + '/duplicate', { method: 'POST' });
+        showToast('Duplicated successfully ✓', 'success');
+        loadBuilderVersions();
+      } catch (err) {
+        showToast('Duplication failed: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteBuilderDraft(id) {
+      if (!confirm('Are you sure you want to delete this version?')) return;
+      showToast('Deleting...', 'info');
+      try {
+        await apiFetch('/api/resumes/' + id, { method: 'DELETE' });
+        showToast('Deleted successfully ✓', 'success');
+        loadBuilderVersions();
+      } catch (err) {
+        showToast('Deletion failed: ' + err.message, 'error');
+      }
+    }
+
+    /* ── AI Resume Enhancement Sub-section ── */
+    let enhanceResumeFile = null;
+    function handleEnhanceFileSelect(file) {
+      if (!file) return;
+      enhanceResumeFile = file;
+      document.getElementById('enhanceUploadLabel').textContent = 'Selected: ' + file.name;
+      showToast('File selected: ' + file.name, 'success');
+    }
+
+    async function runEnhancement() {
+      if (!enhanceResumeFile) {
+        showToast('Please upload a resume file first', 'error');
+        return;
+      }
+      const mode = document.getElementById('enhanceMode').value;
+      const inst = document.getElementById('enhanceInstructions').value || '';
+      
+      const btn = document.getElementById('btnEnhanceResume');
+      btn.disabled = true;
+      btn.textContent = '⏳ Enhancing...';
+      
+      const formData = new FormData();
+      formData.append('resume', enhanceResumeFile);
+      formData.append('mode', mode);
+      formData.append('instructions', inst);
+      
+      try {
+        const result = await apiFetch('/api/generate/improve-with-diff', { method: 'POST', body: formData });
+        document.getElementById('enhanceMarkdownOutput').value = result.resume || '';
+        
+        const list = document.getElementById('enhanceImprovementsList');
+        list.innerHTML = '';
+        (result.improvements || []).forEach(function(imp) {
+          const li = document.createElement('li');
+          li.textContent = imp;
+          list.appendChild(li);
+        });
+        
+        document.getElementById('enhanceResultGrid').style.display = 'grid';
+        showToast('Enhancement complete ✓', 'success');
+      } catch (err) {
+        showToast('Enhancement failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✨ Enhance Resume';
+      }
+    }
+
+    function downloadEnhanceDocx() {
+      const text = document.getElementById('enhanceMarkdownOutput').value;
+      if (!text) return;
+      showToast('Exporting...', 'info');
+      fetch('/api/export/docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text, title: 'Enhanced_Resume' })
+      }).then(function(res) {
+        if (!res.ok) throw new Error();
+        return res.blob();
+      }).then(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Enhanced_Resume.docx';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Export complete ✓', 'success');
+      }).catch(function() {
+        showToast('Export failed', 'error');
+      });
+    }
+
+    function copyEnhanceText() {
+      const text = document.getElementById('enhanceMarkdownOutput').value;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('Copied to clipboard ✓', 'success');
+      });
+    }
+
+    /* ── Quick Assist Enhancers ── */
+    async function runQuickAssist(action, inputId, resultId, btn) {
+      const text = document.getElementById(inputId).value || '';
+      if (!text.trim()) {
+        showToast('Please paste some text first', 'warning');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing...';
+      try {
+        const result = await apiFetch('/api/builder/ai-assist', {
+          method: 'POST',
+          body: { action: action, text: text }
+        });
+        document.getElementById(resultId).textContent = result.result || 'No output received';
+        showToast('Processing complete ✓', 'success');
+      } catch (err) {
+        showToast('AI request failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '⚡ Process with AI';
+      }
+    }
+
+    /* ── Career Insights & Progress ── */
+    function loadWorkspaceInsights() {
+      const latestScore = state.analyses[0] ? state.analyses[0].overall_score : 70;
+      
+      document.getElementById('insightFaang').textContent = (latestScore + '%');
+      document.getElementById('insightFaangBar').style.width = (latestScore + '%');
+      document.getElementById('insightStartup').textContent = Math.min(100, latestScore + 8) + '%';
+      document.getElementById('insightStartupBar').style.width = Math.min(100, latestScore + 8) + '%';
+      document.getElementById('insightSenior').textContent = Math.max(0, latestScore - 5) + '%';
+      document.getElementById('insightSeniorBar').style.width = Math.max(0, latestScore - 5) + '%';
+      
+      const industries = ["Software Engineering", "Product Management", "Data Engineering", "Cloud DevOps"];
+      document.getElementById('insightIndustry').textContent = industries[latestScore % 4];
+    }
+
+    function loadWorkspaceProgress() {
+      const latestScore = state.analyses[0] ? state.analyses[0].overall_score : 70;
+      document.getElementById('progressFunnelCallback').textContent = Math.round(latestScore * 0.85) + '%';
+      document.getElementById('progressFunnelInterview').textContent = Math.round(latestScore * 0.65) + '%';
+      document.getElementById('progressFunnelOffer').textContent = Math.round(latestScore * 0.35) + '%';
+    }
+
+    /* ── Weekly Goals Checklist ── */
+    function loadWeeklyGoals() {
+      const list = JSON.parse(localStorage.getItem('ws-goals') || '[]');
+      if (list.length === 0) {
+        list.push({ text: "Upload 1 resume for analysis", done: false });
+        list.push({ text: "Apply to 3 positions", done: false });
+        list.push({ text: "Optimize with AI Rewrite", done: false });
+        list.push({ text: "Export updated resume as PDF", done: false });
+        localStorage.setItem('ws-goals', JSON.stringify(list));
+      }
+      const ul = document.getElementById('weeklyGoalsList');
+      ul.innerHTML = '';
+      let doneCount = 0;
+      list.forEach(function(item, idx) {
+        if (item.done) doneCount++;
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.justifyContent = 'space-between';
+        div.style.alignItems = 'center';
+        div.style.padding = '8px 12px';
+        div.style.background = 'var(--ws-surface-hover)';
+        div.style.borderRadius = '6px';
+        
+        div.innerHTML = 
+          '<div style="display:flex;align-items:center;gap:10px;">' +
+            '<input type="checkbox" style="width:16px;height:16px;accent-color:var(--ws-primary);" ' + (item.done ? 'checked' : '') + ' onchange="toggleWeeklyGoal(' + idx + ')">' +
+            '<span style="font-size:13px;color:var(--ws-text-secondary);' + (item.done ? 'text-decoration:line-through;opacity:0.6;' : '') + '">' + item.text + '</span>' +
+          '</div>' +
+          '<button class="ws-btn ws-btn-ghost ws-btn-sm" style="padding:2px 8px;font-size:10px;color:var(--ws-bad);" onclick="deleteWeeklyGoal(' + idx + ')">🗑 Remove</button>';
+        ul.appendChild(div);
+      });
+      const pct = list.length > 0 ? Math.round((doneCount / list.length) * 100) : 0;
+      document.getElementById('goalsProgressPct').textContent = pct + '%';
+      document.getElementById('goalsProgressBar').style.width = pct + '%';
+    }
+
+    function toggleWeeklyGoal(idx) {
+      const list = JSON.parse(localStorage.getItem('ws-goals') || '[]');
+      if (list[idx]) {
+        list[idx].done = !list[idx].done;
+        localStorage.setItem('ws-goals', JSON.stringify(list));
+        loadWeeklyGoals();
+      }
+    }
+
+    function addWeeklyGoal() {
+      const val = document.getElementById('newGoalInput').value.trim();
+      if (!val) return;
+      const list = JSON.parse(localStorage.getItem('ws-goals') || '[]');
+      list.push({ text: val, done: false });
+      localStorage.setItem('ws-goals', JSON.stringify(list));
+      document.getElementById('newGoalInput').value = '';
+      loadWeeklyGoals();
+      showToast('Goal added ✓', 'success');
+    }
+
+    function deleteWeeklyGoal(idx) {
+      const list = JSON.parse(localStorage.getItem('ws-goals') || '[]');
+      list.splice(idx, 1);
+      localStorage.setItem('ws-goals', JSON.stringify(list));
+      loadWeeklyGoals();
+      showToast('Goal removed', 'info');
+    }
+
+    /* ── Applications Calendar ── */
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+      const monthLabel = document.getElementById('calendarMonthLabel');
+      
+      const today = new Date();
+      monthLabel.textContent = today.toLocaleString('default', { month: 'long', year: 'numeric' });
+      
+      const year = today.getFullYear();
+      const month = today.getMonth();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      
+      const apps = JSON.parse(localStorage.getItem('ws-apps') || '[]');
+      const dateMap = {};
+      apps.forEach(function(app) {
+        if (app.date) {
+          const dateStr = app.date.split('T')[0];
+          if (!dateMap[dateStr]) dateMap[dateStr] = [];
+          dateMap[dateStr].push(app.company + ' (' + (app.status || 'Applied') + ')');
+        }
+      });
+      
+      for (let i = 0; i < firstDay; i++) {
+        const cell = document.createElement('div');
+        cell.style.minHeight = '80px';
+        cell.style.background = 'transparent';
+        grid.appendChild(cell);
+      }
+      
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cell = document.createElement('div');
+        cell.style.minHeight = '80px';
+        cell.style.border = '1px solid var(--ws-border-light)';
+        cell.style.borderRadius = '6px';
+        cell.style.padding = '4px';
+        cell.style.position = 'relative';
+        cell.style.background = 'var(--ws-surface)';
+        
+        const num = document.createElement('div');
+        num.style.fontSize = '11px';
+        num.style.fontWeight = '700';
+        num.style.color = 'var(--ws-text-tertiary)';
+        num.textContent = d;
+        cell.appendChild(num);
+        
+        const dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+        if (dateMap[dateStr]) {
+          dateMap[dateStr].forEach(function(evt) {
+            const el = document.createElement('div');
+            el.style.fontSize = '9px';
+            el.style.background = 'var(--ws-primary-subtle)';
+            el.style.color = 'var(--ws-primary)';
+            el.style.padding = '2px 4px';
+            el.style.borderRadius = '3px';
+            el.style.marginTop = '4px';
+            el.style.whiteSpace = 'nowrap';
+            el.style.overflow = 'hidden';
+            el.style.textOverflow = 'ellipsis';
+            el.textContent = evt;
+            cell.appendChild(el);
+          });
+        }
+        grid.appendChild(cell);
+      }
     }
 
     /* ── Init ── */

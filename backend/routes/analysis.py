@@ -65,8 +65,9 @@ def analyze():
                         """INSERT INTO analyses (
                             user_id, filename, job_description, overall_score,
                             dimension_scores, summary, strengths, weaknesses,
-                            missing_sections, ats_issues, suggestions, suggested_keywords
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                            missing_sections, ats_issues, suggestions, suggested_keywords,
+                            full_json
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (
                             user_id,
                             file.filename,
@@ -79,7 +80,8 @@ def analyze():
                             json.dumps(result["missing_sections"]),
                             json.dumps(result["ats_issues"]),
                             json.dumps(result["suggestions"]),
-                            json.dumps(result["suggested_keywords"])
+                            json.dumps(result["suggested_keywords"]),
+                            json.dumps(result)
                         )
                     )
                     analysis_id = cursor.lastrowid
@@ -156,6 +158,19 @@ def handle_analysis(analysis_id):
                 ).fetchone()
                 if not r:
                     return jsonify({"error": "Analysis not found or unauthorized"}), 404
+
+                try:
+                    # Check if full_json column is present and has data
+                    columns = r.keys()
+                    if "full_json" in columns and r["full_json"]:
+                        result = json.loads(r["full_json"])
+                        result["id"] = r["id"]
+                        result["filename"] = r["filename"]
+                        result["job_description"] = r["job_description"]
+                        result["created_at"] = r["created_at"]
+                        return jsonify(normalize_analysis_dict(result))
+                except Exception:
+                    pass
 
                 raw_dict = {
                     "id": r["id"],

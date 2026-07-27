@@ -21,6 +21,18 @@ Keys required in JSON response:
 - suggestions (array of strings)
 - suggested_keywords (array of strings)
 
+And the following Level 5 Analysis fields:
+- ats_compatibility (object with keys: overall_ats_score (integer), section_scores (object with keys: formatting, keywords, skills, readability, structure mapping to integers 0-100))
+- missing_keywords_categorized (object with keys: missing (array of objects with keys: word, category), weak (array of objects with: word, category), present (array of objects with: word, category), overused (array of objects with: word, category))
+- recruiter_simulation (object with keys: read_time_seconds (integer), most_attractive_section (string), weakest_section (string), likelihood_to_read_entire_resume_pct (integer))
+- hiring_probability (object with keys: ats_pass_pct (integer), recruiter_callback_pct (integer), interview_pct (integer), offer_pct (integer))
+- section_by_section (object with keys: header, summary, experience, projects, education, skills, certifications, achievements, languages. Each key must be an object with: score (integer), strengths (array of strings), weaknesses (array of strings), suggested_rewrite (string))
+- bullet_point_analysis (array of objects with keys: original (string), weak_verbs (array of strings), passive_voice (boolean), missing_metrics (boolean), suggested_stronger (string))
+- skills_analysis (object with keys: missing_technical (array of strings), missing_soft (array of strings), industry_specific (array of strings), trending (array of strings))
+- keyword_optimization (object with keys: matched (array of strings), missing (array of strings), suggested (array of strings))
+- formatting_analysis (object with keys: margins (string), fonts (string), spacing (string), length_pages (integer), consistency (string), file_compatibility (string))
+- ai_recommendations (object with keys: top_5_fixes (array of strings), quick_wins (array of strings), major_improvements (array of strings), overall_action_plan (string))
+
 {job_context}
 
 Resume:

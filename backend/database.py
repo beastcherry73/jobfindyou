@@ -112,8 +112,14 @@ def _create_tables_and_migrations(db):
         suggestions TEXT NOT NULL,
         suggested_keywords TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )""")
+    try:
+        a_cols = {row["name"] for row in db.execute("PRAGMA table_info(analyses)")}
+        if "full_json" not in a_cols:
+            db.execute("ALTER TABLE analyses ADD COLUMN full_json TEXT")
+    except Exception as e:
+        current_app.logger.warning(f"Migration error for analyses table: {e}")
+
 
     db.execute("""CREATE TABLE IF NOT EXISTS oauth_states (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

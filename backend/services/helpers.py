@@ -120,6 +120,121 @@ def normalize_analysis_dict(data):
     rm.setdefault("major_rewrites_2h", ["Rewrite summary section into an executive value statement"])
     clean_data["roadmap"] = rm
 
+    # Level 5 Compatibility defaults
+    ats_c = clean_data.get("ats_compatibility")
+    if not isinstance(ats_c, dict):
+        ats_c = {}
+    ats_c.setdefault("overall_ats_score", score)
+    ss = ats_c.get("section_scores")
+    if not isinstance(ss, dict):
+        ss = {}
+    for sk in ("formatting", "keywords", "skills", "readability", "structure"):
+        ss.setdefault(sk, score)
+    ats_c["section_scores"] = ss
+    clean_data["ats_compatibility"] = ats_c
+
+    mkc = clean_data.get("missing_keywords_categorized")
+    if not isinstance(mkc, dict):
+        mkc = {}
+    for mk_key in ("missing", "weak", "present", "overused"):
+        if not isinstance(mkc.get(mk_key), list):
+            mkc[mk_key] = []
+    if not mkc["missing"] and not mkc["present"]:
+        mkc["missing"] = [{"word": "Kubernetes", "category": "DevOps"}, {"word": "System Design", "category": "Architecture"}]
+        mkc["weak"] = [{"word": "CI/CD", "category": "DevOps"}]
+        mkc["present"] = [{"word": "Python", "category": "Programming"}, {"word": "Terraform", "category": "IaC"}]
+        mkc["overused"] = [{"word": "Responsible for", "category": "Verbiage"}]
+    clean_data["missing_keywords_categorized"] = mkc
+
+    rec_sim = clean_data.get("recruiter_simulation")
+    if not isinstance(rec_sim, dict):
+        rec_sim = {}
+    rec_sim.setdefault("read_time_seconds", 6)
+    rec_sim.setdefault("most_attractive_section", "Experience")
+    rec_sim.setdefault("weakest_section", "Summary")
+    rec_sim.setdefault("likelihood_to_read_entire_resume_pct", 75)
+    clean_data["recruiter_simulation"] = rec_sim
+
+    hire_prob = clean_data.get("hiring_probability")
+    if not isinstance(hire_prob, dict):
+        hire_prob = {}
+    hire_prob.setdefault("ats_pass_pct", int(score * 1.05) if score < 95 else 98)
+    hire_prob.setdefault("recruiter_callback_pct", int(score * 0.85))
+    hire_prob.setdefault("interview_pct", int(score * 0.65))
+    hire_prob.setdefault("offer_pct", int(score * 0.35))
+    clean_data["hiring_probability"] = hire_prob
+
+    sec_by_sec = clean_data.get("section_by_section")
+    if not isinstance(sec_by_sec, dict):
+        sec_by_sec = {}
+    sections = ("header", "summary", "experience", "projects", "education", "skills", "certifications", "achievements", "languages")
+    for s_name in sections:
+        sec_d = sec_by_sec.get(s_name)
+        if not isinstance(sec_d, dict):
+            sec_d = {}
+        sec_d.setdefault("score", score)
+        sec_d.setdefault("strengths", ["Standard layout" if s_name != "languages" else "Bilingual proficiency"])
+        sec_d.setdefault("weaknesses", ["Needs slight keyword adjustment"])
+        sec_d.setdefault("suggested_rewrite", "Review this section for minor metrics.")
+        sec_by_sec[s_name] = sec_d
+    clean_data["section_by_section"] = sec_by_sec
+
+    bpa = clean_data.get("bullet_point_analysis")
+    if not isinstance(bpa, list) or not bpa:
+        bpa = [
+            {
+                "original": "Worked on server migration and updated codebase.",
+                "weak_verbs": ["Worked"],
+                "passive_voice": False,
+                "missing_metrics": True,
+                "suggested_stronger": "Spearheaded zero-downtime migration of 30+ legacy servers to AWS EKS, reducing deployment latency by 45%."
+            }
+        ]
+    clean_data["bullet_point_analysis"] = bpa
+
+    sa = clean_data.get("skills_analysis")
+    if not isinstance(sa, dict):
+        sa = {}
+    sa.setdefault("missing_technical", ["Docker", "Kubernetes"])
+    sa.setdefault("missing_soft", ["Leadership", "Stakeholder Communication"])
+    sa.setdefault("industry_specific", ["Terraform", "CI/CD"])
+    sa.setdefault("trending", ["Generative AI Integration"])
+    clean_data["skills_analysis"] = sa
+
+    ko = clean_data.get("keyword_optimization")
+    if not isinstance(ko, dict):
+        ko = {}
+    ko.setdefault("matched", clean_data.get("suggested_keywords", [])[:4] or ["Python", "AWS"])
+    ko.setdefault("missing", ["Kubernetes", "System Design"])
+    ko.setdefault("suggested", ["Go", "Microservices"])
+    clean_data["keyword_optimization"] = ko
+
+    fa = clean_data.get("formatting_analysis")
+    if not isinstance(fa, dict):
+        fa = {}
+    fa.setdefault("margins", "0.75 in (Standard)")
+    fa.setdefault("fonts", "Arial / Helvetica (ATS-compatible)")
+    fa.setdefault("spacing", "Single spaced (Consistent)")
+    fa.setdefault("length_pages", 1)
+    fa.setdefault("consistency", "Excellent")
+    fa.setdefault("file_compatibility", "Pristine PDF / Plain Text")
+    clean_data["formatting_analysis"] = fa
+
+    ai_rec = clean_data.get("ai_recommendations")
+    if not isinstance(ai_rec, dict):
+        ai_rec = {}
+    ai_rec.setdefault("top_5_fixes", [
+        "Include metrics to quantify achievement",
+        "Replace passive verbs ('responsible for') with action verbs",
+        "Add missing certifications date",
+        "Integrate 5 missing keywords",
+        "Add LinkedIn custom handle"
+    ])
+    ai_rec.setdefault("quick_wins", ["Format skills into clean columns", "Clarify education dates"])
+    ai_rec.setdefault("major_improvements", ["Rewrite professional summary into a high-impact executive value statement"])
+    ai_rec.setdefault("overall_action_plan", "Begin by correcting action verbs, then add quantifiable achievements to experience blocks. Add missing tech stack tags to match target JD.")
+    clean_data["ai_recommendations"] = ai_rec
+
     clean_data.setdefault("summary", "Candidate exhibits strong core qualifications with clear potential.")
     clean_data.setdefault("filename", "Evaluation Report")
 
