@@ -401,7 +401,7 @@
                     <div style="font-size:28px;margin-bottom:8px;opacity:0.5;">📄</div>
                     <div class="ws-upload-title" style="font-size:13px;">Drop or click to upload</div>
                     <div class="ws-upload-hint" style="font-size:11px;">PDF or TXT • Max 10MB</div>
-                    <input type="file" id="dashFileInput" accept=".pdf,.txt" style="display:none" onchange="handleFileSelect(this.files[0])">
+                    <input type="file" id="dashFileInput" accept=".pdf,.txt" style="display:none" onchange="handleFileSelect(this.files[0])" onclick="event.stopPropagation()">
                   </div>
                 </div>
               </div>
@@ -697,7 +697,7 @@
                   <div style="font-size:48px;margin-bottom:16px;opacity:0.6;">📄</div>
                   <div style="font-size:16px;font-weight:600;color:var(--ws-text);margin-bottom:4px;" id="analysisUploadTitle">Drag and drop your resume here, or click to browse</div>
                   <div style="font-size:12px;color:var(--ws-text-muted);">Supports PDF or TXT formats (Max 10MB)</div>
-                  <input type="file" id="analysisFileInput" accept=".pdf,.txt" style="display:none" onchange="handleAnalysisFileSelect(this.files[0])">
+                  <input type="file" id="analysisFileInput" accept=".pdf,.txt" style="display:none" onchange="handleAnalysisFileSelect(this.files[0])" onclick="event.stopPropagation()">
                 </div>
                 
                 <div class="ws-divider" style="margin:24px 0;"></div>
@@ -816,7 +816,7 @@
                     <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">1. Upload Current Resume</label>
                     <div class="ws-upload-zone" id="enhanceUploadZone" onclick="document.getElementById('enhanceFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:24px 12px; text-align:center; border:2.5px dashed var(--ws-border); border-radius:8px; cursor:pointer;">
                       <span id="enhanceUploadLabel" style="font-size:13px;color:var(--ws-text-secondary);">Click to choose PDF/TXT file</span>
-                      <input type="file" id="enhanceFileInput" accept=".pdf,.txt" style="display:none" onchange="handleEnhanceFileSelect(this.files[0])">
+                      <input type="file" id="enhanceFileInput" accept=".pdf,.txt" style="display:none" onchange="handleEnhanceFileSelect(this.files[0])" onclick="event.stopPropagation()">
                     </div>
                   </div>
                   <div>
@@ -2229,6 +2229,14 @@
         document.getElementById('uploadIcon').textContent = '🎉';
         document.getElementById('uploadTitle').textContent = 'Analysis Complete!';
         document.getElementById('uploadResultScore').textContent = 'ATS Score: ' + result.overall_score + '%';
+        
+        const viewBtn = document.getElementById('uploadComplete').querySelector('button');
+        viewBtn.onclick = function() {
+          closeUploadModal();
+          viewReport(result.id);
+        };
+        viewBtn.textContent = 'View Report';
+
         document.getElementById('uploadComplete').style.display = 'block';
         document.getElementById('uploadSteps').style.display = 'none';
 
@@ -2990,6 +2998,8 @@
         showToast('Failed to load report: ' + err.message, 'error');
       }
     }
+
+    const viewReportDetail = viewReport;
 
     function switchReportTab(tabId, btn) {
       document.querySelectorAll('.report-tab-content').forEach(function(el) {

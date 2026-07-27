@@ -64,7 +64,7 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
   --ws-duration: 0.2s;
   --ws-duration-slow: 0.35s;
 
-  --ws-sidebar-w: 240px;
+  --ws-sidebar-w: 260px;
   --ws-sidebar-collapsed-w: 56px;
   --ws-topbar-h: 52px;
 
@@ -247,7 +247,8 @@ ul, ol { list-style: none; }
   color: var(--ws-text-tertiary);
   padding: 12px 12px 6px;
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible;
+  line-height: 1.4;
   transition: opacity var(--ws-duration) var(--ws-ease);
 }
 
@@ -255,6 +256,7 @@ ul, ol { list-style: none; }
   opacity: 0;
   height: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 .ws-nav-item {
