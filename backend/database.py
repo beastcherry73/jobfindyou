@@ -111,7 +111,7 @@ def _create_tables_and_migrations(db):
         ats_issues TEXT NOT NULL,
         suggestions TEXT NOT NULL,
         suggested_keywords TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""")
     try:
         a_cols = {row["name"] for row in db.execute("PRAGMA table_info(analyses)")}
