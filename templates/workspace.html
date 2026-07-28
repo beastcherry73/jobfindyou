@@ -4033,6 +4033,41 @@
       // Create default radar chart
       createRadar({});
       loadDashboard();
+
+      // Handshake for guest resume preview conversion
+      const pendingAnalysisStr = sessionStorage.getItem('pendingAnalysisResult');
+      if (pendingAnalysisStr) {
+        try {
+          const analysisObj = JSON.parse(pendingAnalysisStr);
+          sessionStorage.removeItem('pendingAnalysisResult');
+          sessionStorage.removeItem('pendingResumeData');
+          sessionStorage.removeItem('pendingResumeName');
+
+          if (typeof showToast === 'function') showToast('⚡ Claiming your preview report...', 'info');
+
+          fetch('/api/analyses/claim', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ analysis: analysisObj })
+          })
+          .then(function(r) { return r.json(); })
+          .then(function(claimedData) {
+            if (claimedData && claimedData.id) {
+              viewReport(claimedData.id);
+            } else {
+              openReportSection();
+              renderReport(analysisObj);
+            }
+            loadDashboard();
+          })
+          .catch(function(err) {
+            openReportSection();
+            renderReport(analysisObj);
+          });
+        } catch(e) {
+          console.error('Handshake claim error:', e);
+        }
+      }
     });
 
     // Listen for theme changes to update radar colors

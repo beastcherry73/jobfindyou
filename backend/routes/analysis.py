@@ -10,7 +10,6 @@ analysis_bp = Blueprint("analysis", __name__)
 
 
 @analysis_bp.route("/api/analyze", methods=["POST"])
-@login_required
 def analyze():
     if "resume" not in request.files:
         return jsonify({"error": "No resume file uploaded"}), 400
@@ -125,6 +124,82 @@ def analyze():
 
     except Exception as e:
         return jsonify({"error": f"Analysis failed: {str(e)}"}), 500
+
+
+@analysis_bp.route("/api/analyses/claim", methods=["POST"])
+@login_required
+def claim_analysis():
+    user_id = session["user_id"]
+    data = request.get_json() or {}
+    analysis_data = data.get("analysis")
+    if not analysis_data or not isinstance(analysis_data, dict):
+        return jsonify({"error": "No analysis data provided"}), 400
+
+    filename = analysis_data.get("filename", "Guest_Resume.pdf")
+    job_description = analysis_data.get("job_description", "")
+    resume_text = analysis_data.get("raw_text", "")
+
+    try:
+        with get_db() as db:
+            cursor = db.execute(
+                """INSERT INTO analyses (
+                    user_id, filename, job_description, overall_score,
+                    dimension_scores, summary, strengths, weaknesses,
+                    missing_sections, ats_issues, suggestions, suggested_keywords,
+                    full_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    user_id,
+                    filename,
+                    job_description,
+                    analysis_data.get("overall_score", 70),
+                    json.dumps(analysis_data.get("dimension_scores", {})),
+                    analysis_data.get("summary", ""),
+                    json.dumps(analysis_data.get("strengths", [])),
+                    json.dumps(analysis_data.get("weaknesses", [])),
+                    json.dumps(analysis_data.get("missing_sections", [])),
+                    json.dumps(analysis_data.get("ats_issues", [])),
+                    json.dumps(analysis_data.get("suggestions", [])),
+                    json.dumps(analysis_data.get("suggested_keywords", [])),
+                    json.dumps(analysis_data)
+                )
+            )
+            analysis_id = cursor.lastrowid
+            analysis_data["id"] = analysis_id
+
+            existing = db.execute(
+                "SELECT id FROM resumes WHERE user_id = ? AND filename = ?",
+                (user_id, filename)
+            ).fetchone()
+
+            data_payload = json.dumps({
+                "fullName": filename.rsplit('.', 1)[0],
+                "summary": analysis_data.get("summary", ""),
+                "skills": ", ".join(analysis_data.get("suggested_keywords", [])),
+                "rawText": resume_text
+            })
+
+            if existing:
+                db.execute(
+                    """UPDATE resumes SET 
+                        title = ?, overall_score = ?, analysis_json = ?, data_json = ?, updated_at = CURRENT_TIMESTAMP 
+                        WHERE id = ? AND user_id = ?""",
+                    (filename, analysis_data.get("overall_score", 70), json.dumps(analysis_data), data_payload, existing["id"], user_id)
+                )
+                analysis_data["resume_id"] = existing["id"]
+            else:
+                res_cur = db.execute(
+                    """INSERT INTO resumes (
+                        user_id, title, filename, template, overall_score, analysis_json, data_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (user_id, filename, filename, 'modern', analysis_data.get("overall_score", 70), json.dumps(analysis_data), data_payload)
+                )
+                analysis_data["resume_id"] = res_cur.lastrowid
+            db.commit()
+
+        return jsonify(analysis_data)
+    except Exception as e:
+        return jsonify({"error": f"Claim failed: {str(e)}"}), 500
 
 
 @analysis_bp.route("/api/analyses", methods=["GET"])

@@ -1,0 +1,36 @@
+========================================================
+  Website Downloader — Download Report
+  https://websitedownloader.io
+========================================================
+
+Status:         Completed
+Started at:     2026-07-26 11:53:00 UTC
+Completed at:   2026-07-26 11:53:43 UTC
+Download ID:    01KYF4AHHDB3PVJBRJ9JRX82DN
+
+--- Source ---
+URL:            https://preview--jobsparkle-insight.lovable.app
+Resolved URL:   https://lovable.dev/auth-bridge?project_id=5c07baea-ed0e-4abe-a1bb-5d14f3e956a1&return_url=https%3A%2F%2Fpreview--jobsparkle-insight.lovable.app%2F
+
+--- Settings ---
+Mode:           Full site (auto)
+URL rewriting:  Relative (works offline)
+Max pages:      1
+Max depth:      1
+
+--- Results ---
+HTML pages:     1
+Total files:    65
+Duration:       43s
+
+========================================================
+  Thanks for using Website Downloader!
+--------------------------------------------------------
+  Need bigger downloads, more pages, or full sites?
+  https://websitedownloader.io/upgrade
+
+  - Pro:       up to 200 pages per download, 1-hour timeout
+  - Unlimited: unlimited pages, unlimited depth, 24-hour timeout
+
+  Smart proxy + JS rendering included on paid plans.
+========================================================
