@@ -1273,15 +1273,15 @@
       const st = (data.strengths || []).slice(0, 3);
       document.getElementById('prevStrengths').innerHTML = st.map(s => `<li>${escHtml(s)}</li>`).join('') || '<li>Clean document structure</li>';
 
-      # Weaknesses (max 3)
+      // Weaknesses (max 3)
       const wk = (data.weaknesses || []).slice(0, 3);
       document.getElementById('prevWeaknesses').innerHTML = wk.map(w => `<li>${escHtml(w)}</li>`).join('') || '<li>Add quantifiable bullet points</li>';
 
-      # Missing Keywords (max 5)
+      // Missing Keywords (max 5)
       const kw = (data.suggested_keywords || []).slice(0, 5);
       document.getElementById('prevKeywords').innerHTML = kw.map(k => `<span style="background:#FEF3C7; color:#92400E; font-weight:700; font-size:0.8rem; padding:4px 10px; border-radius:6px;">+ ${escHtml(k)}</span>`).join('') || '<span>Docker</span><span>CI/CD</span>';
 
-      # 1 AI Recommendation
+      // 1 AI Recommendation
       const rec = (data.suggestions && data.suggestions[0]) ? data.suggestions[0] : 'Quantify your achievements with metrics to improve recruiter interest.';
       document.getElementById('prevRecommendation').textContent = typeof rec === 'string' ? rec : (rec.suggestion || rec.recommendation || JSON.stringify(rec));
 
