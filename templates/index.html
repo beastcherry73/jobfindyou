@@ -1218,18 +1218,22 @@
   <script>
     
     function triggerLandingUpload() {
-      document.getElementById('landingFileInput').click();
+      const input = document.getElementById('landingFileInput');
+      if (input) input.click();
     }
+
     async function handleLandingFile(e) {
       const file = e.target.files[0];
       if (!file) return;
 
-      document.getElementById('landingFileName').textContent = file.name;
-      document.getElementById('landingFileInfo').style.display = 'flex';
-      document.getElementById('landingLoading').style.display = 'block';
-      if (document.getElementById('freePreviewSection')) {
-        document.getElementById('freePreviewSection').style.display = 'none';
-      }
+      const nameEl = document.getElementById('landingFileName');
+      if (nameEl) nameEl.textContent = file.name;
+      
+      const infoEl = document.getElementById('landingFileInfo');
+      if (infoEl) infoEl.style.display = 'flex';
+
+      const loadingModal = document.getElementById('freePreviewLoadingModal');
+      if (loadingModal) loadingModal.style.display = 'grid';
 
       const fd = new FormData();
       fd.append('resume', file);
@@ -1237,7 +1241,8 @@
       try {
         const res = await fetch('/api/analyze', { method: 'POST', body: fd });
         const data = await res.json();
-        document.getElementById('landingLoading').style.display = 'none';
+        
+        if (loadingModal) loadingModal.style.display = 'none';
 
         if (data.error) {
           alert('Analysis error: ' + data.error);
@@ -1248,45 +1253,91 @@
         sessionStorage.setItem('pendingAnalysisResult', JSON.stringify(data));
         sessionStorage.setItem('pendingResumeName', file.name);
 
-        // Render Public Free Preview
+        // Render Public Free Preview Modal
         renderFreePreview(data);
 
       } catch (err) {
-        document.getElementById('landingLoading').style.display = 'none';
+        if (loadingModal) loadingModal.style.display = 'none';
         console.error("Preview analysis failed:", err);
         alert("Failed to analyze resume. Please try again.");
       }
     }
 
     function renderFreePreview(data) {
-      const sec = document.getElementById('freePreviewSection');
+      const sec = document.getElementById('freePreviewModal');
       if (!sec) return;
 
-      document.getElementById('prevFilename').textContent = data.filename || 'Uploaded Resume';
-      document.getElementById('prevOverallScore').textContent = (data.overall_score || 0) + '/100';
-      
+      const fnameEl = document.getElementById('previewFilename');
+      if (fnameEl) fnameEl.textContent = data.filename || sessionStorage.getItem('pendingResumeName') || 'Uploaded Resume';
+
+      const score = data.overall_score || 75;
+      const scoreEl = document.getElementById('previewOverallScore');
+      if (scoreEl) scoreEl.textContent = score;
+
       const ds = data.dimension_scores || {};
-      document.getElementById('prevAtsScore').textContent = (ds.ats_readiness || data.overall_score || 0) + '/100';
-      document.getElementById('prevSummary').textContent = data.summary || 'Resume successfully analyzed.';
+      const atsScore = (ds.ats_readability || ds.ats_readiness || score);
+      const atsEl = document.getElementById('previewAtsScore');
+      if (atsEl) atsEl.textContent = atsScore + '%';
+
+      const summaryEl = document.getElementById('previewSummary');
+      if (summaryEl) summaryEl.textContent = data.summary || 'Resume successfully analyzed. Key structural details extracted.';
 
       // Strengths (max 3)
-      const st = (data.strengths || []).slice(0, 3);
-      document.getElementById('prevStrengths').innerHTML = st.map(s => `<li>${escHtml(s)}</li>`).join('') || '<li>Clean document structure</li>';
+      const stEl = document.getElementById('previewStrengths');
+      if (stEl) {
+        stEl.innerHTML = '';
+        const st = (data.strengths || []).slice(0, 3);
+        if (st.length === 0) st.push('Clear layout and standard section formatting');
+        st.forEach(s => {
+          const li = document.createElement('li');
+          const txt = typeof s === 'string' ? s : (s.point || s.title || JSON.stringify(s));
+          li.innerHTML = '<span style="color:#4ADE80;margin-right:6px;">✓</span>' + txt;
+          stEl.appendChild(li);
+        });
+      }
 
       // Weaknesses (max 3)
-      const wk = (data.weaknesses || []).slice(0, 3);
-      document.getElementById('prevWeaknesses').innerHTML = wk.map(w => `<li>${escHtml(w)}</li>`).join('') || '<li>Add quantifiable bullet points</li>';
+      const wkEl = document.getElementById('previewWeaknesses');
+      if (wkEl) {
+        wkEl.innerHTML = '';
+        const wk = (data.weaknesses || []).slice(0, 3);
+        if (wk.length === 0) wk.push('Missing measurable metrics and impact statements');
+        wk.forEach(w => {
+          const li = document.createElement('li');
+          const txt = typeof w === 'string' ? w : (w.point || w.title || JSON.stringify(w));
+          li.innerHTML = '<span style="color:#F87171;margin-right:6px;">⚠</span>' + txt;
+          wkEl.appendChild(li);
+        });
+      }
 
       // Missing Keywords (max 5)
-      const kw = (data.suggested_keywords || []).slice(0, 5);
-      document.getElementById('prevKeywords').innerHTML = kw.map(k => `<span style="background:#FEF3C7; color:#92400E; font-weight:700; font-size:0.8rem; padding:4px 10px; border-radius:6px;">+ ${escHtml(k)}</span>`).join('') || '<span>Docker</span><span>CI/CD</span>';
+      const kwEl = document.getElementById('previewKeywords');
+      if (kwEl) {
+        kwEl.innerHTML = '';
+        const kw = (data.suggested_keywords || []).slice(0, 5);
+        if (kw.length === 0) kw.push('Kubernetes', 'CI/CD', 'Docker', 'AWS', 'System Architecture');
+        kw.forEach(k => {
+          const badge = document.createElement('span');
+          badge.style.cssText = 'background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(248, 113, 113, 0.3); padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 600;';
+          badge.textContent = k;
+          kwEl.appendChild(badge);
+        });
+      }
 
       // 1 AI Recommendation
-      const rec = (data.suggestions && data.suggestions[0]) ? data.suggestions[0] : 'Quantify your achievements with metrics to improve recruiter interest.';
-      document.getElementById('prevRecommendation').textContent = typeof rec === 'string' ? rec : (rec.suggestion || rec.recommendation || JSON.stringify(rec));
+      const recEl = document.getElementById('previewRecommendation');
+      if (recEl) {
+        const suggestions = data.suggestions || [];
+        const rec = suggestions.length > 0 ? suggestions[0] : 'Quantify your achievements with metrics to improve recruiter interest and ATS ranking.';
+        recEl.textContent = typeof rec === 'string' ? rec : (rec.suggestion || rec);
+      }
 
       sec.style.display = 'block';
-      sec.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeFreePreview() {
+      const sec = document.getElementById('freePreviewModal');
+      if (sec) sec.style.display = 'none';
     }
 
     function openAuthModal() {
