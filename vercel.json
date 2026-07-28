@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "api/index.py": {
-      "includeFiles": "templates/**,static/**"
+      "runtime": "vercel-python@4.3.1",
+      "includeFiles": ["templates/**", "static/**", "backend/**", "app.py"]
     }
   },
   "rewrites": [
