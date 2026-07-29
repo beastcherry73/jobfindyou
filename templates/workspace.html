@@ -131,30 +131,30 @@
 
         <!-- Resume Analysis Section -->
         <div class="ws-nav-section-label" style="margin-top:8px;">Resume Analysis</div>
-        <a class="ws-nav-sub-item" data-section="analysis-upload" onclick="switchSection('analysis-upload')">
+        <a class="ws-nav-item" data-section="analysis-upload" onclick="switchSection('analysis-upload')">
           <span class="ws-nav-icon">📤</span>
           <span class="ws-nav-label">Upload Resume</span>
         </a>
-        <a class="ws-nav-sub-item" data-section="history" onclick="switchSection('history')">
+        <a class="ws-nav-item" data-section="history" onclick="switchSection('history')">
           <span class="ws-nav-icon">📁</span>
           <span class="ws-nav-label">Previous Analyses</span>
         </a>
-        <a class="ws-nav-sub-item" data-section="report" onclick="switchSection('report')" id="nav-detailed-report" style="display:none;">
+        <a class="ws-nav-item" data-section="report" onclick="switchSection('report')" id="nav-detailed-report" style="display:none;">
           <span class="ws-nav-icon">📄</span>
           <span class="ws-nav-label">Reports</span>
         </a>
 
         <!-- Resume Builder Section -->
         <div class="ws-nav-section-label" style="margin-top:8px;">Resume Builder</div>
-        <a class="ws-nav-sub-item" data-section="builder" onclick="switchSection('builder')">
+        <a class="ws-nav-item" data-section="builder" onclick="switchSection('builder')">
           <span class="ws-nav-icon">📝</span>
           <span class="ws-nav-label">Build</span>
         </a>
-        <a class="ws-nav-sub-item" data-section="builder-templates" onclick="switchSection('builder-templates')">
+        <a class="ws-nav-item" data-section="builder-templates" onclick="switchSection('builder-templates')">
           <span class="ws-nav-icon">🎨</span>
           <span class="ws-nav-label">Templates</span>
         </a>
-        <a class="ws-nav-sub-item" data-section="builder-versions" onclick="switchSection('builder-versions')">
+        <a class="ws-nav-item" data-section="builder-versions" onclick="switchSection('builder-versions')">
           <span class="ws-nav-icon">🗂️</span>
           <span class="ws-nav-label">Versions</span>
         </a>
@@ -168,22 +168,22 @@
 
         <!-- Applications Section -->
         <div class="ws-nav-section-label" style="margin-top:8px;">Applications</div>
-        <a class="ws-nav-sub-item" data-section="tracker" onclick="switchSection('tracker')">
+        <a class="ws-nav-item" data-section="tracker" onclick="switchSection('tracker')">
           <span class="ws-nav-icon">🎯</span>
           <span class="ws-nav-label">Tracker</span>
         </a>
 
         <!-- Career Workspace Section -->
         <div class="ws-nav-section-label" style="margin-top:8px;">Career Workspace</div>
-        <a class="ws-nav-sub-item" data-section="workspace-insights" onclick="switchSection('workspace-insights')">
+        <a class="ws-nav-item" data-section="workspace-insights" onclick="switchSection('workspace-insights')">
           <span class="ws-nav-icon">💡</span>
           <span class="ws-nav-label">Insights</span>
         </a>
-        <a class="ws-nav-sub-item" data-section="workspace-goals" onclick="switchSection('workspace-goals')">
+        <a class="ws-nav-item" data-section="workspace-goals" onclick="switchSection('workspace-goals')">
           <span class="ws-nav-icon">✅</span>
           <span class="ws-nav-label">Goals</span>
         </a>
-        <a class="ws-nav-sub-item" data-section="workspace-progress" onclick="switchSection('workspace-progress')">
+        <a class="ws-nav-item" data-section="workspace-progress" onclick="switchSection('workspace-progress')">
           <span class="ws-nav-icon">📈</span>
           <span class="ws-nav-label">Progress</span>
         </a>
@@ -209,7 +209,7 @@
       <div id="persistentHealthBadge" onclick="switchSection('improve')" style="margin: 12px 14px; padding: 12px 14px; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
         <div>
           <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ws-text-tertiary);">Resume Health</div>
-          <div style="font-size: 1.1rem; font-weight: 800; color: var(--ws-primary);" id="floatingHealthScore">84 <span style="font-size: 0.7rem; font-weight: 700; color: #16A34A; background: rgba(34,197,94,0.15); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">Good</span></div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--ws-primary);" id="floatingHealthScore">— <span style="font-size: 0.7rem; font-weight: 700; color: var(--ws-text-tertiary); background: var(--ws-surface-hover); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">No Scans</span></div>
         </div>
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--ws-primary); display: flex; align-items: center; gap: 4px;">
           Improve →
@@ -2397,6 +2397,10 @@
           document.getElementById('readinessScore').textContent = '0%';
           document.getElementById('readinessProgress').setAttribute('stroke-dasharray', '0, 100');
           document.getElementById('timelineContainer').innerHTML = '<div style="color:var(--ws-text-tertiary);font-size:11px;">No timeline data.</div>';
+          const floatHealth = document.getElementById('floatingHealthScore');
+          if (floatHealth) {
+            floatHealth.innerHTML = '— <span style="font-size: 0.7rem; font-weight: 700; color: var(--ws-text-tertiary); background: var(--ws-surface-hover); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">No Scans</span>';
+          }
           return;
         }
 

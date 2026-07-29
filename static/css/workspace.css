@@ -259,7 +259,8 @@ ul, ol { list-style: none; }
   overflow: hidden;
 }
 
-.ws-nav-item {
+.ws-nav-item,
+.ws-nav-sub-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -275,20 +276,25 @@ ul, ol { list-style: none; }
   position: relative;
   text-decoration: none;
   user-select: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.ws-nav-item:hover {
+.ws-nav-item:hover,
+.ws-nav-sub-item:hover {
   background: var(--ws-surface-hover);
   color: var(--ws-text);
 }
 
-.ws-nav-item.active {
+.ws-nav-item.active,
+.ws-nav-sub-item.active {
   background: var(--ws-primary-subtle);
   color: var(--ws-primary);
   font-weight: 600;
 }
 
-.ws-nav-item.active::before {
+.ws-nav-item.active::before,
+.ws-nav-sub-item.active::before {
   content: '';
   position: absolute;
   left: -8px;
@@ -301,7 +307,8 @@ ul, ol { list-style: none; }
   transition: all var(--ws-duration) var(--ws-ease);
 }
 
-.ws-sidebar.collapsed .ws-nav-item.active::before { left: -4px; }
+.ws-sidebar.collapsed .ws-nav-item.active::before,
+.ws-sidebar.collapsed .ws-nav-sub-item.active::before { left: -4px; }
 
 .ws-nav-icon {
   width: 20px;
