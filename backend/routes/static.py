@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, Response, session
+from flask import Blueprint, render_template, Response, session, redirect
 
 static_bp = Blueprint("static_routes", __name__)
 
@@ -38,9 +38,19 @@ def sitemap():
 
 
 @static_bp.route("/")
+@static_bp.route("/workspace")
+@static_bp.route("/dashboard")
+@static_bp.route("/analysis")
+@static_bp.route("/builder")
+@static_bp.route("/improve")
+@static_bp.route("/tracker")
+@static_bp.route("/profile")
+@static_bp.route("/settings")
+@static_bp.route("/billing")
 def index():
     is_authenticated = "user_id" in session
     user_name = session.get("user_name", "there")
     if is_authenticated:
         return render_template("workspace.html", user_name=user_name)
     return render_template("index.html", is_authenticated=is_authenticated, user_name=user_name)
+
