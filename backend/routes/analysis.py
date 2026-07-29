@@ -57,6 +57,17 @@ def analyze():
         result["raw_text"] = resume_text
 
         user_id = session.get("user_id")
+        file_path = None
+        mime_type = "application/pdf" if file.filename.lower().endswith(".pdf") else "text/plain"
+
+        if user_id:
+            try:
+                from backend.services.supabase_service import upload_resume_to_storage
+                file_path = upload_resume_to_storage(file, user_id, file.filename)
+            except Exception as st_err:
+                import logging
+                logging.getLogger(__name__).warning(f"Storage upload error: {st_err}")
+
         if user_id:
             try:
                 with get_db() as db:
@@ -65,8 +76,8 @@ def analyze():
                             user_id, filename, job_description, overall_score,
                             dimension_scores, summary, strengths, weaknesses,
                             missing_sections, ats_issues, suggestions, suggested_keywords,
-                            full_json
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                            full_json, file_path
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (
                             user_id,
                             file.filename,
@@ -80,7 +91,8 @@ def analyze():
                             json.dumps(result["ats_issues"]),
                             json.dumps(result["suggestions"]),
                             json.dumps(result["suggested_keywords"]),
-                            json.dumps(result)
+                            json.dumps(result),
+                            file_path
                         )
                     )
                     analysis_id = cursor.lastrowid
@@ -101,22 +113,21 @@ def analyze():
                     if existing:
                         db.execute(
                             """UPDATE resumes SET 
-                                title = ?, overall_score = ?, analysis_json = ?, data_json = ?, updated_at = CURRENT_TIMESTAMP 
+                                title = ?, overall_score = ?, analysis_json = ?, data_json = ?, file_path = ?, file_size = ?, mime_type = ?, updated_at = CURRENT_TIMESTAMP 
                                 WHERE id = ? AND user_id = ?""",
-                            (file.filename, result["overall_score"], json.dumps(result), data_payload, existing["id"], user_id)
+                            (file.filename, result["overall_score"], json.dumps(result), data_payload, file_path, size, mime_type, existing["id"], user_id)
                         )
                         result["resume_id"] = existing["id"]
                     else:
                         res_cur = db.execute(
                             """INSERT INTO resumes (
-                                user_id, title, filename, template, overall_score, analysis_json, data_json
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                            (user_id, file.filename, file.filename, 'modern', result["overall_score"], json.dumps(result), data_payload)
+                                user_id, title, filename, template, overall_score, analysis_json, data_json, file_path, file_size, mime_type
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                            (user_id, file.filename, file.filename, 'modern', result["overall_score"], json.dumps(result), data_payload, file_path, size, mime_type)
                         )
                         result["resume_id"] = res_cur.lastrowid
                     db.commit()
             except Exception as db_err:
-                # Log DB error but still return the analysis result to the user
                 import logging
                 logging.getLogger(__name__).error(f"Failed to save analysis to DB: {db_err}")
 
@@ -283,13 +294,33 @@ def handle_analysis(analysis_id):
 
             elif method == "DELETE":
                 row = db.execute("SELECT filename FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, user_id)).fetchone()
-                if row and row["filename"]:
-                    db.execute("DELETE FROM resumes WHERE user_id = ? AND (filename = ? OR title = ?)", (user_id, row["filename"], row["filename"]))
-                cursor = db.execute("DELETE FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, user_id))
+                if not row:
+                    return jsonify({"error": "Analysis not found"}), 404
+                db.execute("DELETE FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, user_id))
                 db.commit()
-                if cursor.rowcount == 0:
-                    return jsonify({"error": "Analysis not found or unauthorized"}), 404
-                return jsonify({"success": True})
+                return jsonify({"message": f"Report '{row['filename']}' deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to process analysis: {str(e)}"}), 500
 
+
+@analysis_bp.route("/api/analyses/<int:analysis_id>/signed-url", methods=["GET"])
+@login_required
+def get_analysis_signed_url(analysis_id):
+    user_id = session["user_id"]
+    try:
+        with get_db() as db:
+            row = db.execute(
+                "SELECT file_path, filename FROM analyses WHERE id = ? AND user_id = ?",
+                (analysis_id, user_id)
+            ).fetchone()
+            if not row or not row["file_path"]:
+                return jsonify({"error": "File path not found for this analysis"}), 404
+
+            from backend.services.supabase_service import get_signed_resume_url
+            url = get_signed_resume_url(row["file_path"], expires_in=3600)
+            if not url:
+                return jsonify({"error": "Failed to generate signed URL"}), 500
+
+            return jsonify({"url": url, "filename": row["filename"]})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

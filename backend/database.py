@@ -117,6 +117,8 @@ def _create_tables_and_migrations(db):
         a_cols = {row["name"] for row in db.execute("PRAGMA table_info(analyses)")}
         if "full_json" not in a_cols:
             db.execute("ALTER TABLE analyses ADD COLUMN full_json TEXT")
+        if "file_path" not in a_cols:
+            db.execute("ALTER TABLE analyses ADD COLUMN file_path TEXT")
     except Exception as e:
         current_app.logger.warning(f"Migration error for analyses table: {e}")
 
@@ -148,6 +150,12 @@ def _create_tables_and_migrations(db):
             db.execute("ALTER TABLE resumes ADD COLUMN overall_score INTEGER DEFAULT 0")
         if "analysis_json" not in r_cols:
             db.execute("ALTER TABLE resumes ADD COLUMN analysis_json TEXT")
+        if "file_path" not in r_cols:
+            db.execute("ALTER TABLE resumes ADD COLUMN file_path TEXT")
+        if "file_size" not in r_cols:
+            db.execute("ALTER TABLE resumes ADD COLUMN file_size INTEGER DEFAULT 0")
+        if "mime_type" not in r_cols:
+            db.execute("ALTER TABLE resumes ADD COLUMN mime_type TEXT DEFAULT 'application/pdf'")
     except Exception as e:
         current_app.logger.warning(f"Migration error for resumes table: {e}")
 
