@@ -2345,7 +2345,8 @@
         const viewBtn = document.getElementById('uploadComplete').querySelector('button');
         viewBtn.onclick = function() {
           closeUploadModal();
-          viewReport(result.id);
+          openReportSection();
+          renderReport(result);
         };
         viewBtn.textContent = 'View Report';
 
@@ -3114,6 +3115,10 @@
 
     async function viewReport(analysisId) {
       openReportSection();
+      if (typeof analysisId === 'object' && analysisId !== null) {
+        renderReport(analysisId);
+        return;
+      }
       showToast('Loading report...', 'info');
       try {
         const data = await apiFetch('/api/analyses/' + analysisId);
