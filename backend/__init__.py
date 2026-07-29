@@ -24,6 +24,14 @@ def create_app():
         response.headers["Expires"] = "0"
         return response
 
+    from werkzeug.exceptions import HTTPException
+
+    @app.errorhandler(HTTPException)
+    def handle_http_exception(e):
+        if request.path.startswith("/api/"):
+            return jsonify({"error": e.name, "details": e.description}), e.code
+        return e
+
     @app.errorhandler(Exception)
     def handle_unexpected_error(e):
         import traceback
