@@ -612,6 +612,13 @@ ul, ol { list-style: none; }
   overflow-y: auto;
   overflow-x: hidden;
   padding: 24px 28px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ws-section {
+  width: 100%;
+  max-width: 100%;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -625,6 +632,7 @@ ul, ol { list-style: none; }
   justify-content: space-between;
   margin-bottom: 28px;
   gap: 16px;
+  width: 100%;
 }
 
 .ws-page-title {
@@ -656,6 +664,7 @@ ul, ol { list-style: none; }
   border-radius: var(--ws-radius-xl);
   box-shadow: var(--ws-shadow-sm);
   transition: all var(--ws-duration-slow) var(--ws-ease-out);
+  width: 100%;
 }
 
 .ws-card:hover {
@@ -694,6 +703,7 @@ ul, ol { list-style: none; }
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transition: all var(--ws-duration-slow) var(--ws-ease-out);
+  width: 100%;
 }
 
 .ws-glass-card:hover {
