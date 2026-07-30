@@ -3982,8 +3982,19 @@
       }
 
       select.innerHTML = '<option value="">-- Choose a saved resume --</option>';
-      const items = (state.analyses || []).concat(state.resumes || []);
-      if (items.length === 0) {
+      const seen = new Set();
+      const uniqueItems = [];
+      const rawItems = (state.analyses || []).concat(state.resumes || []);
+
+      rawItems.forEach(function(item) {
+        const name = item.filename || item.title || 'Untitled Resume';
+        if (!seen.has(name.toLowerCase())) {
+          seen.add(name.toLowerCase());
+          uniqueItems.push(item);
+        }
+      });
+
+      if (uniqueItems.length === 0) {
         const opt = document.createElement('option');
         opt.value = '';
         opt.textContent = 'No saved resumes found in your profile. Upload a new file below.';
@@ -3991,7 +4002,7 @@
         return;
       }
 
-      items.forEach(function(item) {
+      uniqueItems.forEach(function(item) {
         const opt = document.createElement('option');
         const name = item.filename || item.title || 'Untitled Resume';
         const score = item.overall_score ? item.overall_score + '%' : 'Draft';
