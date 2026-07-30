@@ -2277,6 +2277,7 @@
       if (section === 'workspace-insights') loadWorkspaceInsights();
       if (section === 'workspace-progress') loadWorkspaceProgress();
       if (section === 'workspace-goals') loadWeeklyGoals();
+      if (section === 'improve' || section.startsWith('enhance-')) populateEnhanceSavedResumes();
     }
 
     /* ── User Menu ── */
@@ -4024,7 +4025,7 @@
       if (!select) return;
       select.innerHTML = '<option value="">-- Loading saved resumes... --</option>';
 
-      if ((!state.analyses || state.analyses.length === 0) && (!state.resumes || state.resumes.length === 0)) {
+      if (!state.analyses || state.analyses.length === 0 || !state.resumes || state.resumes.length === 0) {
         try {
           const [analyses, resumes] = await Promise.all([
             apiFetch('/api/analyses').catch(function() { return []; }),
