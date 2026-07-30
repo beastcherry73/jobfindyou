@@ -1567,7 +1567,7 @@
         <!-- ── ATS REPORT (LEVEL 5) ── -->
         <section id="section-report" class="ws-section" style="display:none;">
           <div class="ws-page-header">
-            <div class="ws-flex-center" style="gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px;">
               <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="closeReport()">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
@@ -3963,16 +3963,30 @@
       }
     }
 
-    function populateEnhanceSavedResumes() {
+    async function populateEnhanceSavedResumes() {
       const select = document.getElementById('enhanceExistingResumeSelect');
       if (!select) return;
-      select.innerHTML = '<option value="">-- Choose a saved resume --</option>';
+      select.innerHTML = '<option value="">-- Loading saved resumes... --</option>';
 
+      if ((!state.analyses || state.analyses.length === 0) && (!state.resumes || state.resumes.length === 0)) {
+        try {
+          const [analyses, resumes] = await Promise.all([
+            apiFetch('/api/analyses').catch(function() { return []; }),
+            apiFetch('/api/resumes').catch(function() { return []; })
+          ]);
+          state.analyses = analyses || [];
+          state.resumes = resumes || [];
+        } catch (e) {
+          console.error("Error fetching saved resumes:", e);
+        }
+      }
+
+      select.innerHTML = '<option value="">-- Choose a saved resume --</option>';
       const items = (state.analyses || []).concat(state.resumes || []);
       if (items.length === 0) {
         const opt = document.createElement('option');
         opt.value = '';
-        opt.textContent = 'No saved resumes found. Upload a new file below.';
+        opt.textContent = 'No saved resumes found in your profile. Upload a new file below.';
         select.appendChild(opt);
         return;
       }
