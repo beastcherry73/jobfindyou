@@ -219,12 +219,36 @@ def get_analyses():
     user_id = session["user_id"]
     try:
         with get_db() as db:
+            # Bi-directional auto-sync: ensure resumes table entries map to analyses table
+            resumes = db.execute("SELECT * FROM resumes WHERE user_id = ?", (user_id,)).fetchall()
+            analyses = db.execute("SELECT filename FROM analyses WHERE user_id = ?", (user_id,)).fetchall()
+            existing_filenames = {a["filename"] for a in analyses if a["filename"]}
+
+            for r in resumes:
+                fname = r["filename"] or r["title"]
+                if fname and fname not in existing_filenames:
+                    summary = ""
+                    try:
+                        data = json.loads(r["data_json"]) if r["data_json"] else {}
+                        summary = data.get("summary", "")
+                    except Exception:
+                        pass
+                    db.execute(
+                        """INSERT INTO analyses (
+                            user_id, filename, overall_score, dimension_scores,
+                            summary, strengths, weaknesses, missing_sections,
+                            ats_issues, suggestions, suggested_keywords, created_at
+                        ) VALUES (?, ?, ?, '{}', ?, '[]', '[]', '[]', '[]', '[]', '[]', ?)""",
+                        (user_id, fname, r["overall_score"] or 70, summary, r["created_at"])
+                    )
+                    existing_filenames.add(fname)
+            db.commit()
+
             rows = db.execute(
                 "SELECT id, filename, overall_score, summary, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
                 (user_id,)
             ).fetchall()
-            analyses = [dict(r) for r in rows]
-        return jsonify(analyses)
+            return jsonify([dict(r) for r in rows])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
