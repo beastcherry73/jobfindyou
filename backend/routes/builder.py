@@ -44,37 +44,48 @@ def handle_resumes():
     user_id = session["user_id"]
     with get_db() as db:
         if request.method == "GET":
-            db.execute("""
-                DELETE FROM resumes 
-                WHERE user_id = ? AND (
-                    TRIM(title) LIKE 'My Master Resume%' 
-                    OR data_json LIKE '%John Doe%'
-                    OR (data_json = '{}' OR data_json IS NULL OR data_json = '')
-                )
-            """, (user_id,))
-            db.execute("DELETE FROM analyses WHERE user_id = ? AND filename LIKE 'My Master Resume%'", (user_id,))
+            try:
+                db.execute("""
+                    DELETE FROM resumes 
+                    WHERE user_id = ? AND (
+                        TRIM(title) LIKE 'My Master Resume%' 
+                        OR data_json LIKE '%John Doe%'
+                        OR (data_json = '{}' OR data_json IS NULL OR data_json = '')
+                    )
+                """, (user_id,))
+                db.execute("DELETE FROM analyses WHERE user_id = ? AND filename LIKE 'My Master Resume%'", (user_id,))
 
-            db.execute("""
-                INSERT INTO resumes (user_id, title, filename, template, overall_score, analysis_json, data_json)
-                SELECT a.user_id, a.filename, a.filename, 'modern', a.overall_score, 
-                       json_object(
-                           'id', a.id, 'filename', a.filename,
-                           'overall_score', a.overall_score, 'summary', a.summary,
-                           'job_description', a.job_description,
-                           'dimension_scores', json(a.dimension_scores),
-                           'strengths', json(a.strengths), 'weaknesses', json(a.weaknesses),
-                           'missing_sections', json(a.missing_sections),
-                           'ats_issues', json(a.ats_issues), 'suggestions', json(a.suggestions),
-                           'suggested_keywords', json(a.suggested_keywords),
-                           'created_at', a.created_at
-                       ),
-                       json_object('fullName', REPLACE(a.filename, '.pdf', ''), 'summary', a.summary)
-                FROM analyses a
-                WHERE a.user_id = ? AND NOT EXISTS (
-                    SELECT 1 FROM resumes r WHERE r.user_id = a.user_id AND (r.filename = a.filename OR r.title = a.filename)
-                )
-            """, (user_id,))
-            db.commit()
+                # Auto-sync analyses to resumes safely across SQLite and PostgreSQL
+                existing_rows = db.execute("SELECT filename, title FROM resumes WHERE user_id = ?", (user_id,)).fetchall()
+                existing_names = set()
+                for er in existing_rows:
+                    if er["filename"]: existing_names.add(er["filename"])
+                    if er["title"]: existing_names.add(er["title"])
+
+                unmapped_analyses = db.execute("SELECT * FROM analyses WHERE user_id = ?", (user_id,)).fetchall()
+                for a in unmapped_analyses:
+                    fname = a["filename"]
+                    if fname and fname not in existing_names:
+                        a_dict = {
+                            "id": a["id"],
+                            "filename": fname,
+                            "overall_score": a["overall_score"],
+                            "summary": a["summary"],
+                            "job_description": a["job_description"],
+                            "created_at": a["created_at"]
+                        }
+                        clean_name = fname.rsplit('.', 1)[0] if '.' in fname else fname
+                        data_payload = json.dumps({"fullName": clean_name, "summary": a["summary"]})
+                        db.execute(
+                            """INSERT INTO resumes (user_id, title, filename, template, overall_score, analysis_json, data_json)
+                               VALUES (?, ?, ?, 'modern', ?, ?, ?)""",
+                            (user_id, fname, fname, a["overall_score"], json.dumps(a_dict), data_payload)
+                        )
+                        existing_names.add(fname)
+                db.commit()
+            except Exception as sync_err:
+                import logging
+                logging.getLogger(__name__).warning(f"Resumes auto-sync error: {sync_err}")
 
             rows = db.execute(
                 "SELECT id, title, filename, template, overall_score, analysis_json, data_json, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
