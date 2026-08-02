@@ -13,7 +13,7 @@ def call_groq(prompt, max_tokens=3000):
             from groq import Groq
             groq_client = Groq(api_key=api_key)
 
-        models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
+        models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it"]
         for m in models:
             try:
                 response = groq_client.chat.completions.create(
