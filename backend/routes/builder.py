@@ -45,16 +45,6 @@ def handle_resumes():
     with get_db() as db:
         if request.method == "GET":
             try:
-                db.execute("""
-                    DELETE FROM resumes 
-                    WHERE user_id = ? AND (
-                        TRIM(title) LIKE 'My Master Resume%' 
-                        OR data_json LIKE '%John Doe%'
-                        OR (data_json = '{}' OR data_json IS NULL OR data_json = '')
-                    )
-                """, (user_id,))
-                db.execute("DELETE FROM analyses WHERE user_id = ? AND filename LIKE 'My Master Resume%'", (user_id,))
-
                 # Auto-sync analyses to resumes safely across SQLite and PostgreSQL
                 existing_rows = db.execute("SELECT filename, title FROM resumes WHERE user_id = ?", (user_id,)).fetchall()
                 existing_names = set()

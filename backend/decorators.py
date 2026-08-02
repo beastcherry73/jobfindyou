@@ -8,6 +8,6 @@ def login_required(view):
         if "user_id" not in session:
             if request.path.startswith("/api/"):
                 return jsonify({"error": "Please log in to use ResumeAI."}), 401
-            return redirect(url_for("login"))
+            return redirect(url_for("auth.login"))
         return view(*args, **kwargs)
     return wrapped_view

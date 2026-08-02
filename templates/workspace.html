@@ -3712,7 +3712,7 @@
       try {
         var payload = {
           title: data.fullName + ' - Resume',
-          template: 'modern',
+          template: selectedTemplate || 'modern',
           data: data
         };
         var result = await apiFetch(builderResumeId ? '/api/resumes/' + builderResumeId : '/api/resumes', {
@@ -3995,6 +3995,7 @@
     let enhanceResumeFile = null;
     let selectedResumeSource = 'existing';
     let selectedExistingResumeText = '';
+    let selectedExistingResumeItem = null;
     let currentEnhanceTemplate = 'modern';
     let enhanceVersions = { v1: '', v2: '' };
 
@@ -4070,7 +4071,7 @@
       });
     }
 
-    function onSelectExistingResume() {
+    async function onSelectExistingResume() {
       const select = document.getElementById('enhanceExistingResumeSelect');
       if (!select || !select.value) {
         selectedExistingResumeText = '';
@@ -4078,17 +4079,70 @@
       }
       try {
         const item = JSON.parse(select.value);
-        if (item.full_json && item.full_json.raw_text) {
-          selectedExistingResumeText = item.full_json.raw_text;
-        } else if (item.data_json) {
-          selectedExistingResumeText = typeof item.data_json === 'string' ? item.data_json : JSON.stringify(item.data_json);
-        } else {
-          selectedExistingResumeText = item.summary || item.title || 'Candidate resume content';
-        }
+        selectedExistingResumeItem = item;
+        selectedExistingResumeText = await extractResumeText(item) || item.summary || item.title || 'Candidate resume content';
         showToast('Selected resume: ' + (item.filename || item.title), 'info');
       } catch (e) {
         selectedExistingResumeText = '';
       }
+    }
+
+    function extractResumeText(item) {
+      return new Promise(function(resolve) {
+        if (!item) return resolve('');
+
+        // 1. Analysis detail / claim payload: full_json.raw_text
+        if (item.full_json) {
+          const fj = typeof item.full_json === 'string' ? (function() { try { return JSON.parse(item.full_json); } catch (e) { return {}; } })() : item.full_json;
+          if (fj && (fj.raw_text || fj.rawText)) return resolve(fj.raw_text || fj.rawText);
+        }
+
+        // 2. Resume items from /api/resumes: data.rawText / data.raw_text
+        if (item.data && (item.data.rawText || item.data.raw_text)) {
+          return resolve(item.data.rawText || item.data.raw_text);
+        }
+
+        // 3. Resume items: analysis object (analysis_json) may carry raw_text
+        if (item.analysis && (item.analysis.raw_text || item.analysis.rawText)) {
+          return resolve(item.analysis.raw_text || item.analysis.rawText);
+        }
+
+        // 4. Legacy data_json
+        if (item.data_json) {
+          return resolve(typeof item.data_json === 'string' ? item.data_json : JSON.stringify(item.data_json));
+        }
+
+        // 5. Analysis list items (id + filename, no title/data): fetch detail for raw text
+        if (item.id && item.filename && !item.title && !item.data) {
+          apiFetch('/api/analyses/' + item.id).then(function(detail) {
+            if (detail && detail.full_json) {
+              const fj = typeof detail.full_json === 'string' ? (function() { try { return JSON.parse(detail.full_json); } catch (e) { return {}; } })() : detail.full_json;
+              if (fj && (fj.raw_text || fj.rawText)) return resolve(fj.raw_text || fj.rawText);
+            }
+            if (detail && detail.raw_text) return resolve(detail.raw_text);
+            resolve(detail && (detail.summary || '') || '');
+          }).catch(function() { resolve(''); });
+          return;
+        }
+
+        // 6. Structured builder draft: reconstruct text from data fields
+        if (item.data) {
+          const d = item.data;
+          const expText = (d.experience || []).map(function(e) {
+            return [e.company, e.role, e.dates, (e.bullets || []).join('\n')].filter(Boolean).join('\n');
+          }).join('\n\n');
+          const eduText = (d.education || []).map(function(e) {
+            return [e.school, e.degree, e.dates].filter(Boolean).join('\n');
+          }).join('\n\n');
+          const projText = (d.projects || []).map(function(p) {
+            return [p.name, p.desc, p.tech].filter(Boolean).join('\n');
+          }).join('\n\n');
+          const rebuilt = [d.fullName, d.summary, d.skills, expText, eduText, projText].filter(Boolean).join('\n\n');
+          if (rebuilt) return resolve(rebuilt);
+        }
+
+        resolve('');
+      });
     }
 
     function handleEnhanceFileSelect(file) {
@@ -4103,9 +4157,14 @@
         showToast('Please upload a resume file first', 'error');
         return;
       }
-      if (selectedResumeSource === 'existing' && !selectedExistingResumeText) {
-        showToast('Please select a saved resume from the dropdown', 'error');
-        return;
+      if (selectedResumeSource === 'existing') {
+        if (!selectedExistingResumeText && selectedExistingResumeItem) {
+          selectedExistingResumeText = await extractResumeText(selectedExistingResumeItem) || 'Candidate resume content';
+        }
+        if (!selectedExistingResumeText) {
+          showToast('Please select a saved resume from the dropdown', 'error');
+          return;
+        }
       }
 
       const modeEl = document.getElementById('enhanceMode');
