@@ -213,17 +213,3 @@ def user_profile():
                 db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(new_password), user_id))
             db.commit()
             return jsonify({"message": "Profile updated successfully"})
-
-
-@auth_bp.route("/api/auth/forgot-password", methods=["POST"])
-def forgot_password():
-    data = request.get_json() or {}
-    email = data.get("email", "").strip().lower()
-    if not email:
-        return jsonify({"error": "Please provide your email address"}), 400
-    with get_db() as db:
-        user = db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
-        if user:
-            token = secrets.token_urlsafe(16)
-            return jsonify({"message": "Password reset instructions have been sent to your email.", "reset_token": token})
-    return jsonify({"message": "If an account exists with that email, reset instructions were sent."})

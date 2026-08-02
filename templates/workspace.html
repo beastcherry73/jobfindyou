@@ -2209,11 +2209,161 @@
       if (wrap) wrap.style.display = type === 'section' ? 'block' : 'none';
     }
 
-    function acceptImprovedResume() {
+    async function acceptImprovedResume() {
       const text = document.getElementById('enhanceMarkdownOutput').value;
-      if (!text) return;
-      showToast('🎉 Changes accepted! Updated resume saved to workspace.', 'success');
+      if (!text || !text.trim()) { showToast('No improved resume to accept', 'warning'); return; }
+      showToast('Loading improved resume into builder...', 'info');
+
+      const parsed = parseImprovedMarkdown(text);
+
+      document.getElementById('bName').value = parsed.name || '';
+      document.getElementById('bEmail').value = parsed.email || '';
+      document.getElementById('bPhone').value = parsed.phone || '';
+      document.getElementById('bLocation').value = parsed.location || '';
+      document.getElementById('bSummary').value = parsed.summary || '';
+      document.getElementById('bSkills').value = parsed.skills || '';
+      builderData.experience = parsed.experience || [];
+      builderData.education = parsed.education || [];
+      builderData.projects = parsed.projects || [];
+
+      renderSubpanelLists();
+      updatePreview();
+
+      try {
+        const payload = {
+          title: (parsed.name || 'Improved') + ' - Resume',
+          template: selectedTemplate || 'modern',
+          data: {
+            fullName: parsed.name || '',
+            email: parsed.email || '',
+            phone: parsed.phone || '',
+            location: parsed.location || '',
+            summary: parsed.summary || '',
+            skills: parsed.skills || '',
+            experience: builderData.experience,
+            education: builderData.education,
+            projects: builderData.projects
+          }
+        };
+        await apiFetch(builderResumeId ? '/api/resumes/' + builderResumeId : '/api/resumes', {
+          method: builderResumeId ? 'PUT' : 'POST',
+          body: payload
+        });
+        if (builderResumeId) loadBuilderVersions();
+        showToast('🎉 Improved resume saved to your workspace.', 'success');
+      } catch (err) {
+        showToast('Saved to builder, but workspace save failed: ' + err.message, 'error');
+      }
       switchSection('builder');
+    }
+
+    function parseImprovedMarkdown(text) {
+      const lines = text.split(/\r?\n/);
+      const result = { name: '', email: '', phone: '', location: '', summary: '', skills: '', experience: [], education: [], projects: [] };
+      let currentSection = '';
+      let sectionBuf = [];
+
+      const strip = function(s) { return s.replace(/^\s*#+\s*/, '').replace(/\*\*/g, '').trim(); };
+
+      function flush() {
+        const sec = currentSection.toLowerCase();
+        if (!sec || !sectionBuf.length) { sectionBuf = []; return; }
+        if (sec.indexOf('summary') !== -1 || sec.indexOf('profile') !== -1 || sec.indexOf('objective') !== -1) {
+          result.summary = sectionBuf.join(' ').trim();
+        } else if (sec.indexOf('skill') !== -1 || sec.indexOf('competenc') !== -1 || sec.indexOf('technolog') !== -1) {
+          result.skills = sectionBuf.map(function(l) { return strip(l).replace(/^[-*•]\s*/, ''); }).join(', ').replace(/\s*,\s*/g, ', ').trim();
+        } else if (sec.indexOf('experience') !== -1 || sec.indexOf('employ') !== -1 || sec.indexOf('work history') !== -1) {
+          parseEntries(sectionBuf, 'experience');
+        } else if (sec.indexOf('education') !== -1) {
+          parseEducation(sectionBuf);
+        } else if (sec.indexOf('project') !== -1) {
+          parseEntries(sectionBuf, 'projects');
+        }
+        sectionBuf = [];
+      }
+
+      function parseEntries(buf, kind) {
+        let cur = null;
+        buf.forEach(function(line) {
+          const t = line.trim();
+          if (!t) return;
+          if (/^###/.test(t)) {
+            if (cur && (cur.role || cur.company || cur.name)) result[kind].push(cur);
+            const header = strip(t);
+            const dates = (header.match(/\(([^)]*)\)/) || [])[1] || '';
+            const titlePart = header.replace(/\s*\([^)]*\)\s*$/, '').trim();
+            if (kind === 'projects') {
+              cur = { name: titlePart, desc: '', tech: '' };
+            } else {
+              const parts = titlePart.split(/\s+[-–—|]\s+/);
+              cur = { role: (parts[0] || '').trim(), company: (parts[1] || '').trim(), dates: dates.trim(), bullets: [] };
+            }
+          } else if (/^[-*•]/.test(t)) {
+            const bullet = strip(t).replace(/^[-*•]\s*/, '');
+            if (cur) { if (!cur.bullets) cur.bullets = []; cur.bullets.push(bullet); }
+            else if (kind === 'experience') { cur = { role: '', company: '', dates: '', bullets: [bullet] }; }
+            else if (kind === 'projects') { cur = { name: 'Project', desc: bullet, tech: '' }; }
+          } else if (cur) {
+            if (kind === 'projects') { if (!cur.desc) cur.desc = t; else cur.desc += ' ' + t; }
+            else { if (!cur.bullets) cur.bullets = []; cur.bullets.push(t); }
+          } else if (kind === 'projects' && !cur) {
+            cur = { name: t, desc: '', tech: '' };
+          }
+        });
+        if (cur && (cur.role || cur.company || cur.name)) result[kind].push(cur);
+      }
+
+      function parseEducation(buf) {
+        buf.forEach(function(line) {
+          const t = line.trim();
+          if (!t || /^[-*•]/.test(t)) return;
+          const header = strip(t);
+          const dates = (header.match(/\(([^)]*)\)/) || [])[1] || '';
+          const body = header.replace(/\s*\([^)]*\)\s*$/, '').trim();
+          const parts = body.split(/\s+[-–—|]\s+/);
+          result.education.push({
+            school: (parts[1] || parts[0] || '').trim(),
+            degree: (parts[0] || '').trim(),
+            dates: dates.trim()
+          });
+        });
+      }
+
+      lines.forEach(function(line) {
+        const trimmed = line.trim();
+        if (/^##\s+/.test(trimmed)) {
+          flush();
+          currentSection = strip(trimmed);
+          sectionBuf = [];
+        } else if (/^###\s+/.test(trimmed)) {
+          sectionBuf.push(line);
+        } else if (/^#\s+/.test(trimmed)) {
+          flush();
+          currentSection = '';
+          if (!result.name) result.name = strip(trimmed);
+        } else if (currentSection) {
+          sectionBuf.push(line);
+        } else if (trimmed && !result.name) {
+          result.name = strip(trimmed);
+        } else if (trimmed) {
+          const em = trimmed.match(/[\w.+-]+@[\w-]+\.[\w.]+/);
+          if (em && !result.email) result.email = em[0];
+          const ph = trimmed.match(/(?:\+?\d[\d\s().-]{7,})/);
+          if (ph && !result.phone) result.phone = ph[0].trim();
+          if (!result.location) {
+            const segs = trimmed.split('|').map(function(s) { return s.trim(); });
+            segs.forEach(function(seg) {
+              if (result.location) return;
+              if (seg && seg.indexOf('@') === -1 && !/\d{7,}/.test(seg) && seg.length < 40 && /[A-Za-z]{2,}/.test(seg)) {
+                result.location = seg;
+              }
+            });
+          }
+        }
+      });
+      flush();
+
+      return result;
     }
 
     function switchSection(section) {
@@ -3670,7 +3820,14 @@
           '<div style="font-weight:600;color:var(--ws-text-secondary);">Edit your resume to see preview</div></div>';
       }
 
-      document.getElementById('builderPreview').innerHTML = html;
+      // Template themes make switching visibly change the preview
+      var tplTheme = 'border-top:2px solid var(--ws-primary);';
+      if (selectedTemplate === 'executive') tplTheme = 'border-top:4px solid #0f172a; font-family:Georgia, serif;';
+      else if (selectedTemplate === 'creative') tplTheme = 'border-top:4px solid #7c3aed; background:#faf5ff;';
+      else if (selectedTemplate === 'minimalist') tplTheme = 'border-top:2px solid #64748b; font-family:Inter, sans-serif;';
+
+      document.getElementById('builderPreview').innerHTML =
+        '<div style="' + tplTheme + ' padding:14px;border-radius:6px;">' + html + '</div>';
     }
 
     async function aiAssist(mode, btn) {

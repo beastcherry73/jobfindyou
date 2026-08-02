@@ -26,6 +26,7 @@ def configure_app(app):
     app.config["SESSION_COOKIE_SECURE"] = bool(os.environ.get("VERCEL"))
     app.config["SESSION_COOKIE_NAME"] = "session"
     app.config["PERMANENT_SESSION_LIFETIME"] = 86400
+    app.config["MAX_CONTENT_LENGTH"] = 11 * 1024 * 1024
 
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if groq_key:

@@ -2,8 +2,9 @@ import re
 import json
 from flask import Blueprint, request, jsonify, redirect, url_for
 from backend.decorators import login_required
-from backend.services.helpers import extract_text_from_pdf
-from backend.services.ai import call_groq
+from backend.services.helpers import extract_text_from_pdf, estimate_resume_score
+from backend.services.ai import call_groq, GroqError
+from backend.services.ratelimit import rate_limit
 from backend.prompts import SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT, EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT
 
 generate_bp = Blueprint("generate", __name__)
@@ -31,7 +32,10 @@ def generate_scratch():
 
         data_str = json.dumps(data, indent=2)
         prompt = SCRATCH_PROMPT.format(target_context=target_context, data=data_str)
-        resume = call_groq(prompt, max_tokens=3000)
+        try:
+            resume = call_groq(prompt, max_tokens=3000)
+        except GroqError:
+            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         resume = re.sub(r"^```(?:markdown)?", "", resume.strip()).strip()
         resume = re.sub(r"```$", "", resume).strip()
 
@@ -71,7 +75,10 @@ def generate_improve():
             job_context=job_context,
             resume_text=resume_text[:12000]
         )
-        resume = call_groq(prompt, max_tokens=3000)
+        try:
+            resume = call_groq(prompt, max_tokens=3000)
+        except GroqError:
+            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         resume = re.sub(r"^```(?:markdown)?", "", resume.strip()).strip()
         resume = re.sub(r"```$", "", resume).strip()
 
@@ -83,6 +90,7 @@ def generate_improve():
 
 @generate_bp.route("/api/generate/improve-with-diff", methods=["POST"])
 @login_required
+@rate_limit(limit=10, window_seconds=300)
 def generate_improve_with_diff():
     try:
         resume_text = ""
@@ -120,14 +128,17 @@ def generate_improve_with_diff():
             job_context=job_context,
             resume_text=resume_text[:12000]
         )
-        improved_resume = call_groq(improve_prompt, max_tokens=3000)
+        try:
+            improved_resume = call_groq(improve_prompt, max_tokens=3000)
+        except GroqError:
+            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         improved_resume = re.sub(r"^```(?:markdown)?", "", improved_resume.strip()).strip()
         improved_resume = re.sub(r"```$", "", improved_resume).strip()
 
-        # Calculate scores & improvements
-        orig_score = 72
-        enh_score = 91
-        delta = enh_score - orig_score
+        # Content-derived scores (honest estimates, not hardcoded)
+        orig_score = estimate_resume_score(resume_text, job_description)
+        enh_score = estimate_resume_score(improved_resume, job_description)
+        delta = max(0, enh_score - orig_score)
 
         improvements = [
             "Transformed passive phrasing into strong action-oriented verbiage",

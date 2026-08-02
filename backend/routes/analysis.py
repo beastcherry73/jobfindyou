@@ -3,13 +3,15 @@ from flask import Blueprint, request, jsonify, session
 from backend.database import get_db
 from backend.decorators import login_required
 from backend.services.helpers import extract_text_from_pdf, clean_json, normalize_analysis_dict
-from backend.services.ai import call_groq
+from backend.services.ai import call_groq, GroqError
+from backend.services.ratelimit import rate_limit
 from backend.prompts import ANALYSIS_PROMPT
 
 analysis_bp = Blueprint("analysis", __name__)
 
 
 @analysis_bp.route("/api/analyze", methods=["POST"])
+@rate_limit(limit=10, window_seconds=300)
 def analyze():
     if "resume" not in request.files:
         return jsonify({"error": "No resume file uploaded"}), 400
@@ -36,7 +38,9 @@ def analyze():
             resume_text = file.read().decode("utf-8", errors="ignore")
 
         if not resume_text.strip():
-            resume_text = f"Sample candidate resume content from {file.filename}"
+            return jsonify({
+                "error": "Could not read any text from this file. Scanned or image-based PDFs and empty files are not supported. Please upload a text-based PDF or TXT resume."
+            }), 400
 
         job_context = (
             f"The candidate is applying for this role: {job_description}"
@@ -45,12 +49,18 @@ def analyze():
         )
 
         prompt = ANALYSIS_PROMPT.format(job_context=job_context, resume_text=resume_text[:12000])
-        raw = clean_json(call_groq(prompt))
+        try:
+            raw = clean_json(call_groq(prompt))
+        except GroqError:
+            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
 
         try:
             parsed = json.loads(raw)
         except Exception:
             parsed = {}
+
+        if not isinstance(parsed, dict) or not parsed:
+            return jsonify({"error": "AI service returned an empty result. Please try again."}), 502
 
         result = normalize_analysis_dict(parsed)
         result["filename"] = file.filename
@@ -71,31 +81,64 @@ def analyze():
         if user_id:
             try:
                 with get_db() as db:
-                    cursor = db.execute(
-                        """INSERT INTO analyses (
-                            user_id, filename, job_description, overall_score,
-                            dimension_scores, summary, strengths, weaknesses,
-                            missing_sections, ats_issues, suggestions, suggested_keywords,
-                            full_json, file_path
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (
-                            user_id,
-                            file.filename,
-                            job_description,
-                            result["overall_score"],
-                            json.dumps(result["dimension_scores"]),
-                            result["summary"],
-                            json.dumps(result["strengths"]),
-                            json.dumps(result["weaknesses"]),
-                            json.dumps(result["missing_sections"]),
-                            json.dumps(result["ats_issues"]),
-                            json.dumps(result["suggestions"]),
-                            json.dumps(result["suggested_keywords"]),
-                            json.dumps(result),
-                            file_path
+                    existing_analysis = db.execute(
+                        "SELECT id FROM analyses WHERE user_id = ? AND filename = ?",
+                        (user_id, file.filename)
+                    ).fetchone()
+
+                    if existing_analysis:
+                        analysis_id = existing_analysis["id"]
+                        db.execute(
+                            """UPDATE analyses SET
+                                job_description = ?, overall_score = ?,
+                                dimension_scores = ?, summary = ?, strengths = ?,
+                                weaknesses = ?, missing_sections = ?, ats_issues = ?,
+                                suggestions = ?, suggested_keywords = ?, full_json = ?,
+                                file_path = ?, created_at = CURRENT_TIMESTAMP
+                                WHERE id = ? AND user_id = ?""",
+                            (
+                                job_description,
+                                result["overall_score"],
+                                json.dumps(result["dimension_scores"]),
+                                result["summary"],
+                                json.dumps(result["strengths"]),
+                                json.dumps(result["weaknesses"]),
+                                json.dumps(result["missing_sections"]),
+                                json.dumps(result["ats_issues"]),
+                                json.dumps(result["suggestions"]),
+                                json.dumps(result["suggested_keywords"]),
+                                json.dumps(result),
+                                file_path,
+                                analysis_id,
+                                user_id
+                            )
                         )
-                    )
-                    analysis_id = cursor.lastrowid
+                    else:
+                        cursor = db.execute(
+                            """INSERT INTO analyses (
+                                user_id, filename, job_description, overall_score,
+                                dimension_scores, summary, strengths, weaknesses,
+                                missing_sections, ats_issues, suggestions, suggested_keywords,
+                                full_json, file_path
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                            (
+                                user_id,
+                                file.filename,
+                                job_description,
+                                result["overall_score"],
+                                json.dumps(result["dimension_scores"]),
+                                result["summary"],
+                                json.dumps(result["strengths"]),
+                                json.dumps(result["weaknesses"]),
+                                json.dumps(result["missing_sections"]),
+                                json.dumps(result["ats_issues"]),
+                                json.dumps(result["suggestions"]),
+                                json.dumps(result["suggested_keywords"]),
+                                json.dumps(result),
+                                file_path
+                            )
+                        )
+                        analysis_id = cursor.lastrowid
                     result["id"] = analysis_id
 
                     existing = db.execute(
@@ -139,6 +182,7 @@ def analyze():
 
 @analysis_bp.route("/api/analyses/claim", methods=["POST"])
 @login_required
+@rate_limit(limit=10, window_seconds=300)
 def claim_analysis():
     user_id = session["user_id"]
     data = request.get_json() or {}
@@ -152,30 +196,62 @@ def claim_analysis():
 
     try:
         with get_db() as db:
-            cursor = db.execute(
-                """INSERT INTO analyses (
-                    user_id, filename, job_description, overall_score,
-                    dimension_scores, summary, strengths, weaknesses,
-                    missing_sections, ats_issues, suggestions, suggested_keywords,
-                    full_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    user_id,
-                    filename,
-                    job_description,
-                    analysis_data.get("overall_score", 70),
-                    json.dumps(analysis_data.get("dimension_scores", {})),
-                    analysis_data.get("summary", ""),
-                    json.dumps(analysis_data.get("strengths", [])),
-                    json.dumps(analysis_data.get("weaknesses", [])),
-                    json.dumps(analysis_data.get("missing_sections", [])),
-                    json.dumps(analysis_data.get("ats_issues", [])),
-                    json.dumps(analysis_data.get("suggestions", [])),
-                    json.dumps(analysis_data.get("suggested_keywords", [])),
-                    json.dumps(analysis_data)
+            existing_analysis = db.execute(
+                "SELECT id FROM analyses WHERE user_id = ? AND filename = ?",
+                (user_id, filename)
+            ).fetchone()
+
+            if existing_analysis:
+                analysis_id = existing_analysis["id"]
+                db.execute(
+                    """UPDATE analyses SET
+                        job_description = ?, overall_score = ?,
+                        dimension_scores = ?, summary = ?, strengths = ?,
+                        weaknesses = ?, missing_sections = ?, ats_issues = ?,
+                        suggestions = ?, suggested_keywords = ?, full_json = ?,
+                        created_at = CURRENT_TIMESTAMP
+                        WHERE id = ? AND user_id = ?""",
+                    (
+                        job_description,
+                        analysis_data.get("overall_score", 70),
+                        json.dumps(analysis_data.get("dimension_scores", {})),
+                        analysis_data.get("summary", ""),
+                        json.dumps(analysis_data.get("strengths", [])),
+                        json.dumps(analysis_data.get("weaknesses", [])),
+                        json.dumps(analysis_data.get("missing_sections", [])),
+                        json.dumps(analysis_data.get("ats_issues", [])),
+                        json.dumps(analysis_data.get("suggestions", [])),
+                        json.dumps(analysis_data.get("suggested_keywords", [])),
+                        json.dumps(analysis_data),
+                        analysis_id,
+                        user_id
+                    )
                 )
-            )
-            analysis_id = cursor.lastrowid
+            else:
+                cursor = db.execute(
+                    """INSERT INTO analyses (
+                        user_id, filename, job_description, overall_score,
+                        dimension_scores, summary, strengths, weaknesses,
+                        missing_sections, ats_issues, suggestions, suggested_keywords,
+                        full_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        user_id,
+                        filename,
+                        job_description,
+                        analysis_data.get("overall_score", 70),
+                        json.dumps(analysis_data.get("dimension_scores", {})),
+                        analysis_data.get("summary", ""),
+                        json.dumps(analysis_data.get("strengths", [])),
+                        json.dumps(analysis_data.get("weaknesses", [])),
+                        json.dumps(analysis_data.get("missing_sections", [])),
+                        json.dumps(analysis_data.get("ats_issues", [])),
+                        json.dumps(analysis_data.get("suggestions", [])),
+                        json.dumps(analysis_data.get("suggested_keywords", [])),
+                        json.dumps(analysis_data)
+                    )
+                )
+                analysis_id = cursor.lastrowid
             analysis_data["id"] = analysis_id
 
             existing = db.execute(
@@ -219,31 +295,6 @@ def get_analyses():
     user_id = session["user_id"]
     try:
         with get_db() as db:
-            # Bi-directional auto-sync: ensure resumes table entries map to analyses table
-            resumes = db.execute("SELECT * FROM resumes WHERE user_id = ?", (user_id,)).fetchall()
-            analyses = db.execute("SELECT filename FROM analyses WHERE user_id = ?", (user_id,)).fetchall()
-            existing_filenames = {a["filename"] for a in analyses if a["filename"]}
-
-            for r in resumes:
-                fname = r["filename"] or r["title"]
-                if fname and fname not in existing_filenames:
-                    summary = ""
-                    try:
-                        data = json.loads(r["data_json"]) if r["data_json"] else {}
-                        summary = data.get("summary", "")
-                    except Exception:
-                        pass
-                    db.execute(
-                        """INSERT INTO analyses (
-                            user_id, filename, overall_score, dimension_scores,
-                            summary, strengths, weaknesses, missing_sections,
-                            ats_issues, suggestions, suggested_keywords, created_at
-                        ) VALUES (?, ?, ?, '{}', ?, '[]', '[]', '[]', '[]', '[]', '[]', ?)""",
-                        (user_id, fname, r["overall_score"] or 70, summary, r["created_at"])
-                    )
-                    existing_filenames.add(fname)
-            db.commit()
-
             rows = db.execute(
                 "SELECT id, filename, overall_score, summary, created_at FROM analyses WHERE user_id = ? ORDER BY created_at DESC",
                 (user_id,)
@@ -307,13 +358,23 @@ def handle_analysis(analysis_id):
                 new_filename = data.get("filename", "").strip()
                 if not new_filename:
                     return jsonify({"error": "New filename is required"}), 400
-                res = db.execute(
+                row = db.execute(
+                    "SELECT filename FROM analyses WHERE id = ? AND user_id = ?",
+                    (analysis_id, user_id)
+                ).fetchone()
+                if not row:
+                    return jsonify({"error": "Analysis not found"}), 404
+                old_filename = row["filename"]
+                db.execute(
                     "UPDATE analyses SET filename = ? WHERE id = ? AND user_id = ?",
                     (new_filename, analysis_id, user_id)
                 )
+                if old_filename and old_filename != new_filename:
+                    db.execute(
+                        "UPDATE resumes SET title = ?, filename = ? WHERE user_id = ? AND filename = ?",
+                        (new_filename, new_filename, user_id, old_filename)
+                    )
                 db.commit()
-                if res.rowcount == 0:
-                    return jsonify({"error": "Analysis not found"}), 404
                 return jsonify({"message": "Report renamed successfully"})
 
             elif method == "DELETE":

@@ -217,6 +217,13 @@ def _create_tables_and_migrations(db):
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""")
 
+    db.execute("""CREATE TABLE IF NOT EXISTS rate_limits (
+        key TEXT NOT NULL,
+        window_start INTEGER NOT NULL,
+        hits INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (key, window_start)
+    )""")
+
     db.execute("""CREATE TABLE IF NOT EXISTS resumes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,

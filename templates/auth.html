@@ -168,9 +168,6 @@
 
         <label for="password">
           Password
-          {% if mode != 'register' %}
-            <a href="#" class="forgot-link" onclick="handleForgotPassword(event)">Forgot Password?</a>
-          {% endif %}
         </label>
         <input id="password" name="password" type="password" placeholder="••••••••" autocomplete="{{ 'new-password' if mode == 'register' else 'current-password' }}" minlength="8" required>
 
@@ -187,21 +184,5 @@
     </div>
   </main>
 
-  <script>
-    function handleForgotPassword(e) {
-      e.preventDefault();
-      const email = prompt("Enter your account email address for password reset instructions:");
-      if (email && email.trim()) {
-        fetch('/api/auth/forgot-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim() })
-        })
-        .then(res => res.json())
-        .then(data => alert(data.message || data.error))
-        .catch(err => alert("Password reset request submitted."));
-      }
-    }
-  </script>
 </body>
 </html>

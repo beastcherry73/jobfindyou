@@ -2,13 +2,15 @@ import json
 from flask import Blueprint, request, jsonify, session
 from backend.database import get_db
 from backend.decorators import login_required
-from backend.services.ai import call_groq
+from backend.services.ai import call_groq, GroqError
+from backend.services.ratelimit import rate_limit
 
 builder_bp = Blueprint("builder", __name__)
 
 
 @builder_bp.route("/api/builder/ai-assist", methods=["POST"])
 @login_required
+@rate_limit(limit=20, window_seconds=300)
 def builder_ai_assist():
     data = request.get_json() or {}
     action = data.get("action", "improve_bullet")
@@ -30,7 +32,12 @@ def builder_ai_assist():
     prompt = template.format(text=text, target_role=target_role or "Professional")
 
     try:
-        ai_response = call_groq(prompt, max_tokens=300).strip()
+        try:
+            ai_response = call_groq(prompt, max_tokens=300).strip()
+        except GroqError:
+            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
+        if not ai_response or ai_response in ("{}", ""):
+            return jsonify({"error": "AI service returned an empty result. Please try again."}), 502
         if ai_response.startswith('"') and ai_response.endswith('"'):
             ai_response = ai_response[1:-1].strip()
         return jsonify({"result": ai_response})

@@ -22,6 +22,60 @@ def clean_json(text):
     return match.group(0) if match else text
 
 
+def estimate_resume_score(resume_text, job_description=""):
+    """Lightweight content-based resume quality estimate (0-100).
+
+    Used to produce an honest, content-derived score for the improve
+    feature instead of a hardcoded number. Not a full ATS engine.
+    """
+    text = resume_text or ""
+    lower = text.lower()
+    score = 30
+
+    if re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", text):
+        score += 5
+    if re.search(r"\b[\d()+\-\s]{7,}\b", text):
+        score += 5
+
+    if re.search(r"(?im)^\s*(summary|profile|objective)\s*:?$", text):
+        score += 8
+    elif re.search(r"(?im)professional summary", lower):
+        score += 6
+
+    exp_section = re.search(r"(?im)^\s*(experience|employment|work history)\s*:?$", text)
+    bullet_count = len(re.findall(r"(?m)^\s*[-*•]\s+", text))
+    if exp_section and bullet_count >= 3:
+        score += 12
+    elif bullet_count >= 2:
+        score += 8
+
+    if re.search(r"(?im)^\s*education\s*:?$", text):
+        score += 6
+
+    skills_section = re.search(r"(?im)^\s*(skills|core competencies|technologies)\s*:?$", text)
+    if skills_section and len(re.findall(r"[A-Za-z][\w+#.+-]*(?:\s{1}[\w+#.+-]+)?", text[skills_section.end():skills_section.end() + 500])) >= 4:
+        score += 6
+
+    if re.search(r"(?im)^\s*projects?\s*:?$", text):
+        score += 5
+
+    metrics = len(re.findall(r"\d+(?:\.\d+)?\s*(?:%|percent|k|m|million|\+|\$)|%\s*$", lower))
+    if metrics >= 3:
+        score += 8
+    elif metrics >= 1:
+        score += 4
+
+    if job_description and job_description.strip():
+        jd_keywords = re.findall(r"[A-Za-z][\w+#.\-]{2,}", job_description.lower())
+        jd_keywords = [k for k in jd_keywords if k not in ("the", "and", "for", "with", "that", "this", "are", "was", "will", "have", "has", "had", "you", "your", "role", "job", "position", "candidate", "must", "should", "experience", "skills", "ability", "work")]
+        matched = sum(1 for k in set(jd_keywords) if k in lower)
+        if jd_keywords:
+            ratio = min(1.0, matched / max(1, len(set(jd_keywords)) / 3.0))
+            score += int(ratio * 10)
+
+    return max(30, min(95, score))
+
+
 def normalize_analysis_dict(data):
     if not isinstance(data, dict):
         data = {}
