@@ -4,8 +4,14 @@ from pypdf import PdfReader
 
 
 def extract_text_from_pdf(file_stream):
-    reader = PdfReader(file_stream)
-    return "".join(page.extract_text() or "" for page in reader.pages)
+    try:
+        reader = PdfReader(file_stream)
+        text = "".join(page.extract_text() or "" for page in reader.pages)
+        if text.strip():
+            return text
+    except Exception:
+        pass
+    return ""
 
 
 def clean_json(text):

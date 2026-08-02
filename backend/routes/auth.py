@@ -13,6 +13,7 @@ auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
+@auth_bp.route("/auth/register", methods=["GET", "POST"])
 def register():
     if "user_id" in session:
         return redirect(url_for("static_routes.index"))
@@ -45,6 +46,7 @@ def register():
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+@auth_bp.route("/auth/login", methods=["GET", "POST"])
 def login():
     if "user_id" in session:
         return redirect(url_for("static_routes.index"))
