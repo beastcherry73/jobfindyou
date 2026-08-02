@@ -104,6 +104,36 @@
   </style>
 </head>
 <body>
+  <!-- ═══ ON-PAGE ERROR REPORTER (diagnostic) ═══ -->
+  <script>
+    (function () {
+      function banner(msg, color) {
+        try {
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:' + color + ';color:#fff;font:12px/1.4 monospace;padding:8px 12px;white-space:pre-wrap;word-break:break-all;';
+          d.setAttribute('data-diagnostic', '1');
+          d.textContent = msg;
+          document.body.appendChild(d);
+        } catch (e) {}
+      }
+      window.__appInitDone = false;
+      window.addEventListener('error', function (e) {
+        banner('JS ERROR: ' + (e.message || 'unknown') + ' @ ' + String(e.filename || '').split('/').pop() + ':' + (e.lineno || ''), '#c0392b');
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e && e.reason;
+        banner('UNHANDLED PROMISE: ' + (r && r.message ? r.message : String(r)), '#e67e22');
+      });
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          if (window.__appInitDone !== true) {
+            banner('WARNING: app JS did not finish initializing (check console / network).', '#8e44ad');
+          }
+        }, 3000);
+      });
+    })();
+  </script>
+
   <!-- ═══ OVERLAY (mobile) ═══ -->
   <div class="ws-sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
 
@@ -2479,6 +2509,15 @@
     }
 
     /* ── API Helpers ── */
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise(function(_, reject) {
+          setTimeout(function() { reject(new Error('Request timed out. Please try again.')); }, ms);
+        })
+      ]);
+    }
+
     async function apiFetch(url, options) {
       options = options || {};
       options.headers = options.headers || {};
@@ -2487,7 +2526,7 @@
         options.headers['Content-Type'] = 'application/json';
       }
       options.credentials = 'same-origin';
-      const res = await fetch(url, options);
+      const res = await withTimeout(fetch(url, options), 60000);
       if (!res.ok) {
         const err = await res.json().catch(function() { return {error: res.statusText}; });
         throw new Error(err.error || 'Request failed');
@@ -4819,6 +4858,8 @@
         radarChart.update();
       }
     };
+
+    window.__appInitDone = true;
   </script>
 
   <!-- ── Resume Comparison Modal ── -->

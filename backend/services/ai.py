@@ -21,7 +21,7 @@ def call_groq(prompt, max_tokens=3000):
     if not groq_client:
         try:
             from groq import Groq
-            groq_client = Groq(api_key=api_key)
+            groq_client = Groq(api_key=api_key, timeout=40.0, max_retries=1)
         except Exception as client_err:
             current_app.logger.error(f"Failed to initialize Groq client: {client_err}")
             raise GroqError("AI service is misconfigured.")
@@ -35,6 +35,7 @@ def call_groq(prompt, max_tokens=3000):
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.4,
                 max_tokens=max_tokens,
+                timeout=40.0,
             )
             content = response.choices[0].message.content
             if content is None:

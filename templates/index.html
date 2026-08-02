@@ -399,6 +399,36 @@
 
 <body class="{% if not is_authenticated %}arctic-body{% endif %}">
 
+  <!-- ═══ ON-PAGE ERROR REPORTER (diagnostic) ═══ -->
+  <script>
+    (function () {
+      function banner(msg, color) {
+        try {
+          var d = document.createElement('div');
+          d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:' + color + ';color:#fff;font:12px/1.4 monospace;padding:8px 12px;white-space:pre-wrap;word-break:break-all;';
+          d.setAttribute('data-diagnostic', '1');
+          d.textContent = msg;
+          document.body.appendChild(d);
+        } catch (e) {}
+      }
+      window.__appInitDone = false;
+      window.addEventListener('error', function (e) {
+        banner('JS ERROR: ' + (e.message || 'unknown') + ' @ ' + String(e.filename || '').split('/').pop() + ':' + (e.lineno || ''), '#c0392b');
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        var r = e && e.reason;
+        banner('UNHANDLED PROMISE: ' + (r && r.message ? r.message : String(r)), '#e67e22');
+      });
+      window.addEventListener('load', function () {
+        setTimeout(function () {
+          if (window.__appInitDone !== true) {
+            banner('WARNING: app JS did not finish initializing (check console / network).', '#8e44ad');
+          }
+        }, 3000);
+      });
+    })();
+  </script>
+
   {% if is_authenticated %}
 
   <!-- ── TOP UTILITY BAR ── -->
@@ -1217,6 +1247,15 @@
   <!-- ── LANDING PAGE INTERACTIVE ANIMATIONS ── -->
   <script>
     
+    function withTimeout(promise, ms) {
+      return Promise.race([
+        promise,
+        new Promise(function(_, reject) {
+          setTimeout(function() { reject(new Error('Request timed out. Please try again.')); }, ms);
+        })
+      ]);
+    }
+
     function triggerLandingUpload() {
       const input = document.getElementById('landingFileInput');
       if (input) input.click();
@@ -1239,7 +1278,7 @@
       fd.append('resume', file);
 
       try {
-        const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+        const res = await withTimeout(fetch('/api/analyze', { method: 'POST', body: fd }), 60000);
         const data = await res.json();
         
         if (loadingModal) loadingModal.style.display = 'none';
@@ -1553,7 +1592,7 @@
         const fd = new FormData();
         fd.append('resume', f);
         fd.append('job_description', $('jobDesc').value);
-        const apiPromise = fetch('/api/analyze', { method: 'POST', body: fd }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Analysis failed'); return d; });
+        const apiPromise = withTimeout(fetch('/api/analyze', { method: 'POST', body: fd }), 60000).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Analysis failed'); return d; });
 
         await runAnalysisSteps();
 
@@ -2716,6 +2755,8 @@
         greet.textContent = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
       }
     });
+
+    window.__appInitDone = true;
   </script>
 
   <!-- LEVEL 2: WHOLE-DOCUMENT AI OPTIMIZATION MODAL -->
