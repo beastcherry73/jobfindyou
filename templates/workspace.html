@@ -2787,50 +2787,54 @@
 
     function createRadar(scores) {
       const canvas = document.getElementById('dashboardRadar');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const labels = ['Keywords', 'Formatting', 'Experience', 'Education', 'Skills', 'Impact'];
-      const defaultScores = [65, 70, 60, 75, 68, 55];
-      const data = labels.map(function(l, i) {
-        return scores[l] != null ? scores[l] : defaultScores[i];
-      });
+      if (!canvas || typeof Chart === 'undefined') return;
+      try {
+        const ctx = canvas.getContext('2d');
+        const labels = ['Keywords', 'Formatting', 'Experience', 'Education', 'Skills', 'Impact'];
+        const defaultScores = [65, 70, 60, 75, 68, 55];
+        const data = labels.map(function(l, i) {
+          return scores[l] != null ? scores[l] : defaultScores[i];
+        });
 
-      if (radarChart) { radarChart.destroy(); }
+        if (radarChart) { radarChart.destroy(); }
 
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-      const labelColor = isDark ? '#8B8B92' : '#6B6560';
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+        const labelColor = isDark ? '#8B8B92' : '#6B6560';
 
-      radarChart = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            backgroundColor: 'rgba(30,58,95,0.08)',
-            borderColor: '#1E3A5F',
-            borderWidth: 2,
-            pointBackgroundColor: '#1E3A5F',
-            pointRadius: 2,
-            pointHoverRadius: 4,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-          scales: {
-            r: {
-              beginAtZero: true,
-              max: 100,
-              ticks: { display: false, stepSize: 20 },
-              grid: { color: gridColor },
-              angleLines: { color: gridColor },
-              pointLabels: { color: labelColor, font: { size: 9, family: 'Inter' } }
+        radarChart = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data,
+              backgroundColor: 'rgba(30,58,95,0.08)',
+              borderColor: '#1E3A5F',
+              borderWidth: 2,
+              pointBackgroundColor: '#1E3A5F',
+              pointRadius: 2,
+              pointHoverRadius: 4,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+              r: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { display: false, stepSize: 20 },
+                grid: { color: gridColor },
+                angleLines: { color: gridColor },
+                pointLabels: { color: labelColor, font: { size: 9, family: 'Inter' } }
+              }
             }
           }
-        }
-      });
+        });
+      } catch (e) {
+        console.warn('Radar chart initialization skipped:', e);
+      }
     }
 
     function updateRadar(scores) {
@@ -4762,7 +4766,7 @@
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', function() {
       // Create default radar chart
-      createRadar({});
+      try { createRadar({}); } catch(e) { console.warn('Radar init error:', e); }
       loadDashboard();
 
       // Handshake for guest resume preview conversion
