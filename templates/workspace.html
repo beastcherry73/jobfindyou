@@ -1565,77 +1565,89 @@
         <!-- ── ATS REPORT ── -->
         <!-- ── ATS REPORT (LEVEL 5) ── -->
         <section id="section-report" class="ws-section" style="display:none;">
-          <div class="ws-page-header">
-            <div style="display:flex; align-items:center; gap:12px;">
-              <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="closeReport()">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+          <!-- ── Page Header ── -->
+          <div class="ws-page-header" style="margin-bottom:20px; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:14px;">
+              <button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="closeReport()" style="font-weight:600; font-size:12px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
               <div>
-                <h1 class="ws-page-title" id="reportTitle" style="font-size:20px;">ATS Report</h1>
-                <p class="ws-page-subtitle" id="reportSubtitle">Analysis for <span id="reportFilename"></span></p>
+                <h1 class="ws-page-title" id="reportTitle" style="font-size:20px; font-weight:800;">ATS Report</h1>
+                <p class="ws-page-subtitle" id="reportSubtitle" style="font-size:12.5px;">Analysis for <span id="reportFilename" style="font-weight:700; color:var(--ws-text);"></span></p>
               </div>
             </div>
-            <div class="ws-page-actions">
-              <button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="window.print()">⬇ Print Report PDF</button>
+            <div class="ws-page-actions" style="display:flex; gap:10px;">
+              <button class="ws-btn ws-btn-primary ws-btn-sm" onclick="switchSection('improve')" style="font-weight:700; font-size:12px;">✨ Optimize Resume</button>
+              <button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="window.print()" style="font-size:12px;">🖨️ PDF</button>
             </div>
           </div>
 
           <div class="ws-animate-stagger">
-            <!-- Tabs Navigation -->
-            <div class="report-tabs">
-              <button class="report-tab-btn active" onclick="switchReportTab('report-tab-overview', this)">Overview</button>
-              <button class="report-tab-btn" onclick="switchReportTab('report-tab-ats', this)">ATS</button>
-              <button class="report-tab-btn" onclick="switchReportTab('report-tab-content', this)">Content</button>
-              <button class="report-tab-btn" onclick="switchReportTab('report-tab-skills', this)">Skills</button>
-              <button class="report-tab-btn" onclick="switchReportTab('report-tab-formatting', this)">Formatting</button>
-              <button class="report-tab-btn" onclick="switchReportTab('report-tab-recruiter', this)">Recruiter View</button>
-              <button class="report-tab-btn" onclick="switchReportTab('report-tab-coach', this)">AI Coach</button>
+            <!-- Sleek Pill Tab Bar -->
+            <div class="report-tabs" style="margin-bottom:20px; display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--ws-border); padding-bottom:12px;">
+              <button class="report-tab-btn active" onclick="switchReportTab('report-tab-overview', this)">📊 Overview</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-ats', this)">🤖 ATS Metrics</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-content', this)">📝 Bullet & Keywords</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-skills', this)">💻 Skills Matrix</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-formatting', this)">📐 Formatting</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-recruiter', this)">👁️ Recruiter View</button>
+              <button class="report-tab-btn" onclick="switchReportTab('report-tab-coach', this)">💡 AI Action Plan</button>
             </div>
 
             <!-- TAB 1: Overview -->
             <div id="report-tab-overview" class="report-tab-content active">
-              <div class="ws-grid-2 ws-mb-md">
-                <div class="ws-glass-card" style="display:flex;align-items:center;gap:32px;padding:32px;">
-                  <div class="ws-score-ring" style="flex-shrink:0;width:120px;height:120px;">
-                    <svg width="120" height="120" viewBox="0 0 120 120">
-                      <circle class="ws-score-ring-bg" cx="60" cy="60" r="52" stroke-width="8"/>
-                      <circle class="ws-score-ring-fill" id="reportScoreRing" cx="60" cy="60" r="52" stroke-width="8"
-                        stroke-dasharray="326.73" stroke-dashoffset="326.73" style="stroke:var(--ws-primary);"/>
-                    </svg>
-                    <span class="ws-score-ring-value" id="reportScoreValue" style="font-size:32px;">—</span>
-                  </div>
-                  <div>
-                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;">Overall ATS Score</div>
-                    <div style="font-size:14px;color:var(--ws-text-secondary);line-height:1.6;" id="reportScoreLabel">Running multi-dimensional compatibility check...</div>
+              <div class="ws-grid-2 ws-mb-md" style="gap:16px;">
+                <!-- ATS Score Card -->
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
+                  <div class="ws-card-body" style="padding:24px; display:flex; align-items:center; gap:24px;">
+                    <div class="ws-score-ring" style="flex-shrink:0; width:110px; height:110px;">
+                      <svg width="110" height="110" viewBox="0 0 120 120">
+                        <circle class="ws-score-ring-bg" cx="60" cy="60" r="52" stroke-width="8"/>
+                        <circle class="ws-score-ring-fill" id="reportScoreRing" cx="60" cy="60" r="52" stroke-width="8"
+                          stroke-dasharray="326.73" stroke-dashoffset="326.73" style="stroke:var(--ws-primary); transition: stroke-dashoffset 1.2s ease;"/>
+                      </svg>
+                      <span class="ws-score-ring-value" id="reportScoreValue" style="font-size:30px; font-weight:800;">—</span>
+                    </div>
+                    <div>
+                      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ws-text-tertiary); margin-bottom:6px;">Overall ATS Score</div>
+                      <div style="font-size:13.5px; color:var(--ws-text-secondary); line-height:1.5;" id="reportScoreLabel">Running multi-dimensional compatibility check...</div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="ws-glass-card" style="display:flex;align-items:center;gap:32px;padding:32px;">
-                  <div style="flex-shrink:0;width:120px;height:120px;" id="reportRadarContainer">
-                    <canvas id="reportRadar"></canvas>
-                  </div>
-                  <div>
-                    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;">Dimension Breakdown</div>
-                    <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.6;">Your resume's scores plotted across 6 critical parser dimensions. Optimize lower-performing vectors to boost readability.</div>
+                <!-- Radar Dimension Vector Chart Card -->
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
+                  <div class="ws-card-body" style="padding:20px; display:flex; align-items:center; gap:20px;">
+                    <div style="flex-shrink:0; width:110px; height:110px;" id="reportRadarContainer">
+                      <canvas id="reportRadar"></canvas>
+                    </div>
+                    <div>
+                      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ws-text-tertiary); margin-bottom:6px;">Dimension Breakdown</div>
+                      <div style="font-size:12.5px; color:var(--ws-text-secondary); line-height:1.5;">Scores evaluated across 6 critical parser vectors (formatting, keywords, skills, readability, impact, structure).</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Confidence Meter & AI Summary -->
-              <div class="ws-grid-2 ws-mb-md">
-                <div class="ws-card">
-                  <div class="ws-card-body" style="padding:24px;">
-                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--ws-text-tertiary); letter-spacing:0.05em; margin-bottom:12px;">Resume Confidence Meter</div>
-                    <div style="font-size:28px; font-weight:800; color:var(--ws-primary);" id="reportConfidenceVal">High</div>
-                    <div class="ws-divider" style="margin:12px 0;"></div>
-                    <p style="font-size:13px; color:var(--ws-text-secondary); line-height:1.5;" id="reportConfidenceReason">Standard layout patterns, strong technical keyword frequency match, and complete contact header found.</p>
+              <!-- Confidence Meter & AI Summary Card Grid -->
+              <div class="ws-grid-2 ws-mb-md" style="gap:16px;">
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:10px;">
+                  <div class="ws-card-body" style="padding:20px;">
+                    <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ws-text-tertiary); margin-bottom:8px;">Parser Confidence Rating</div>
+                    <div style="font-size:26px; font-weight:800; color:var(--ws-primary);" id="reportConfidenceVal">High</div>
+                    <div style="height:1px; background:var(--ws-border); margin:12px 0;"></div>
+                    <p style="font-size:12.5px; color:var(--ws-text-secondary); line-height:1.5; margin:0;" id="reportConfidenceReason">Standard layout patterns, strong technical keyword frequency match, and complete contact header found.</p>
                   </div>
                 </div>
-                <div class="ws-card">
-                  <div class="ws-card-body" style="padding:24px;">
-                    <h3 class="ws-card-title" style="margin-bottom:8px;">AI Assessment Summary</h3>
-                    <p id="reportSummary" style="font-size:13px;color:var(--ws-text-secondary);line-height:1.6;"></p>
+
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:10px;">
+                  <div class="ws-card-body" style="padding:20px;">
+                    <div class="ws-card-header" style="margin-bottom:8px;">
+                      <div class="ws-card-title" style="font-size:14px; font-weight:700;">Executive Assessment Summary</div>
+                      <span class="ws-badge ws-badge-primary">AI Diagnostic</span>
+                    </div>
+                    <p id="reportSummary" style="font-size:12.5px; color:var(--ws-text-secondary); line-height:1.6; margin:0;"></p>
                   </div>
                 </div>
               </div>
@@ -1643,72 +1655,90 @@
 
             <!-- TAB 2: ATS -->
             <div id="report-tab-ats" class="report-tab-content">
-              <div class="ws-card">
+              <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
                 <div class="ws-card-body" style="padding:24px;">
-                  <h3 class="ws-card-title" style="margin-bottom:16px;">Core ATS Metrics</h3>
-                  <div class="ws-grid-3" style="gap:24px;">
+                  <div class="ws-card-header" style="margin-bottom:20px;">
                     <div>
-                      <div class="ws-flex-between" style="margin-bottom:6px;">
-                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Formatting Compatibility</span>
-                        <span style="font-size:13px;font-weight:600;" id="metricFormatting">—</span>
-                      </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="metricFormattingBar" style="width:0%;"></div></div>
+                      <div class="ws-card-title" style="font-size:15px; font-weight:800;">Core ATS Parsing Diagnostics</div>
+                      <div class="ws-card-subtitle" style="font-size:12px;">Machine readability performance across major ATS systems (Workday, Greenhouse, Lever)</div>
                     </div>
-                    <div>
-                      <div class="ws-flex-between" style="margin-bottom:6px;">
-                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Keyword Match Percentage</span>
-                        <span style="font-size:13px;font-weight:600;" id="metricKeywords">—</span>
+                    <span class="ws-badge ws-badge-good">Parser Compatible</span>
+                  </div>
+
+                  <div class="ws-grid-3" style="gap:20px;">
+                    <div style="background:var(--ws-surface-hover); padding:16px; border-radius:8px; border:1px solid var(--ws-border-light);">
+                      <div class="ws-flex-between" style="margin-bottom:8px;">
+                        <span style="font-size:12.5px; font-weight:700; color:var(--ws-text);">Formatting Compatibility</span>
+                        <span style="font-size:13px; font-weight:800; color:var(--ws-primary);" id="metricFormatting">—</span>
                       </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="metricKeywordsBar" style="width:0%;"></div></div>
+                      <div class="ws-progress" style="height:6px; border-radius:3px;"><div class="ws-progress-bar" id="metricFormattingBar" style="width:0%;"></div></div>
                     </div>
-                    <div>
-                      <div class="ws-flex-between" style="margin-bottom:6px;">
-                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Skills Density</span>
-                        <span style="font-size:13px;font-weight:600;" id="metricSkills">—</span>
+
+                    <div style="background:var(--ws-surface-hover); padding:16px; border-radius:8px; border:1px solid var(--ws-border-light);">
+                      <div class="ws-flex-between" style="margin-bottom:8px;">
+                        <span style="font-size:12.5px; font-weight:700; color:var(--ws-text);">Keyword Coverage Match</span>
+                        <span style="font-size:13px; font-weight:800; color:var(--ws-primary);" id="metricKeywords">—</span>
                       </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="metricSkillsBar" style="width:0%;"></div></div>
+                      <div class="ws-progress" style="height:6px; border-radius:3px;"><div class="ws-progress-bar" id="metricKeywordsBar" style="width:0%;"></div></div>
                     </div>
-                    <div>
-                      <div class="ws-flex-between" style="margin-bottom:6px;">
-                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Readability Grade</span>
-                        <span style="font-size:13px;font-weight:600;" id="metricReadability">—</span>
+
+                    <div style="background:var(--ws-surface-hover); padding:16px; border-radius:8px; border:1px solid var(--ws-border-light);">
+                      <div class="ws-flex-between" style="margin-bottom:8px;">
+                        <span style="font-size:12.5px; font-weight:700; color:var(--ws-text);">Skills Density</span>
+                        <span style="font-size:13px; font-weight:800; color:var(--ws-primary);" id="metricSkills">—</span>
                       </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="metricReadabilityBar" style="width:0%;"></div></div>
+                      <div class="ws-progress" style="height:6px; border-radius:3px;"><div class="ws-progress-bar" id="metricSkillsBar" style="width:0%;"></div></div>
                     </div>
-                    <div>
-                      <div class="ws-flex-between" style="margin-bottom:6px;">
-                        <span style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);">Structural Logic</span>
-                        <span style="font-size:13px;font-weight:600;" id="metricStructure">—</span>
+
+                    <div style="background:var(--ws-surface-hover); padding:16px; border-radius:8px; border:1px solid var(--ws-border-light);">
+                      <div class="ws-flex-between" style="margin-bottom:8px;">
+                        <span style="font-size:12.5px; font-weight:700; color:var(--ws-text);">Readability Grade</span>
+                        <span style="font-size:13px; font-weight:800; color:var(--ws-primary);" id="metricReadability">—</span>
                       </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="metricStructureBar" style="width:0%;"></div></div>
+                      <div class="ws-progress" style="height:6px; border-radius:3px;"><div class="ws-progress-bar" id="metricReadabilityBar" style="width:0%;"></div></div>
+                    </div>
+
+                    <div style="background:var(--ws-surface-hover); padding:16px; border-radius:8px; border:1px solid var(--ws-border-light);">
+                      <div class="ws-flex-between" style="margin-bottom:8px;">
+                        <span style="font-size:12.5px; font-weight:700; color:var(--ws-text);">Structural Hierarchy</span>
+                        <span style="font-size:13px; font-weight:800; color:var(--ws-primary);" id="metricStructure">—</span>
+                      </div>
+                      <div class="ws-progress" style="height:6px; border-radius:3px;"><div class="ws-progress-bar" id="metricStructureBar" style="width:0%;"></div></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- TAB 3: Content -->
+            <!-- TAB 3: Content (Heatmap & Bullet Comparison) -->
             <div id="report-tab-content" class="report-tab-content">
-              <!-- Keyword Heatmap Box -->
-              <div class="ws-card ws-mb-md">
+              <!-- Keyword Density Heatmap Box -->
+              <div class="ws-card ws-mb-md" style="border:1px solid var(--ws-border); border-radius:12px;">
                 <div class="ws-card-body" style="padding:24px;">
-                  <h3 class="ws-card-title" style="margin-bottom:4px;">Keyword Density Heatmap</h3>
-                  <p class="ws-card-subtitle" style="margin-bottom:16px;">Visualizing matching (Green), weak (Yellow), and missing (Red) keyword presence across scanned text</p>
-                  <div id="keywordHeatmapContainer" style="display:flex; flex-wrap:wrap; gap:8px; padding:16px; background:var(--ws-surface-hover); border-radius:6px; min-height:100px;">
+                  <div class="ws-card-header" style="margin-bottom:6px;">
+                    <div class="ws-card-title" style="font-size:15px; font-weight:800;">Keyword Frequency & Density Heatmap</div>
+                    <span class="ws-badge ws-badge-accent">Scanner Heatmap</span>
+                  </div>
+                  <p class="ws-card-subtitle" style="margin-bottom:16px; font-size:12px;">Visualizing matching (Green), weak (Yellow), and missing (Red) keyword presence across scanned text</p>
+                  <div id="keywordHeatmapContainer" style="display:flex; flex-wrap:wrap; gap:8px; padding:16px; background:var(--ws-surface-hover); border-radius:8px; border:1px solid var(--ws-border-light); min-height:90px;">
                     <!-- Dynamically populated keyword badges -->
                   </div>
                 </div>
               </div>
 
-              <!-- Bullet point comparison table -->
-              <div class="ws-card">
+              <!-- Bullet Point Comparison Table -->
+              <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
                 <div class="ws-card-body" style="padding:0;">
-                  <div class="ws-table-wrap" style="border:none;border-radius:0;">
+                  <div style="padding:20px 20px 12px;">
+                    <div class="ws-card-title" style="font-size:15px; font-weight:800;">Bullet Point Impact Rewrites</div>
+                    <div class="ws-card-subtitle" style="font-size:12px;">AI-enhanced recommendations converting passive phrasing into quantified achievements</div>
+                  </div>
+                  <div class="ws-table-wrap" style="border:none; border-radius:0;">
                     <table class="ws-table">
                       <thead>
                         <tr>
-                          <th style="width:40%;">Original Bullet Point</th>
-                          <th style="width:15%;">Detected Issue</th>
+                          <th style="width:38%;">Original Bullet Point</th>
+                          <th style="width:17%;">Detected Issue</th>
                           <th style="width:45%;">ATS-Enhanced Stronger Suggestion</th>
                         </tr>
                       </thead>
@@ -1719,123 +1749,134 @@
               </div>
             </div>
 
-            <!-- TAB 4: Skills -->
+            <!-- TAB 4: Skills Matrix -->
             <div id="report-tab-skills" class="report-tab-content">
-              <div class="ws-grid-2 ws-mb-md">
-                <div class="ws-card">
+              <div class="ws-grid-2 ws-mb-md" style="gap:16px;">
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:10px;">
                   <div class="ws-card-body" style="padding:20px;">
-                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-primary);margin-bottom:12px;">💻 Programming & Tech</h3>
-                    <div id="skillsProgramming" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    <h3 style="font-size:14px; font-weight:700; color:var(--ws-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                      <span>💻</span> Programming & Technical Stack
+                    </h3>
+                    <div id="skillsProgramming" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                   </div>
                 </div>
-                <div class="ws-card">
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:10px;">
                   <div class="ws-card-body" style="padding:20px;">
-                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-primary);margin-bottom:12px;">☁️ Cloud & Infrastructure</h3>
-                    <div id="skillsCloud" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    <h3 style="font-size:14px; font-weight:700; color:var(--ws-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                      <span>☁️</span> Cloud & Infrastructure
+                    </h3>
+                    <div id="skillsCloud" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                   </div>
                 </div>
               </div>
-              <div class="ws-grid-2">
-                <div class="ws-card">
+              <div class="ws-grid-2" style="gap:16px;">
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:10px;">
                   <div class="ws-card-body" style="padding:20px;">
-                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-primary);margin-bottom:12px;">👥 Leadership & Management</h3>
-                    <div id="skillsLeadership" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    <h3 style="font-size:14px; font-weight:700; color:var(--ws-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                      <span>👥</span> Leadership & Executive
+                    </h3>
+                    <div id="skillsLeadership" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                   </div>
                 </div>
-                <div class="ws-card">
+                <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:10px;">
                   <div class="ws-card-body" style="padding:20px;">
-                    <h3 style="font-size:14px;font-weight:700;color:var(--ws-primary);margin-bottom:12px;">💬 Communication & Soft</h3>
-                    <div id="skillsCommunication" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    <h3 style="font-size:14px; font-weight:700; color:var(--ws-primary); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                      <span>💬</span> Communication & Core Competencies
+                    </h3>
+                    <div id="skillsCommunication" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- TAB 5: Formatting -->
+            <!-- TAB 5: Formatting Diagnostics -->
             <div id="report-tab-formatting" class="report-tab-content">
-              <div class="ws-card">
+              <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
                 <div class="ws-card-body" style="padding:24px;">
-                  <h3 class="ws-card-title" style="margin-bottom:16px;">ATS Design & Compatibility Diagnostics</h3>
-                  <div style="display:flex;flex-direction:column;gap:12px;">
-                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
-                      <span style="font-size:13px;font-weight:600;">Margins Layout</span>
-                      <span id="l5FormatMargins" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                  <h3 class="ws-card-title" style="margin-bottom:16px; font-size:15px; font-weight:800;">ATS Design & Layout Diagnostics</h3>
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <div class="ws-flex-between" style="padding-bottom:10px; border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px; font-weight:700; color:var(--ws-text);">Margins & Grid Spacing</span>
+                      <span id="l5FormatMargins" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;">—</span>
                     </div>
-                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
-                      <span style="font-size:13px;font-weight:600;">Typography Check (Fonts)</span>
-                      <span id="l5FormatFonts" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    <div class="ws-flex-between" style="padding-bottom:10px; border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px; font-weight:700; color:var(--ws-text);">Typography & Font Compatibility</span>
+                      <span id="l5FormatFonts" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;">—</span>
                     </div>
-                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
-                      <span style="font-size:13px;font-weight:600;">Line and Block Spacing</span>
-                      <span id="l5FormatSpacing" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    <div class="ws-flex-between" style="padding-bottom:10px; border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px; font-weight:700; color:var(--ws-text);">Line & Block Height Ratios</span>
+                      <span id="l5FormatSpacing" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;">—</span>
                     </div>
-                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
-                      <span style="font-size:13px;font-weight:600;">Page Count Length</span>
-                      <span id="l5FormatLength" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    <div class="ws-flex-between" style="padding-bottom:10px; border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px; font-weight:700; color:var(--ws-text);">Page Count Length</span>
+                      <span id="l5FormatLength" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;">—</span>
                     </div>
-                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
-                      <span style="font-size:13px;font-weight:600;">Consistency Score</span>
-                      <span id="l5FormatConsistency" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    <div class="ws-flex-between" style="padding-bottom:10px; border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px; font-weight:700; color:var(--ws-text);">Structure Consistency Score</span>
+                      <span id="l5FormatConsistency" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;">—</span>
                     </div>
-                    <div class="ws-flex-between" style="padding-bottom:8px;border-bottom:1px solid var(--ws-border-light);">
-                      <span style="font-size:13px;font-weight:600;">File Compatibility (PDF/Docx)</span>
-                      <span id="l5FormatFile" style="font-size:13px;color:var(--ws-text-secondary);font-weight:500;">—</span>
+                    <div class="ws-flex-between" style="padding-bottom:10px; border-bottom:1px solid var(--ws-border-light);">
+                      <span style="font-size:13px; font-weight:700; color:var(--ws-text);">File Format Stream (PDF/Docx)</span>
+                      <span id="l5FormatFile" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;">—</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- TAB 6: Recruiter View -->
+            <!-- TAB 6: Recruiter Eye-Tracking View -->
             <div id="report-tab-recruiter" class="report-tab-content">
-              <!-- Recruiter Decision Card -->
-              <div class="ws-card ws-mb-md" style="background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(34,197,94,0.06)); border: 1.5px solid var(--ws-primary-subtle);">
+              <!-- Recruiter Decision Banner -->
+              <div class="ws-card ws-mb-md" style="background: linear-gradient(135deg, rgba(37,99,235,0.06), rgba(34,197,94,0.06)); border: 1px solid rgba(34,197,94,0.25); border-radius: 12px;">
                 <div class="ws-card-body" style="padding:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px;">
                   <div style="display:flex; align-items:center; gap:20px;">
                     <div style="font-size:2.4rem;">👁️</div>
                     <div>
-                      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:var(--ws-text-tertiary);">7-Second Recruiter Decision</div>
-                      <div style="font-size:1.4rem; font-weight:800; color:var(--ws-text); margin-top:2px;">Would Recruiter Continue Reading?</div>
+                      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ws-text-tertiary);">7-Second Recruiter Decision</div>
+                      <div style="font-size:1.3rem; font-weight:800; color:var(--ws-text); margin-top:2px;">Would Recruiter Continue Reading?</div>
                       <div style="font-size:13px; color:var(--ws-text-secondary); margin-top:4px;">
                         <span class="ws-badge ws-badge-good" id="recVerdictScore" style="font-size:12px; font-weight:700;">✓ YES — 84% Callback Probability</span>
                         <span style="margin-left:8px; color:var(--ws-text-tertiary);">Passed initial 7.4s scan threshold</span>
                       </div>
                     </div>
                   </div>
-                  <button class="ws-btn ws-btn-primary" onclick="switchSection('improve')" style="padding:10px 20px; font-weight:700;">
+                  <button class="ws-btn ws-btn-primary" onclick="switchSection('improve')" style="padding:11px 22px; font-weight:700; font-size:13px; border-radius:8px;">
                     ✨ Optimize for Recruiter
                   </button>
                 </div>
               </div>
 
-              <div class="ws-grid-3 ws-mb-md">
-                <div class="ws-glass-card" style="text-align:center;padding:24px;">
-                  <div style="font-size:32px;margin-bottom:8px;">⏱️</div>
-                  <div style="font-size:28px;font-weight:800;color:var(--ws-primary);" id="recSimTime">—</div>
-                  <div style="font-size:12px;color:var(--ws-text-secondary);font-weight:600;text-transform:uppercase;margin-top:4px;">Recruiter Read Time</div>
-                  <p style="font-size:11px;color:var(--ws-text-muted);margin-top:6px;line-height:1.4;">Average scan duration before hiring decision</p>
+              <div class="ws-grid-3 ws-mb-md" style="gap:16px;">
+                <div class="ws-card" style="text-align:center; padding:20px; border:1px solid var(--ws-border); border-radius:10px;">
+                  <div style="font-size:28px; margin-bottom:6px;">⏱️</div>
+                  <div style="font-size:26px; font-weight:800; color:var(--ws-primary);" id="recSimTime">—</div>
+                  <div style="font-size:11.5px; color:var(--ws-text-secondary); font-weight:700; text-transform:uppercase; margin-top:4px;">Recruiter Read Time</div>
+                  <p style="font-size:11px; color:var(--ws-text-muted); margin-top:4px; line-height:1.4;">Average scan duration before decision</p>
                 </div>
-                <div class="ws-glass-card" style="text-align:center;padding:24px;">
-                  <div style="font-size:32px;margin-bottom:8px;">⭐</div>
-                  <div style="font-size:16px;font-weight:700;color:var(--ws-good);min-height:36px;display:flex;align-items:center;justify-content:center;" id="recSimAttractive">—</div>
-                  <div style="font-size:12px;color:var(--ws-text-secondary);font-weight:600;text-transform:uppercase;margin-top:4px;">Strongest Section</div>
-                  <p style="font-size:11px;color:var(--ws-text-muted);margin-top:6px;line-height:1.4;">Compelling highlights detected by parser</p>
+                <div class="ws-card" style="text-align:center; padding:20px; border:1px solid var(--ws-border); border-radius:10px;">
+                  <div style="font-size:28px; margin-bottom:6px;">⭐</div>
+                  <div style="font-size:15px; font-weight:800; color:var(--ws-good); min-height:36px; display:flex; align-items:center; justify-content:center;" id="recSimAttractive">—</div>
+                  <div style="font-size:11.5px; color:var(--ws-text-secondary); font-weight:700; text-transform:uppercase; margin-top:4px;">Strongest Section</div>
+                  <p style="font-size:11px; color:var(--ws-text-muted); margin-top:4px; line-height:1.4;">Compelling highlights detected</p>
                 </div>
-                <div class="ws-glass-card" style="text-align:center;padding:24px;">
-                  <div style="font-size:32px;margin-bottom:8px;">⚠️</div>
-                  <div style="font-size:16px;font-weight:700;color:var(--ws-bad);min-height:36px;display:flex;align-items:center;justify-content:center;" id="recSimWeakest">—</div>
-                  <div style="font-size:12px;color:var(--ws-text-secondary);font-weight:600;text-transform:uppercase;margin-top:4px;">Weakest Section</div>
-                  <p style="font-size:11px;color:var(--ws-text-muted);margin-top:6px;line-height:1.4;">Needs immediate detail injection</p>
+                <div class="ws-card" style="text-align:center; padding:20px; border:1px solid var(--ws-border); border-radius:10px;">
+                  <div style="font-size:28px; margin-bottom:6px;">⚠️</div>
+                  <div style="font-size:15px; font-weight:800; color:var(--ws-bad); min-height:36px; display:flex; align-items:center; justify-content:center;" id="recSimWeakest">—</div>
+                  <div style="font-size:11.5px; color:var(--ws-text-secondary); font-weight:700; text-transform:uppercase; margin-top:4px;">Weakest Section</div>
+                  <p style="font-size:11px; color:var(--ws-text-muted); margin-top:4px; line-height:1.4;">Needs immediate detail injection</p>
                 </div>
               </div>
 
               <!-- Recruiter Eye Tracking Mockup Visualizer -->
-              <div class="ws-card">
+              <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
                 <div class="ws-card-body" style="padding:24px;">
-                  <h3 class="ws-card-title" style="margin-bottom:4px;">Recruiter Eye-Tracking Hotspots</h3>
-                  <p class="ws-card-subtitle" style="margin-bottom:20px;">Visual heat simulation displaying how a typical recruiter scans your resume layout</p>
+                  <div class="ws-card-header" style="margin-bottom:6px;">
+                    <div class="ws-card-title" style="font-size:15px; font-weight:800;">Recruiter Eye-Tracking Hotspots</div>
+                    <span class="ws-badge ws-badge-accent">Heat Simulation</span>
+                  </div>
+                  <p class="ws-card-subtitle" style="margin-bottom:20px; font-size:12px;">Visual heat simulation displaying how a typical recruiter scans your resume layout in the first 7 seconds</p>
                   
-                  <div style="position:relative; width:100%; max-width:480px; margin:0 auto; aspect-ratio: 1 / 1.4; border:1px solid var(--ws-border); border-radius:6px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.04); overflow:hidden; padding:20px;">
+                  <div style="position:relative; width:100%; max-width:440px; margin:0 auto; aspect-ratio: 1 / 1.4; border:1px solid var(--ws-border); border-radius:8px; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.04); overflow:hidden; padding:20px;">
                     <!-- Mock resume representation -->
                     <div style="width:40%; height:14px; background:#e2e8f0; border-radius:4px; margin-bottom:8px;"></div>
                     <div style="width:100%; height:1px; background:#cbd5e1; margin-bottom:20px;"></div>
@@ -1858,19 +1899,19 @@
               </div>
             </div>
 
-            <!-- TAB 7: AI Recommendations -->
+            <!-- TAB 7: AI Action Plan -->
             <div id="report-tab-coach" class="report-tab-content">
-              <div class="ws-card">
-                <div class="ws-card-body" style="padding:28px; text-align:center;">
-                  <div style="font-size:48px; margin-bottom:16px;">💡</div>
-                  <h3 style="font-size:20px; font-weight:800; margin-bottom:6px;">Prioritized AI Recommendations</h3>
-                  <p style="font-size:13px; color:var(--ws-text-secondary); margin-bottom:20px;">Complete these actionable improvements to maximize your recruiter callback chances</p>
-                  <div style="max-width:560px; margin:0 auto 24px; padding:20px; background:var(--ws-surface-hover); border-radius:var(--ws-radius-lg); font-size:14px; line-height:1.7; color:var(--ws-text-secondary); text-align:left;" id="aiCoachAdvice">
+              <div class="ws-card" style="border:1px solid var(--ws-border); border-radius:12px;">
+                <div class="ws-card-body" style="padding:32px; text-align:center;">
+                  <div style="font-size:40px; margin-bottom:12px;">💡</div>
+                  <h3 style="font-size:20px; font-weight:800; margin-bottom:6px;">Prioritized AI Action Plan</h3>
+                  <p style="font-size:12.5px; color:var(--ws-text-secondary); margin-bottom:20px;">Complete these actionable steps to maximize your recruiter callback chances</p>
+                  <div style="max-width:580px; margin:0 auto 24px; padding:20px; background:var(--ws-surface-hover); border-radius:10px; border:1px solid var(--ws-border-light); font-size:13.5px; line-height:1.7; color:var(--ws-text); text-align:left;" id="aiCoachAdvice">
                     "I recommend running full AI Optimization to automatically inject missing technical keywords and quantify experience bullet points."
                   </div>
-                  <div style="display:flex; justify-content:center; gap:12px;">
-                    <button class="ws-btn ws-btn-primary" onclick="switchSection('improve')" style="font-weight:700;">✨ Run AI Optimization</button>
-                    <button class="ws-btn ws-btn-secondary" onclick="switchSection('builder')">📝 Open Resume Builder</button>
+                  <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                    <button class="ws-btn ws-btn-primary" onclick="switchSection('improve')" style="font-weight:700; font-size:13px; padding:11px 22px; border-radius:8px;">✨ Run AI Optimization</button>
+                    <button class="ws-btn ws-btn-secondary" onclick="switchSection('builder')" style="font-size:13px; padding:11px 22px; border-radius:8px;">📝 Open Resume Builder</button>
                   </div>
                 </div>
               </div>
