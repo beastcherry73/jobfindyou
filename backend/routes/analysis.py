@@ -1,4 +1,5 @@
 import json
+import hashlib
 from flask import Blueprint, request, jsonify, session
 from backend.database import get_db
 from backend.decorators import login_required
@@ -66,6 +67,8 @@ def analyze():
         result["filename"] = file.filename
         result["raw_text"] = resume_text
 
+        content_hash = hashlib.sha256(resume_text.encode("utf-8", errors="ignore")).hexdigest()
+
         user_id = session.get("user_id")
         file_path = None
         mime_type = "application/pdf" if file.filename.lower().endswith(".pdf") else "text/plain"
@@ -82,21 +85,22 @@ def analyze():
             try:
                 with get_db() as db:
                     existing_analysis = db.execute(
-                        "SELECT id FROM analyses WHERE user_id = ? AND filename = ?",
-                        (user_id, file.filename)
+                        "SELECT id FROM analyses WHERE user_id = ? AND content_hash = ?",
+                        (user_id, content_hash)
                     ).fetchone()
 
                     if existing_analysis:
                         analysis_id = existing_analysis["id"]
                         db.execute(
                             """UPDATE analyses SET
-                                job_description = ?, overall_score = ?,
+                                filename = ?, job_description = ?, overall_score = ?,
                                 dimension_scores = ?, summary = ?, strengths = ?,
                                 weaknesses = ?, missing_sections = ?, ats_issues = ?,
                                 suggestions = ?, suggested_keywords = ?, full_json = ?,
-                                file_path = ?, created_at = CURRENT_TIMESTAMP
+                                file_path = ?, content_hash = ?, created_at = CURRENT_TIMESTAMP
                                 WHERE id = ? AND user_id = ?""",
                             (
+                                file.filename,
                                 job_description,
                                 result["overall_score"],
                                 json.dumps(result["dimension_scores"]),
@@ -109,6 +113,7 @@ def analyze():
                                 json.dumps(result["suggested_keywords"]),
                                 json.dumps(result),
                                 file_path,
+                                content_hash,
                                 analysis_id,
                                 user_id
                             )
@@ -119,8 +124,8 @@ def analyze():
                                 user_id, filename, job_description, overall_score,
                                 dimension_scores, summary, strengths, weaknesses,
                                 missing_sections, ats_issues, suggestions, suggested_keywords,
-                                full_json, file_path
-                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                full_json, file_path, content_hash
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                             (
                                 user_id,
                                 file.filename,
@@ -135,7 +140,8 @@ def analyze():
                                 json.dumps(result["suggestions"]),
                                 json.dumps(result["suggested_keywords"]),
                                 json.dumps(result),
-                                file_path
+                                file_path,
+                                content_hash
                             )
                         )
                         analysis_id = cursor.lastrowid
@@ -193,25 +199,27 @@ def claim_analysis():
     filename = analysis_data.get("filename", "Guest_Resume.pdf")
     job_description = analysis_data.get("job_description", "")
     resume_text = analysis_data.get("raw_text", "")
+    content_hash = hashlib.sha256((resume_text or "").encode("utf-8", errors="ignore")).hexdigest()
 
     try:
         with get_db() as db:
             existing_analysis = db.execute(
-                "SELECT id FROM analyses WHERE user_id = ? AND filename = ?",
-                (user_id, filename)
+                "SELECT id FROM analyses WHERE user_id = ? AND content_hash = ?",
+                (user_id, content_hash)
             ).fetchone()
 
             if existing_analysis:
                 analysis_id = existing_analysis["id"]
                 db.execute(
                     """UPDATE analyses SET
-                        job_description = ?, overall_score = ?,
+                        filename = ?, job_description = ?, overall_score = ?,
                         dimension_scores = ?, summary = ?, strengths = ?,
                         weaknesses = ?, missing_sections = ?, ats_issues = ?,
                         suggestions = ?, suggested_keywords = ?, full_json = ?,
-                        created_at = CURRENT_TIMESTAMP
+                        content_hash = ?, created_at = CURRENT_TIMESTAMP
                         WHERE id = ? AND user_id = ?""",
                     (
+                        filename,
                         job_description,
                         analysis_data.get("overall_score", 70),
                         json.dumps(analysis_data.get("dimension_scores", {})),
@@ -223,6 +231,7 @@ def claim_analysis():
                         json.dumps(analysis_data.get("suggestions", [])),
                         json.dumps(analysis_data.get("suggested_keywords", [])),
                         json.dumps(analysis_data),
+                        content_hash,
                         analysis_id,
                         user_id
                     )
@@ -233,8 +242,8 @@ def claim_analysis():
                         user_id, filename, job_description, overall_score,
                         dimension_scores, summary, strengths, weaknesses,
                         missing_sections, ats_issues, suggestions, suggested_keywords,
-                        full_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        full_json, content_hash
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         user_id,
                         filename,
@@ -248,7 +257,8 @@ def claim_analysis():
                         json.dumps(analysis_data.get("ats_issues", [])),
                         json.dumps(analysis_data.get("suggestions", [])),
                         json.dumps(analysis_data.get("suggested_keywords", [])),
-                        json.dumps(analysis_data)
+                        json.dumps(analysis_data),
+                        content_hash
                     )
                 )
                 analysis_id = cursor.lastrowid

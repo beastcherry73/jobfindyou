@@ -2271,7 +2271,7 @@
         if (sec.indexOf('summary') !== -1 || sec.indexOf('profile') !== -1 || sec.indexOf('objective') !== -1) {
           result.summary = sectionBuf.join(' ').trim();
         } else if (sec.indexOf('skill') !== -1 || sec.indexOf('competenc') !== -1 || sec.indexOf('technolog') !== -1) {
-          result.skills = sectionBuf.map(function(l) { return strip(l).replace(/^[-*•]\s*/, ''); }).join(', ').replace(/\s*,\s*/g, ', ').trim();
+          result.skills = sectionBuf.map(function(l) { return strip(l).replace(/^[-*•]\s*/, ''); }).filter(function(s) { return s; }).join(', ').replace(/\s*,\s*/g, ', ').replace(/,+$/, '').trim();
         } else if (sec.indexOf('experience') !== -1 || sec.indexOf('employ') !== -1 || sec.indexOf('work history') !== -1) {
           parseEntries(sectionBuf, 'experience');
         } else if (sec.indexOf('education') !== -1) {

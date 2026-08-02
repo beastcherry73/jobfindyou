@@ -207,6 +207,8 @@ def _create_tables_and_migrations(db):
             db.execute("ALTER TABLE analyses ADD COLUMN full_json TEXT")
         if "file_path" not in a_cols:
             db.execute("ALTER TABLE analyses ADD COLUMN file_path TEXT")
+        if "content_hash" not in a_cols:
+            db.execute("ALTER TABLE analyses ADD COLUMN content_hash TEXT")
     except Exception as e:
         current_app.logger.warning(f"Migration error for analyses table: {e}")
 
