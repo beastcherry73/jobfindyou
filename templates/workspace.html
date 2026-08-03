@@ -2121,8 +2121,8 @@
   </div>
 
   <!-- ═══ UPLOAD MODAL ═══ -->
-  <div class="ws-modal-backdrop" id="uploadModal" style="display:none;">
-    <div class="ws-modal" style="max-width:440px;text-align:center;padding:36px 32px;">
+  <div class="ws-modal-backdrop" id="uploadModal" style="display:none;pointer-events:none;">
+    <div class="ws-modal" style="pointer-events:auto;max-width:440px;text-align:center;padding:36px 32px;">
       <div class="ws-flex-center" style="margin-bottom:16px;">
         <div style="width:56px;height:56px;border-radius:16px;background:var(--ws-primary-subtle);display:grid;place-items:center;font-size:24px;" id="uploadIcon">📄</div>
       </div>
@@ -2158,6 +2158,11 @@
           <span>📊 Preparing report</span>
           <span class="ws-step-status">⏳</span>
         </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--ws-text-tertiary);margin-top:4px;" id="uploadElapsed">Elapsed: 0s — the page stays usable while we work</div>
+      <div class="ws-flex-center" style="margin-top:14px;">
+        <button id="cancelAnalysisBtn" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="cancelUploadAnalysis()" style="display:inline-flex;align-items:center;gap:6px;color:var(--ws-text-secondary);">✕ Cancel analysis</button>
       </div>
 
       <div id="uploadComplete" style="display:none;margin-top:8px;">
@@ -2558,6 +2563,15 @@
     }
 
     /* ── Premium Upload Flow ── */
+    let uploadAbort = null;
+    let uploadElapsedTimer = null;
+
+    function stopUploadElapsed() {
+      if (uploadElapsedTimer) { clearInterval(uploadElapsedTimer); uploadElapsedTimer = null; }
+      const cancelBtn = document.getElementById('cancelAnalysisBtn');
+      if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
     function showUploadModal(fileName) {
       const modal = document.getElementById('uploadModal');
       modal.style.display = 'grid';
@@ -2567,6 +2581,19 @@
       document.getElementById('uploadComplete').style.display = 'none';
       document.getElementById('uploadSteps').style.display = 'block';
       document.getElementById('uploadProgressBar').style.width = '0%';
+
+      const cancelBtn = document.getElementById('cancelAnalysisBtn');
+      if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+      const elapsedEl = document.getElementById('uploadElapsed');
+      if (elapsedEl) elapsedEl.textContent = 'Elapsed: 0s — the page stays usable while we work';
+
+      uploadAbort = new AbortController();
+      if (uploadElapsedTimer) clearInterval(uploadElapsedTimer);
+      const t0 = Date.now();
+      uploadElapsedTimer = setInterval(function() {
+        const s = Math.round((Date.now() - t0) / 1000);
+        if (elapsedEl) elapsedEl.textContent = 'Elapsed: ' + s + 's — the page stays usable while we work';
+      }, 1000);
 
       // Reset all steps
       document.querySelectorAll('[data-step]').forEach(function(el) {
@@ -2583,7 +2610,15 @@
       }
     }
 
+    function cancelUploadAnalysis() {
+      if (uploadAbort) uploadAbort.abort();
+      stopUploadElapsed();
+      document.getElementById('uploadModal').style.display = 'none';
+    }
+
     function closeUploadModal() {
+      if (uploadAbort && !uploadAbort.signal.aborted) uploadAbort.abort();
+      stopUploadElapsed();
       document.getElementById('uploadModal').style.display = 'none';
     }
 
@@ -2606,7 +2641,7 @@
       document.getElementById('uploadProgressBar').style.width = '50%';
 
       try {
-        const result = await apiFetch('/api/analyze', {method: 'POST', body: formData});
+        const result = await apiFetch('/api/analyze', {method: 'POST', body: formData, signal: uploadAbort ? uploadAbort.signal : undefined});
 
         setStepComplete('suggestions');
         document.getElementById('uploadProgressBar').style.width = '70%';
@@ -4022,7 +4057,7 @@
       document.getElementById('uploadProgressBar').style.width = '50%';
 
       try {
-        const result = await apiFetch('/api/analyze', {method: 'POST', body: formData});
+        const result = await apiFetch('/api/analyze', {method: 'POST', body: formData, signal: uploadAbort ? uploadAbort.signal : undefined});
 
         setStepComplete('suggestions');
         document.getElementById('uploadProgressBar').style.width = '70%';
@@ -4062,6 +4097,11 @@
         loadDashboard();
         loadHistory();
       } catch (err) {
+        if (uploadAbort && uploadAbort.signal.aborted) {
+          stopUploadElapsed();
+          document.getElementById('uploadModal').style.display = 'none';
+          return;
+        }
         document.getElementById('uploadIcon').textContent = '⚠️';
         document.getElementById('uploadTitle').textContent = 'Analysis Failed';
         document.getElementById('uploadFilename').textContent = err.message || 'Upload failed';
