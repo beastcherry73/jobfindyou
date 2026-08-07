@@ -7,3 +7,4 @@ requests
 gunicorn
 python-docx
 pg8000
+reportlab

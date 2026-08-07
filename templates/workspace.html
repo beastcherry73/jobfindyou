@@ -3030,19 +3030,28 @@
       empty.style.display = 'none';
       filtered.forEach(function(item) {
         const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
         const scoreBadge = item.score != null
           ? '<span class="ws-badge ws-badge-' + (item.score >= 70 ? 'good' : item.score >= 40 ? 'warn' : 'bad') + '">' + item.score + '%</span>'
           : '<span class="ws-badge ws-badge-primary">Draft</span>';
         const viewAction = item.type === 'analysis'
           ? 'viewReport(' + item.id + ')'
-          : 'switchSection(\'builder\')';
+          : 'restoreBuilderDraft(' + item.id + ')';
+        tr.onclick = function(e) {
+          if (e.target.closest('button')) return;
+          if (item.type === 'analysis') {
+            viewReport(item.id);
+          } else {
+            restoreBuilderDraft(item.id);
+          }
+        };
         tr.innerHTML =
-          '<td style="font-weight:500;">' + item.name + '</td>' +
+          '<td style="font-weight:600;color:var(--ws-primary);">' + item.name + '</td>' +
           '<td><span class="ws-badge ws-badge-' + (item.type === 'analysis' ? 'primary' : 'accent') + '">' + item.type + '</span></td>' +
           '<td>' + scoreBadge + '</td>' +
           '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
           '<td style="display:flex;gap:4px;">' +
-            '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="' + viewAction + '">' + (item.type === 'analysis' ? 'View' : 'Edit') + '</button>' +
+            '<button class="ws-btn ws-btn-secondary ws-btn-sm" onclick="' + viewAction + '">' + (item.type === 'analysis' ? '📄 View Report' : '📝 Open & Edit') + '</button>' +
             '<button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="openDeleteModal(' + item.id + ',\'' + item.type + '\')" style="color:var(--ws-bad);">🗑</button>' +
           '</td>';
         body.appendChild(tr);
@@ -3468,15 +3477,23 @@
         const body = document.getElementById('profileAnalysesBody');
         if (body) {
           body.innerHTML = '';
-          const items = (analyses || []).map(a => ({name: a.filename, score: a.overall_score, date: a.created_at, type: 'Analysis'})).concat(
-            (resumes || []).map(r => ({name: r.title || r.filename, score: r.overall_score, date: r.updated_at || r.created_at, type: 'Resume Draft'}))
+          const items = (analyses || []).map(a => ({id: a.id, name: a.filename, score: a.overall_score, date: a.created_at, type: 'Analysis'})).concat(
+            (resumes || []).map(r => ({id: r.id, name: r.title || r.filename, score: r.overall_score, date: r.updated_at || r.created_at, type: 'Resume Draft'}))
           );
           if (items.length === 0) {
             body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--ws-text-tertiary);padding:16px;">No saved records yet. Upload a resume to create your first analysis.</td></tr>';
           } else {
             items.slice(0, 5).forEach(function(item) {
               const tr = document.createElement('tr');
-              tr.innerHTML = '<td>' + item.name + '</td>' +
+              tr.style.cursor = 'pointer';
+              tr.onclick = function() {
+                if (item.type === 'Analysis') {
+                  viewReport(item.id);
+                } else {
+                  restoreBuilderDraft(item.id);
+                }
+              };
+              tr.innerHTML = '<td style="font-weight:600;color:var(--ws-primary);">' + item.name + '</td>' +
                 '<td><span class="ws-badge ws-badge-' + (item.score >= 70 ? 'good' : item.score >= 40 ? 'warn' : 'bad') + '">' + (item.score || 0) + '%</span></td>' +
                 '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
                 '<td><span class="ws-badge ws-badge-primary">' + item.type + '</span></td>';
@@ -3501,15 +3518,23 @@
         const body = document.getElementById('settingsAnalysesBody');
         if (body) {
           body.innerHTML = '';
-          const items = (analyses || []).map(a => ({name: a.filename, score: a.overall_score, date: a.created_at, status: 'Stored'})).concat(
-            (resumes || []).map(r => ({name: r.title || r.filename, score: r.overall_score, date: r.updated_at || r.created_at, status: 'Saved Version'}))
+          const items = (analyses || []).map(a => ({id: a.id, name: a.filename, score: a.overall_score, date: a.created_at, type: 'Analysis', status: 'Stored'})).concat(
+            (resumes || []).map(r => ({id: r.id, name: r.title || r.filename, score: r.overall_score, date: r.updated_at || r.created_at, type: 'Resume Draft', status: 'Saved Version'}))
           );
           if (items.length === 0) {
             body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--ws-text-tertiary);padding:16px;">No saved analyses found in persistent storage.</td></tr>';
           } else {
             items.slice(0, 5).forEach(function(item) {
               const tr = document.createElement('tr');
-              tr.innerHTML = '<td>' + item.name + '</td>' +
+              tr.style.cursor = 'pointer';
+              tr.onclick = function() {
+                if (item.type === 'Analysis') {
+                  viewReport(item.id);
+                } else {
+                  restoreBuilderDraft(item.id);
+                }
+              };
+              tr.innerHTML = '<td style="font-weight:600;color:var(--ws-primary);">' + item.name + '</td>' +
                 '<td><span class="ws-badge ws-badge-' + (item.score >= 70 ? 'good' : item.score >= 40 ? 'warn' : 'bad') + '">' + (item.score || 0) + '%</span></td>' +
                 '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
                 '<td><span class="ws-badge ws-badge-good">' + item.status + '</span></td>';
