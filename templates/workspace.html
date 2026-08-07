@@ -4103,7 +4103,8 @@
         skills: document.getElementById('bSkills').value,
         experience: builderData.experience,
         education: builderData.education,
-        projects: builderData.projects
+        projects: builderData.projects,
+        certifications: builderData.certifications || []
       };
       try {
         var payload = {
@@ -4139,7 +4140,8 @@
         skills: skills,
         experience: (builderData && builderData.experience) || [],
         education: (builderData && builderData.education) || [],
-        projects: (builderData && builderData.projects) || []
+        projects: (builderData && builderData.projects) || [],
+        certifications: (builderData && builderData.certifications) || []
       };
     }
 

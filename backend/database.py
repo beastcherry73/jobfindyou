@@ -292,22 +292,41 @@ def get_db():
     global _db_initialized
     pg_url = os.environ.get("SUPABASE_DB_URL") or os.environ.get("DATABASE_URL")
     if pg_url:
-        try:
-            import pg8000.dbapi
-            from urllib.parse import urlparse
-            parsed = urlparse(pg_url)
-            conn = pg8000.dbapi.connect(
-                user=parsed.username or "postgres",
-                password=parsed.password or "",
-                host=parsed.hostname or "localhost",
-                port=parsed.port or 5432,
-                database=parsed.path.lstrip("/") or "postgres",
-                ssl_context=True
-            )
-            return PgConnection(conn)
-        except Exception as e:
-            if current_app:
-                current_app.logger.warning(f"Supabase PostgreSQL connection error: {e}")
+        import time
+        import pg8000.dbapi
+        from urllib.parse import urlparse
+        parsed = urlparse(pg_url)
+        
+        last_err = None
+        for attempt in range(3):
+            try:
+                conn = pg8000.dbapi.connect(
+                    user=parsed.username or "postgres",
+                    password=parsed.password or "",
+                    host=parsed.hostname or "localhost",
+                    port=parsed.port or 5432,
+                    database=parsed.path.lstrip("/") or "postgres",
+                    ssl_context=True,
+                    timeout=10
+                )
+                db = PgConnection(conn)
+                if not _db_initialized:
+                    try:
+                        _create_tables_and_migrations(db)
+                        _db_initialized = True
+                    except Exception as e:
+                        if current_app:
+                            current_app.logger.error(f"Error initializing Pg tables: {e}")
+                return db
+            except Exception as e:
+                last_err = e
+                if current_app:
+                    current_app.logger.warning(f"Supabase PostgreSQL connection attempt {attempt+1}/3 failed: {e}")
+                time.sleep(0.2 * (attempt + 1))
+        
+        if os.environ.get("VERCEL"):
+            # In Vercel production, if PostgreSQL was configured, fail loudly rather than writing to ephemeral /tmp
+            raise RuntimeError(f"Database connection to Supabase PostgreSQL failed: {last_err}")
 
     db_url = os.environ.get("TURSO_DATABASE_URL")
     auth_token = os.environ.get("TURSO_AUTH_TOKEN")

@@ -1,6 +1,7 @@
 import re
 import io
 import json
+import html
 from flask import Blueprint, request, jsonify, send_file
 from backend.decorators import login_required
 
@@ -9,7 +10,7 @@ export_bp = Blueprint("export", __name__)
 
 def parse_markdown_to_data(text):
     """
-    Utility to parse raw markdown text into a structured dictionary if structured data is missing.
+    Utility to parse raw markdown text into a complete structured dictionary.
     """
     lines = text.split('\n')
     data = {
@@ -21,7 +22,9 @@ def parse_markdown_to_data(text):
         "skills": "",
         "experience": [],
         "education": [],
-        "projects": []
+        "projects": [],
+        "certifications": [],
+        "rawText": text
     }
     
     current_sec = ""
@@ -45,6 +48,8 @@ def parse_markdown_to_data(text):
                 current_sec = 'education'
             elif 'project' in sec_title:
                 current_sec = 'projects'
+            elif 'certif' in sec_title or 'license' in sec_title:
+                current_sec = 'certifications'
             else:
                 current_sec = sec_title
         elif current_sec == 'summary':
@@ -52,38 +57,60 @@ def parse_markdown_to_data(text):
         elif current_sec == 'skills':
             clean_s = s.lstrip('-•* ').strip()
             data["skills"] = (data["skills"] + ", " + clean_s if data["skills"] else clean_s).strip(', ')
-        elif current_sec in ('experience', 'projects', 'education'):
-            buf.append(s)
+        elif current_sec in ('experience', 'projects', 'education', 'certifications'):
+            buf.append((current_sec, s))
 
-    # Basic entry parsing for buffer lines
+    # Entry parsing for buffer lines
     if buf:
         cur_entry = None
-        for b in buf:
-            if b.startswith('### '):
-                if cur_entry:
-                    data["experience"].append(cur_entry)
-                header = b[4:].strip()
-                dates = ""
-                if '(' in header and ')' in header:
-                    parts = header.rsplit('(', 1)
-                    header = parts[0].strip()
-                    dates = parts[1].rstrip(')').strip()
-                title_parts = header.split(' - ') if ' - ' in header else header.split(' | ')
-                role = title_parts[0].strip()
-                company = title_parts[1].strip() if len(title_parts) > 1 else ""
-                cur_entry = {"role": role, "company": company, "dates": dates, "bullets": []}
-            elif b.startswith(('- ', '• ', '* ')):
-                bullet = b.lstrip('-•* ').strip()
-                if cur_entry:
-                    cur_entry["bullets"].append(bullet)
-                else:
-                    cur_entry = {"role": "Experience", "company": "", "dates": "", "bullets": [bullet]}
-            elif cur_entry and not cur_entry["bullets"]:
-                cur_entry["company"] = (cur_entry["company"] + " " + b).strip()
-        if cur_entry:
+        for sec, b in buf:
+            if sec == 'experience':
+                if b.startswith('### '):
+                    if cur_entry:
+                        data["experience"].append(cur_entry)
+                    header = b[4:].strip()
+                    dates = ""
+                    if '(' in header and ')' in header:
+                        parts = header.rsplit('(', 1)
+                        header = parts[0].strip()
+                        dates = parts[1].rstrip(')').strip()
+                    title_parts = header.split(' - ') if ' - ' in header else header.split(' | ')
+                    role = title_parts[0].strip()
+                    company = title_parts[1].strip() if len(title_parts) > 1 else ""
+                    cur_entry = {"role": role, "company": company, "dates": dates, "bullets": []}
+                elif b.startswith(('- ', '• ', '* ')):
+                    bullet = b.lstrip('-•* ').strip()
+                    if cur_entry:
+                        cur_entry["bullets"].append(bullet)
+                    else:
+                        cur_entry = {"role": "Experience", "company": "", "dates": "", "bullets": [bullet]}
+                elif cur_entry and not cur_entry["bullets"]:
+                    cur_entry["company"] = (cur_entry["company"] + " " + b).strip()
+            elif sec == 'education':
+                if b.startswith(('### ', '- ', '• ', '* ')):
+                    clean_b = b.lstrip('#-•* ').strip()
+                    data["education"].append({"school": clean_b, "degree": "", "dates": ""})
+            elif sec == 'projects':
+                if b.startswith('### '):
+                    p_name = b[4:].strip()
+                    data["projects"].append({"name": p_name, "desc": "", "tech": ""})
+                elif b.startswith(('- ', '• ', '* ')) and data["projects"]:
+                    data["projects"][-1]["desc"] = (data["projects"][-1]["desc"] + " " + b.lstrip('-•* ').strip()).strip()
+            elif sec == 'certifications':
+                if b.startswith(('### ', '- ', '• ', '* ')):
+                    data["certifications"].append({"name": b.lstrip('#-•* ').strip(), "issuer": "", "dates": ""})
+
+        if cur_entry and cur_entry not in data["experience"]:
             data["experience"].append(cur_entry)
             
     return data
+
+
+def esc(text):
+    """Safely escape text for ReportLab XML paragraph tags."""
+    if not text:
+        return ""
+    return html.escape(str(text))
 
 
 @export_bp.route("/api/export/pdf", methods=["POST"])
@@ -123,6 +150,7 @@ def export_pdf():
     education = data.get("education", [])
     projects = data.get("projects", [])
     certifications = data.get("certifications", [])
+    fallback_text = data.get("rawText") or raw_text
 
     # Theme colors
     color_palette = {
@@ -149,8 +177,8 @@ def export_pdf():
         'HeaderName',
         parent=styles['Heading1'],
         fontName='Helvetica-Bold',
-        fontSize=22,
-        leading=26,
+        fontSize=20,
+        leading=24,
         textColor=theme["primary"],
         spaceAfter=4
     )
@@ -173,7 +201,8 @@ def export_pdf():
         leading=15,
         textColor=theme["primary"],
         spaceBefore=10,
-        spaceAfter=4
+        spaceAfter=4,
+        keepWithNext=True
     )
 
     body_style = ParagraphStyle(
@@ -220,22 +249,22 @@ def export_pdf():
     story = []
 
     # 1. Header
-    story.append(Paragraph(full_name, name_style))
-    contact_parts = [p for p in [email, phone, location] if p]
+    story.append(Paragraph(esc(full_name), name_style))
+    contact_parts = [esc(p) for p in [email, phone, location] if p]
     if contact_parts:
         story.append(Paragraph(" | ".join(contact_parts), contact_style))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=theme["accent"], spaceAfter=10))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=theme["accent"], spaceAfter=8))
 
     # 2. Professional Summary
     if summary:
         story.append(Paragraph("PROFESSIONAL SUMMARY", sec_heading_style))
-        story.append(Paragraph(summary, body_style))
+        story.append(Paragraph(esc(summary), body_style))
 
     # 3. Skills Matrix
     if skills:
         story.append(Paragraph("SKILLS & COMPETENCIES", sec_heading_style))
         skills_text = skills if isinstance(skills, str) else ", ".join(skills)
-        story.append(Paragraph(skills_text, body_style))
+        story.append(Paragraph(esc(skills_text), body_style))
 
     # 4. Work Experience
     if experience:
@@ -247,9 +276,9 @@ def export_pdf():
                 dates = exp.get("dates", "")
                 bullets = exp.get("bullets", [])
 
-                title_line = f"<b>{role}</b>" + (f" — {company}" if company else "")
+                title_line = f"<b>{esc(role)}</b>" + (f" — {esc(company)}" if company else "")
                 t_table = Table(
-                    [[Paragraph(title_line, item_title_style), Paragraph(dates, item_sub_style)]],
+                    [[Paragraph(title_line, item_title_style), Paragraph(esc(dates), item_sub_style)]],
                     colWidths=[380, 160]
                 )
                 t_table.setStyle(TableStyle([
@@ -262,7 +291,8 @@ def export_pdf():
                 story.append(t_table)
 
                 for b in bullets:
-                    story.append(Paragraph(f"• {b}", bullet_style))
+                    if b and str(b).strip():
+                        story.append(Paragraph(f"• {esc(b)}", bullet_style))
                 story.append(Spacer(1, 4))
 
     # 5. Education
@@ -273,9 +303,9 @@ def export_pdf():
                 degree = edu.get("degree", "")
                 school = edu.get("school", "")
                 dates = edu.get("dates", "")
-                title_line = f"<b>{degree}</b>" + (f" — {school}" if school else "")
+                title_line = f"<b>{esc(degree)}</b>" + (f" — {esc(school)}" if school else "")
                 t_table = Table(
-                    [[Paragraph(title_line, item_title_style), Paragraph(dates, item_sub_style)]],
+                    [[Paragraph(title_line, item_title_style), Paragraph(esc(dates), item_sub_style)]],
                     colWidths=[380, 160]
                 )
                 t_table.setStyle(TableStyle([
@@ -296,27 +326,52 @@ def export_pdf():
                 p_name = proj.get("name") or proj.get("title") or "Project"
                 p_desc = proj.get("desc") or proj.get("description") or ""
                 p_tech = proj.get("tech") or proj.get("technologies") or ""
-                story.append(Paragraph(f"<b>{p_name}</b>" + (f" ({p_tech})" if p_tech else ""), item_title_style))
+                story.append(Paragraph(f"<b>{esc(p_name)}</b>" + (f" ({esc(p_tech)})" if p_tech else ""), item_title_style))
                 if p_desc:
-                    story.append(Paragraph(p_desc, body_style))
+                    story.append(Paragraph(esc(p_desc), body_style))
                 story.append(Spacer(1, 4))
 
-    # If raw markdown was passed and parsing produced minimal structured output, render raw markdown blocks
-    if raw_text and not experience and not summary:
-        for line in raw_text.split('\n'):
+    # 7. Certifications
+    if certifications:
+        story.append(Paragraph("CERTIFICATIONS & LICENSES", sec_heading_style))
+        for cert in certifications:
+            if isinstance(cert, dict):
+                c_name = cert.get("name") or cert.get("title") or "Certification"
+                c_issuer = cert.get("issuer") or cert.get("organization") or ""
+                c_dates = cert.get("dates") or cert.get("date") or ""
+                title_line = f"<b>{esc(c_name)}</b>" + (f" — {esc(c_issuer)}" if c_issuer else "")
+                t_table = Table(
+                    [[Paragraph(title_line, item_title_style), Paragraph(esc(c_dates), item_sub_style)]],
+                    colWidths=[380, 160]
+                )
+                t_table.setStyle(TableStyle([
+                    ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                    ('TOPPADDING', (0, 0), (-1, -1), 2),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ]))
+                story.append(t_table)
+                story.append(Spacer(1, 4))
+            elif isinstance(cert, str) and cert.strip():
+                story.append(Paragraph(f"• {esc(cert)}", bullet_style))
+
+    # Fallback to lines parsing if structured data was minimal and fallback_text exists
+    if fallback_text and not experience and not summary:
+        for line in fallback_text.split('\n'):
             s = line.strip()
             if not s:
                 continue
             if s.startswith('# '):
-                story.append(Paragraph(s[2:], name_style))
+                story.append(Paragraph(esc(s[2:]), name_style))
             elif s.startswith('## '):
-                story.append(Paragraph(s[3:], sec_heading_style))
+                story.append(Paragraph(esc(s[3:]), sec_heading_style))
             elif s.startswith('### '):
-                story.append(Paragraph(s[4:], item_title_style))
+                story.append(Paragraph(esc(s[4:]), item_title_style))
             elif s.startswith(('- ', '• ', '* ')):
-                story.append(Paragraph(f"• {s.lstrip('-•* ')}", bullet_style))
+                story.append(Paragraph(f"• {esc(s.lstrip('-•* '))}", bullet_style))
             else:
-                story.append(Paragraph(s, body_style))
+                story.append(Paragraph(esc(s), body_style))
 
     doc.build(story)
     buffer.seek(0)
@@ -364,7 +419,7 @@ def export_docx():
     font.size = Pt(10.5)
     font.color.rgb = RGBColor(15, 23, 42)
 
-    if raw_data and (raw_data.get("fullName") or raw_data.get("experience")):
+    if raw_data and (raw_data.get("fullName") or raw_data.get("experience") or raw_data.get("summary")):
         data = raw_data
         full_name = data.get("fullName") or data.get("name") or "Professional Resume"
         email = data.get("email", "")
@@ -375,6 +430,7 @@ def export_docx():
         experience = data.get("experience", [])
         education = data.get("education", [])
         projects = data.get("projects", [])
+        certifications = data.get("certifications", [])
 
         # Header
         p = doc.add_paragraph()
@@ -447,9 +503,10 @@ def export_docx():
                     p_e.paragraph_format.space_after = Pt(2)
 
                     for b in bullets:
-                        p_b = doc.add_paragraph(style='List Bullet')
-                        p_b.add_run(b)
-                        p_b.paragraph_format.space_after = Pt(2)
+                        if b and str(b).strip():
+                            p_b = doc.add_paragraph(style='List Bullet')
+                            p_b.add_run(str(b))
+                            p_b.paragraph_format.space_after = Pt(2)
 
         # Education
         if education:
@@ -500,6 +557,34 @@ def export_docx():
                         p_pd = doc.add_paragraph()
                         p_pd.add_run(p_desc)
                         p_pd.paragraph_format.space_after = Pt(4)
+
+        # Certifications
+        if certifications:
+            p_h = doc.add_paragraph()
+            r_h = p_h.add_run("CERTIFICATIONS & LICENSES")
+            r_h.font.size = Pt(12)
+            r_h.font.bold = True
+            r_h.font.color.rgb = RGBColor(30, 41, 59)
+            p_h.paragraph_format.space_before = Pt(8)
+            p_h.paragraph_format.space_after = Pt(3)
+
+            for cert in certifications:
+                if isinstance(cert, dict):
+                    c_name = cert.get("name") or cert.get("title") or "Certification"
+                    c_issuer = cert.get("issuer") or cert.get("organization") or ""
+                    c_dates = cert.get("dates") or cert.get("date") or ""
+                    p_ct = doc.add_paragraph()
+                    r_cn = p_ct.add_run(c_name)
+                    r_cn.bold = True
+                    if c_issuer:
+                        p_ct.add_run(f" — {c_issuer}")
+                    if c_dates:
+                        p_ct.add_run(f"\t{c_dates}")
+                    p_ct.paragraph_format.space_after = Pt(2)
+                elif isinstance(cert, str) and cert.strip():
+                    p_b = doc.add_paragraph(style='List Bullet')
+                    p_b.add_run(cert)
+                    p_b.paragraph_format.space_after = Pt(2)
 
     else:
         # Fallback to lines parsing
