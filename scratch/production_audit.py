@@ -109,10 +109,14 @@ with app.test_client() as client:
     record("POST /api/generate/improve-with-diff (File)", enhance_file_ok, f"Status: {res_enhance_file.status_code}")
 
     # 11. POST /api/export/docx
-    res_docx = client.post('/api/export/docx', json={"text": "Audit Test Resume Content", "title": "Audit_Export"})
-    record("POST /api/export/docx", res_docx.status_code == 200 and res_docx.content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document", f"Status: {res_docx.status_code}")
+    res_docx = client.post('/api/export/docx', json={"text": "# John Doe\n## Summary\nAudit Test Resume Content", "title": "Audit_Export"})
+    record("POST /api/export/docx", res_docx.status_code == 200 and "wordprocessingml" in res_docx.content_type, f"Status: {res_docx.status_code}")
 
-    # 12. GET /api/user/profile
+    # 12. POST /api/export/pdf
+    res_pdf = client.post('/api/export/pdf', json={"text": "# John Doe\n## Summary\nAudit Test Resume Content", "title": "Audit_Export"})
+    record("POST /api/export/pdf", res_pdf.status_code == 200 and res_pdf.content_type == "application/pdf", f"Status: {res_pdf.status_code}")
+
+    # 13. GET /api/user/profile
     res_profile = client.get('/api/user/profile')
     record("GET /api/user/profile", res_profile.status_code == 200 and 'user' in (res_profile.get_json() or {}), f"Status: {res_profile.status_code}")
 

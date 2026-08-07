@@ -171,6 +171,21 @@ class PgConnection:
 
 
 def _create_tables_and_migrations(db):
+    is_pg = isinstance(db, PgConnection)
+
+    def add_col_safe(table, col_def):
+        try:
+            if is_pg:
+                db.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col_def}")
+            else:
+                col_name = col_def.split()[0]
+                cols = {row["name"] for row in db.execute(f"PRAGMA table_info({table})")}
+                if col_name not in cols:
+                    db.execute(f"ALTER TABLE {table} ADD COLUMN {col_def}")
+        except Exception as e:
+            if current_app:
+                current_app.logger.warning(f"Migration error ({table}.{col_def}): {e}")
+
     db.execute("""CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -178,12 +193,7 @@ def _create_tables_and_migrations(db):
         password_hash TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""")
-    try:
-        columns = {row["name"] for row in db.execute("PRAGMA table_info(users)")}
-        if "google_sub" not in columns:
-            db.execute("ALTER TABLE users ADD COLUMN google_sub TEXT")
-    except Exception as e:
-        current_app.logger.warning(f"Migration error for users table: {e}")
+    add_col_safe("users", "google_sub TEXT")
 
     db.execute("""CREATE TABLE IF NOT EXISTS analyses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -201,17 +211,9 @@ def _create_tables_and_migrations(db):
         suggested_keywords TEXT NOT NULL,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )""")
-    try:
-        a_cols = {row["name"] for row in db.execute("PRAGMA table_info(analyses)")}
-        if "full_json" not in a_cols:
-            db.execute("ALTER TABLE analyses ADD COLUMN full_json TEXT")
-        if "file_path" not in a_cols:
-            db.execute("ALTER TABLE analyses ADD COLUMN file_path TEXT")
-        if "content_hash" not in a_cols:
-            db.execute("ALTER TABLE analyses ADD COLUMN content_hash TEXT")
-    except Exception as e:
-        current_app.logger.warning(f"Migration error for analyses table: {e}")
-
+    add_col_safe("analyses", "full_json TEXT")
+    add_col_safe("analyses", "file_path TEXT")
+    add_col_safe("analyses", "content_hash TEXT")
 
     db.execute("""CREATE TABLE IF NOT EXISTS oauth_states (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,22 +241,12 @@ def _create_tables_and_migrations(db):
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )""")
-    try:
-        r_cols = {row["name"] for row in db.execute("PRAGMA table_info(resumes)")}
-        if "filename" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN filename TEXT")
-        if "overall_score" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN overall_score INTEGER DEFAULT 0")
-        if "analysis_json" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN analysis_json TEXT")
-        if "file_path" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN file_path TEXT")
-        if "file_size" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN file_size INTEGER DEFAULT 0")
-        if "mime_type" not in r_cols:
-            db.execute("ALTER TABLE resumes ADD COLUMN mime_type TEXT DEFAULT 'application/pdf'")
-    except Exception as e:
-        current_app.logger.warning(f"Migration error for resumes table: {e}")
+    add_col_safe("resumes", "filename TEXT")
+    add_col_safe("resumes", "overall_score INTEGER DEFAULT 0")
+    add_col_safe("resumes", "analysis_json TEXT")
+    add_col_safe("resumes", "file_path TEXT")
+    add_col_safe("resumes", "file_size INTEGER DEFAULT 0")
+    add_col_safe("resumes", "mime_type TEXT DEFAULT 'application/pdf'")
 
 
 def store_oauth_state(state):
