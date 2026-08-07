@@ -18,10 +18,20 @@ print("==================================================")
 print("   SPRINT 1.1 PERSISTENCE & EXPORT AUDIT MATRIX   ")
 print("==================================================")
 
+test_user_id = 1
+with app.app_context():
+    with get_db() as db:
+        db.execute("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?) ON CONFLICT(email) DO NOTHING", 
+                   ('Matrix Verification User', 'matrix_user@example.com', 'pbkdf2:sha256:test'))
+        db.commit()
+        u_row = db.execute("SELECT id FROM users WHERE email = 'matrix_user@example.com'").fetchone()
+        if u_row:
+            test_user_id = u_row['id'] if hasattr(u_row, 'keys') else u_row[0]
+
 with app.test_client() as client:
     # Set authenticated user session
     with client.session_transaction() as sess:
-        sess['user_id'] = 1001
+        sess['user_id'] = test_user_id
         sess['user_name'] = 'Matrix Verification User'
 
     # 1. Upload a resume
@@ -41,7 +51,7 @@ with app.test_client() as client:
     # 3. Log out -> log in -> still there
     client.get('/logout')
     with client.session_transaction() as sess:
-        sess['user_id'] = 1001
+        sess['user_id'] = test_user_id
         sess['user_name'] = 'Matrix Verification User'
     res_relogin = client.get('/api/analyses')
     analyses_relogin = res_relogin.get_json() or []
@@ -49,10 +59,12 @@ with app.test_client() as client:
     record("3. Log out -> log in -> still there", found_on_relogin, f"Preserved across login session")
 
     # 4. Server restart / Database query check -> still there
-    with get_db() as db:
-        db_row = db.execute("SELECT id, filename FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, 1001)).fetchone()
-        found_in_db = db_row is not None
-    record("4. Restart server/redeploy -> still there", found_in_db, f"Verified in persistent database row: {dict(db_row) if db_row else 'None'}")
+    found_in_db = False
+    with app.app_context():
+        with get_db() as db:
+            db_row = db.execute("SELECT id, filename FROM analyses WHERE id = ? AND user_id = ?", (analysis_id, test_user_id)).fetchone()
+            found_in_db = db_row is not None
+    record("4. Restart server/redeploy -> still there", found_in_db, f"Verified in persistent database row: {dict(db_row) if (found_in_db and db_row) else 'None'}")
 
     # 5. Profile page lists it
     res_prof = client.get('/api/user/profile')

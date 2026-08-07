@@ -197,10 +197,13 @@ def user_profile():
             user = db.execute("SELECT id, name, email, created_at FROM users WHERE id = ?", (user_id,)).fetchone()
             if not user:
                 return jsonify({"error": "User not found"}), 404
-            analysis_count = db.execute("SELECT COUNT(*) as cnt FROM analyses WHERE user_id = ?", (user_id,)).fetchone()["cnt"]
+            count_row = db.execute("SELECT COUNT(*) as cnt FROM analyses WHERE user_id = ?", (user_id,)).fetchone()
+            analysis_count = 0
+            if count_row:
+                analysis_count = count_row.get("cnt") if hasattr(count_row, "get") else count_row[0]
             return jsonify({
                 "user": dict(user),
-                "total_analyses": analysis_count
+                "total_analyses": analysis_count or 0
             })
         else:
             data = request.get_json() or {}
