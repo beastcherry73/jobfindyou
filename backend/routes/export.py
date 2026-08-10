@@ -8,9 +8,52 @@ from backend.decorators import login_required
 export_bp = Blueprint("export", __name__)
 
 
+def _section_key(title):
+    """Classify a markdown section heading into a canonical section key.
+
+    Case-insensitive and tolerant of harmless formatting differences
+    (surrounding whitespace, punctuation, capitalization).
+    """
+    t = re.sub(r'[#*_\-:\s]+', ' ', title).strip().lower()
+    if not t:
+        return None
+    if any(k in t for k in ('summary', 'profile', 'objective')):
+        return 'summary'
+    if 'education' in t:
+        if any(k in t for k in ('certif', 'licens', 'credential')):
+            return 'education_certs'
+        return 'education'
+    if any(k in t for k in ('certif', 'licens', 'credential')):
+        return 'certifications'
+    if 'project' in t:
+        return 'projects'
+    if any(k in t for k in ('skill', 'competenc', 'technolog', 'core')):
+        return 'skills'
+    if any(k in t for k in ('experience', 'employment', 'work', 'career')):
+        return 'experience'
+    return 'custom'
+
+
+def _looks_like_cert(line):
+    """Heuristic: does this education-ish line look like a certification instead?"""
+    l = line.lower()
+    if any(k in l for k in ('certif', 'licens', 'credential', 'cert.', 'badge', 'course')):
+        return True
+    if re.search(r'(aws|gcp|google|azure|microsoft|coursera|udemy|linkedin|pmp|comptia|scrum|cisco)\b.*(20\d\d|\d{2})', l):
+        return True
+    return False
+
+
 def parse_markdown_to_data(text):
     """
     Utility to parse raw markdown text into a complete structured dictionary.
+
+    Recognizes (case-insensitive): Summary / Professional Summary,
+    Skills / Core Competencies / Technical Skills / Professional Skills,
+    Experience / Work Experience / Professional Experience,
+    Education, Certifications, Education & Certifications (split heuristically),
+    Projects. Content lines that do not start with ###, -, *, or bullet
+    characters are still captured so valid content is never silently dropped.
     """
     lines = text.split('\n')
     data = {
@@ -24,86 +67,136 @@ def parse_markdown_to_data(text):
         "education": [],
         "projects": [],
         "certifications": [],
+        "customSections": [],
         "rawText": text
     }
-    
-    current_sec = ""
+
+    current_sec = None
     buf = []
-    
+
     for line in lines:
         s = line.strip()
         if not s:
             continue
         if s.startswith('# '):
             data["fullName"] = s[2:].strip()
-        elif s.startswith('## '):
-            sec_title = s[3:].strip().lower()
-            if 'summary' in sec_title or 'profile' in sec_title:
-                current_sec = 'summary'
-            elif 'skill' in sec_title:
-                current_sec = 'skills'
-            elif 'experience' in sec_title or 'work' in sec_title or 'employment' in sec_title:
-                current_sec = 'experience'
-            elif 'education' in sec_title:
-                current_sec = 'education'
-            elif 'project' in sec_title:
-                current_sec = 'projects'
-            elif 'certif' in sec_title or 'license' in sec_title:
-                current_sec = 'certifications'
-            else:
-                current_sec = sec_title
-        elif current_sec == 'summary':
+            continue
+        if s.startswith('## '):
+            sec_title = s[3:].strip()
+            key = _section_key(sec_title)
+            current_sec = key
+            if key == 'custom':
+                data["customSections"].append({"title": sec_title, "lines": []})
+            continue
+        if current_sec is None:
+            continue
+        if current_sec == 'summary':
             data["summary"] = (data["summary"] + " " + s).strip()
         elif current_sec == 'skills':
             clean_s = s.lstrip('-•* ').strip()
             data["skills"] = (data["skills"] + ", " + clean_s if data["skills"] else clean_s).strip(', ')
-        elif current_sec in ('experience', 'projects', 'education', 'certifications'):
+        elif current_sec == 'custom':
+            if data["customSections"]:
+                data["customSections"][-1]["lines"].append(s.lstrip('-•* ').strip())
+        else:
             buf.append((current_sec, s))
 
     # Entry parsing for buffer lines
-    if buf:
-        cur_entry = None
-        for sec, b in buf:
-            if sec == 'experience':
-                if b.startswith('### '):
-                    if cur_entry:
-                        data["experience"].append(cur_entry)
-                    header = b[4:].strip()
-                    dates = ""
-                    if '(' in header and ')' in header:
-                        parts = header.rsplit('(', 1)
-                        header = parts[0].strip()
-                        dates = parts[1].rstrip(')').strip()
-                    title_parts = header.split(' - ') if ' - ' in header else header.split(' | ')
-                    role = title_parts[0].strip()
-                    company = title_parts[1].strip() if len(title_parts) > 1 else ""
-                    cur_entry = {"role": role, "company": company, "dates": dates, "bullets": []}
-                elif b.startswith(('- ', '• ', '* ')):
-                    bullet = b.lstrip('-•* ').strip()
-                    if cur_entry:
-                        cur_entry["bullets"].append(bullet)
-                    else:
-                        cur_entry = {"role": "Experience", "company": "", "dates": "", "bullets": [bullet]}
-                elif cur_entry and not cur_entry["bullets"]:
-                    cur_entry["company"] = (cur_entry["company"] + " " + b).strip()
-            elif sec == 'education':
-                if b.startswith(('### ', '- ', '• ', '* ')):
-                    clean_b = b.lstrip('#-•* ').strip()
+    cur_entry = None
+    for sec, b in buf:
+        if sec == 'experience':
+            if b.startswith('### '):
+                if cur_entry:
+                    data["experience"].append(cur_entry)
+                header = b[4:].strip()
+                dates = ""
+                if '(' in header and ')' in header:
+                    parts = header.rsplit('(', 1)
+                    header = parts[0].strip()
+                    dates = parts[1].rstrip(')').strip()
+                title_parts = header.split(' - ') if ' - ' in header else header.split(' | ')
+                role = title_parts[0].strip()
+                company = title_parts[1].strip() if len(title_parts) > 1 else ""
+                cur_entry = {"role": role, "company": company, "dates": dates, "bullets": []}
+            elif b.startswith(('- ', '• ', '* ')):
+                bullet = b.lstrip('-•* ').strip()
+                if cur_entry:
+                    cur_entry["bullets"].append(bullet)
+                else:
+                    cur_entry = {"role": "Experience", "company": "", "dates": "", "bullets": [bullet]}
+            elif cur_entry:
+                if not cur_entry["bullets"] and not cur_entry["company"]:
+                    cur_entry["company"] = b
+                else:
+                    cur_entry["bullets"].append(b)
+            else:
+                cur_entry = {"role": "Experience", "company": "", "dates": "", "bullets": [b]}
+        elif sec == 'education':
+            if b.startswith(('### ', '- ', '• ', '* ')):
+                clean_b = b.lstrip('#-•* ').strip()
+                data["education"].append({"school": clean_b, "degree": "", "dates": ""})
+            elif not data["education"]:
+                data["education"].append({"school": b, "degree": "", "dates": ""})
+            else:
+                data["education"][-1]["school"] = (data["education"][-1]["school"] + " " + b).strip()
+        elif sec == 'education_certs':
+            if b.startswith(('### ', '- ', '• ', '* ')):
+                clean_b = b.lstrip('#-•* ').strip()
+                if _looks_like_cert(clean_b):
+                    data["certifications"].append({"name": clean_b, "issuer": "", "dates": ""})
+                else:
                     data["education"].append({"school": clean_b, "degree": "", "dates": ""})
-            elif sec == 'projects':
-                if b.startswith('### '):
-                    p_name = b[4:].strip()
-                    data["projects"].append({"name": p_name, "desc": "", "tech": ""})
-                elif b.startswith(('- ', '• ', '* ')) and data["projects"]:
-                    data["projects"][-1]["desc"] = (data["projects"][-1]["desc"] + " " + b.lstrip('-•* ').strip()).strip()
-            elif sec == 'certifications':
-                if b.startswith(('### ', '- ', '• ', '* ')):
-                    data["certifications"].append({"name": b.lstrip('#-•* ').strip(), "issuer": "", "dates": ""})
+            elif not data["education"] and not data["certifications"]:
+                data["education"].append({"school": b, "degree": "", "dates": ""})
+            else:
+                if _looks_like_cert(b) and data["certifications"]:
+                    data["certifications"][-1]["name"] = (data["certifications"][-1]["name"] + " " + b).strip()
+                elif data["education"]:
+                    data["education"][-1]["school"] = (data["education"][-1]["school"] + " " + b).strip()
+                else:
+                    data["education"].append({"school": b, "degree": "", "dates": ""})
+        elif sec == 'projects':
+            if b.startswith('### '):
+                p_name = b[4:].strip()
+                data["projects"].append({"name": p_name, "desc": "", "tech": ""})
+            elif b.startswith(('- ', '• ', '* ')) and data["projects"]:
+                data["projects"][-1]["desc"] = (data["projects"][-1]["desc"] + " " + b.lstrip('-•* ').strip()).strip()
+            elif data["projects"]:
+                data["projects"][-1]["desc"] = (data["projects"][-1]["desc"] + " " + b).strip()
+            else:
+                data["projects"].append({"name": b, "desc": "", "tech": ""})
+        elif sec == 'certifications':
+            if b.startswith(('### ', '- ', '• ', '* ')):
+                clean_b = b.lstrip('#-•* ').strip()
+                data["certifications"].append({"name": clean_b, "issuer": "", "dates": ""})
+            elif not data["certifications"]:
+                data["certifications"].append({"name": b, "issuer": "", "dates": ""})
+            else:
+                data["certifications"][-1]["name"] = (data["certifications"][-1]["name"] + " " + b).strip()
 
-        if cur_entry and cur_entry not in data["experience"]:
-            data["experience"].append(cur_entry)
-            
+    if cur_entry and cur_entry not in data["experience"]:
+        data["experience"].append(cur_entry)
+
     return data
+
+
+def merge_missing_sections(data, raw_text):
+    """Recover missing structured fields section-by-section from rawText.
+
+    A single missing field must not cause unrelated sections to disappear,
+    and must not trigger the whole-resume raw-line fallback.
+    """
+    if not data:
+        return data
+    d = dict(data)
+    source_text = raw_text or d.get("rawText") or ""
+    if not source_text:
+        return d
+    parsed = parse_markdown_to_data(source_text)
+    for key in ("summary", "skills", "experience", "education", "projects", "certifications", "fullName", "customSections"):
+        if not d.get(key) and parsed.get(key):
+            d[key] = parsed[key]
+    return d
 
 
 def esc(text):
@@ -111,6 +204,24 @@ def esc(text):
     if not text:
         return ""
     return html.escape(str(text))
+
+
+@export_bp.route("/api/export/parse", methods=["POST"])
+@login_required
+def parse_resume_text():
+    """Return the canonical structured resume parsed from raw markdown/text.
+
+    Used by saveOptimizedResumeVersion() so an AI-enhanced resume is persisted
+    as structured data (experience/education/skills/projects/certifications),
+    NOT just {fullName, summary, rawText}.
+    """
+    req_json = request.get_json() or {}
+    text = req_json.get("text", "") or req_json.get("resume", "")
+    if not text or not str(text).strip():
+        return jsonify({"error": "No text provided to parse"}), 400
+    parsed = parse_markdown_to_data(str(text))
+    parsed["rawText"] = str(text)
+    return jsonify({"data": parsed})
 
 
 @export_bp.route("/api/export/pdf", methods=["POST"])
@@ -140,6 +251,8 @@ def export_pdf():
         return jsonify({"error": "No resume data or text provided for PDF export"}), 400
 
     data = raw_data or {}
+    fallback_text = data.get("rawText") or raw_text
+    data = merge_missing_sections(data, fallback_text)
     full_name = data.get("fullName") or data.get("name") or "Professional Resume"
     email = data.get("email", "")
     phone = data.get("phone", "")
@@ -150,7 +263,7 @@ def export_pdf():
     education = data.get("education", [])
     projects = data.get("projects", [])
     certifications = data.get("certifications", [])
-    fallback_text = data.get("rawText") or raw_text
+    custom_sections = data.get("customSections", [])
 
     # Theme colors
     color_palette = {
@@ -356,8 +469,20 @@ def export_pdf():
             elif isinstance(cert, str) and cert.strip():
                 story.append(Paragraph(f"• {esc(cert)}", bullet_style))
 
-    # Fallback to lines parsing if structured data was minimal and fallback_text exists
-    if fallback_text and not experience and not summary:
+    # 8. Custom sections parsed from markdown (headings not otherwise classified)
+    if custom_sections:
+        for section in custom_sections:
+            if isinstance(section, dict):
+                title = section.get("title") or "Additional"
+                lines = section.get("lines") or []
+                story.append(Paragraph(esc(title).upper(), sec_heading_style))
+                for cl in lines:
+                    if cl and str(cl).strip():
+                        story.append(Paragraph(f"• {esc(cl)}", bullet_style))
+
+    # Fallback to lines parsing only when NO structured sections were populated.
+    # Having a summary alone must not silently drop the rest of the resume.
+    if fallback_text and not experience and not education and not projects and not certifications:
         for line in fallback_text.split('\n'):
             s = line.strip()
             if not s:
@@ -419,8 +544,8 @@ def export_docx():
     font.size = Pt(10.5)
     font.color.rgb = RGBColor(15, 23, 42)
 
-    if raw_data and (raw_data.get("fullName") or raw_data.get("experience") or raw_data.get("summary")):
-        data = raw_data
+    if raw_data and (raw_data.get("fullName") or raw_data.get("experience") or raw_data.get("summary") or raw_data.get("rawText")):
+        data = merge_missing_sections(raw_data, raw_data.get("rawText") or raw_text)
         full_name = data.get("fullName") or data.get("name") or "Professional Resume"
         email = data.get("email", "")
         phone = data.get("phone", "")
@@ -431,6 +556,7 @@ def export_docx():
         education = data.get("education", [])
         projects = data.get("projects", [])
         certifications = data.get("certifications", [])
+        custom_sections = data.get("customSections", [])
 
         # Header
         p = doc.add_paragraph()
@@ -585,6 +711,25 @@ def export_docx():
                     p_b = doc.add_paragraph(style='List Bullet')
                     p_b.add_run(cert)
                     p_b.paragraph_format.space_after = Pt(2)
+
+        # Custom sections
+        if custom_sections:
+            for section in custom_sections:
+                if isinstance(section, dict):
+                    title = section.get("title") or "Additional"
+                    lines = section.get("lines") or []
+                    p_h = doc.add_paragraph()
+                    r_h = p_h.add_run(title.upper())
+                    r_h.font.size = Pt(12)
+                    r_h.font.bold = True
+                    r_h.font.color.rgb = RGBColor(30, 41, 59)
+                    p_h.paragraph_format.space_before = Pt(8)
+                    p_h.paragraph_format.space_after = Pt(3)
+                    for cl in lines:
+                        if cl and str(cl).strip():
+                            p_b = doc.add_paragraph(style='List Bullet')
+                            p_b.add_run(str(cl))
+                            p_b.paragraph_format.space_after = Pt(2)
 
     else:
         # Fallback to lines parsing

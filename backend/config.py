@@ -4,6 +4,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _is_vercel():
+    return bool(os.environ.get("VERCEL"))
+
+
 def configure_app(app):
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-local-development-secret")
 
@@ -27,6 +31,28 @@ def configure_app(app):
     app.config["SESSION_COOKIE_NAME"] = "session"
     app.config["PERMANENT_SESSION_LIFETIME"] = 86400
     app.config["MAX_CONTENT_LENGTH"] = 11 * 1024 * 1024
+
+    # Production DB validation (safe: never logs the connection string/credentials).
+    if _is_vercel():
+        pg_url = os.environ.get("SUPABASE_DB_URL") or os.environ.get("DATABASE_URL")
+        db_env = "SUPABASE_DB_URL" if os.environ.get("SUPABASE_DB_URL") else "DATABASE_URL"
+        if not pg_url:
+            app.logger.error(
+                "STARTUP BLOCKER: Neither SUPABASE_DB_URL nor DATABASE_URL is set. "
+                "Vercel production REQUIRES PostgreSQL. SQLite is forbidden. "
+                "Set SUPABASE_DB_URL in Vercel project env and redeploy."
+            )
+        else:
+            scheme = pg_url.split("://", 1)[0] if "://" in pg_url else pg_url[:8]
+            # Host/project identifier only — never credentials or the full URL.
+            from urllib.parse import urlparse
+            parsed = urlparse(pg_url)
+            host = parsed.hostname
+            project = (parsed.path or "").lstrip("/").split("/")[0] or None
+            app.logger.info(
+                f"Database env var present ({db_env}, scheme={scheme}), "
+                f"host={host}, project={project}"
+            )
 
     groq_key = os.environ.get("GROQ_API_KEY", "")
     if groq_key:

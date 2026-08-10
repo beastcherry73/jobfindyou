@@ -2572,8 +2572,15 @@
       options.credentials = 'same-origin';
       const res = await withTimeout(fetch(url, options), 60000);
       if (!res.ok) {
-        const err = await res.json().catch(function() { return {error: res.statusText}; });
-        throw new Error(err.error || 'Request failed');
+        let payload = null;
+        try {
+          payload = await res.clone().json();
+        } catch (e) { /* not json */ }
+        const message = (payload && payload.error) || ('HTTP ' + res.status);
+        const err = new Error(message);
+        err.status = res.status;
+        err.payload = payload;
+        throw err;
       }
       return res.json();
     }
@@ -2973,18 +2980,92 @@
       renderHistory(query);
     }
 
-    async function loadHistory() {
-      try {
-        const [analyses, resumes] = await Promise.all([
-          apiFetch('/api/analyses'),
-          apiFetch('/api/resumes')
-        ]);
-        state.analyses = analyses || [];
-        state.resumes = resumes || [];
-        renderHistory();
-      } catch (err) {
-        console.error('History load error:', err);
+    function renderHistoryError(kind) {
+      var body = document.getElementById('historyBody');
+      var empty = document.getElementById('historyEmpty');
+      var countEl = document.getElementById('historyCount');
+      body.innerHTML = '';
+      if (countEl) countEl.textContent = '';
+      empty.style.display = 'flex';
+      var title = document.querySelector('#historyEmpty .ws-empty-title');
+      var desc = document.querySelector('#historyEmpty .ws-empty-desc');
+      var icon = document.querySelector('#historyEmpty .ws-empty-icon');
+      if (!title || !desc) return;
+      if (kind === 'no-analyses') {
+        title.textContent = 'No analyses yet';
+        desc.textContent = 'Upload a resume to see your Previous Analyses here';
+      } else if (kind === 'no-resumes') {
+        title.textContent = 'No saved resumes';
+        desc.textContent = 'Your resume drafts will appear here';
+      } else if (kind === 'auth') {
+        title.textContent = 'Session expired';
+        desc.textContent = 'Please log in again to view your analyses.';
+        icon.textContent = '🔒';
+      } else if (kind === 'analyses-error') {
+        title.textContent = 'Could not load analyses';
+        desc.textContent = 'There was a server error loading your analyses. Try refreshing the page.';
+        icon.textContent = '⚠️';
+      } else if (kind === 'resumes-error') {
+        title.textContent = 'Could not load resumes';
+        desc.textContent = 'There was a server error loading your saved resumes. Try refreshing the page.';
+        icon.textContent = '⚠️';
+      } else {
+        title.textContent = 'Could not load history';
+        desc.textContent = 'There was an error. Please try again.';
+        icon.textContent = '⚠️';
       }
+    }
+
+    async function loadHistory() {
+      const countEl = document.getElementById('historyCount');
+      if (countEl) countEl.textContent = 'Loading…';
+      var authFailure = null;
+
+      function isAuthErr(e) {
+        return e && (e.status === 401 || e.status === 403 || /log in|session/i.test(e.message || ''));
+      }
+
+      var analysesRes = null;
+      var resumesRes = null;
+
+      try {
+        analysesRes = await apiFetch('/api/analyses');
+      } catch (e) {
+        if (isAuthErr(e)) authFailure = e;
+        else analysesRes = { __error: e };
+      }
+
+      try {
+        resumesRes = await apiFetch('/api/resumes');
+      } catch (e) {
+        if (isAuthErr(e) && !authFailure) authFailure = e;
+        else resumesRes = { __error: e };
+      }
+
+      if (authFailure) {
+        var removedFailed = false;
+        try {
+          await apiFetch('/api/user/profile');
+        } catch (e2) {
+          // Session is genuinely gone — mark for redirect
+        }
+        window.location.href = '/auth/login?next=/workspace';
+        return;
+      }
+
+      if (analysesRes && analysesRes.__error) {
+        renderHistoryError('analyses-error');
+        return;
+      }
+      if (resumesRes && resumesRes.__error) {
+        renderHistoryError('resumes-error');
+        return;
+      }
+
+      state.analyses = Array.isArray(analysesRes) ? analysesRes : [];
+      state.resumes = Array.isArray(resumesRes) ? resumesRes : [];
+      renderHistory();
+      if (state.analyses.length === 0 && state.resumes.length === 0) renderHistoryError('no-analyses');
     }
 
     var deleteTarget = null;
@@ -4763,14 +4844,40 @@
       
       showToast('Saving version...', 'info');
       try {
+        // Parse AI markdown output into the canonical structured resume so
+        // experience/education/skills/projects/certifications survive, not
+        // just {fullName, summary, rawText}.
+        let structured = null;
+        try {
+          const parsed = await apiFetch('/api/export/parse', { method: 'POST', body: { text: text } });
+          structured = (parsed && parsed.data) ? parsed.data : null;
+        } catch (e) {
+          structured = null;
+        }
+
+        var data = {
+          fullName: 'Candidate Resume',
+          summary: text.slice(0, 300),
+          rawText: text
+        };
+        if (structured) {
+          data = {
+            fullName: structured.fullName || 'Candidate Resume',
+            summary: structured.summary || text.slice(0, 300),
+            skills: structured.skills || '',
+            experience: structured.experience || [],
+            education: structured.education || [],
+            projects: structured.projects || [],
+            certifications: structured.certifications || [],
+            customSections: structured.customSections || [],
+            rawText: text
+          };
+        }
+
         const payload = {
           title: title,
           template: currentEnhanceTemplate,
-          data: {
-            fullName: 'Candidate Resume',
-            summary: text.slice(0, 300),
-            rawText: text
-          }
+          data: data
         };
         const res = await apiFetch('/api/resumes', { method: 'POST', body: payload });
         

@@ -155,7 +155,11 @@ def analyze():
                     data_payload = json.dumps({
                         "fullName": file.filename.rsplit('.', 1)[0],
                         "summary": result.get("summary", ""),
-                        "skills": ", ".join(result.get("suggested_keywords", [])),
+                        "skills": result.get("skills") or ", ".join(result.get("suggested_keywords", [])),
+                        "experience": result.get("experience", []),
+                        "education": result.get("education", []),
+                        "projects": result.get("projects", []),
+                        "certifications": result.get("certifications", []),
                         "rawText": resume_text
                     })
 
@@ -177,8 +181,16 @@ def analyze():
                         result["resume_id"] = res_cur.lastrowid
                     db.commit()
             except Exception as db_err:
+                # A database failure must NEVER look like a successful save.
                 import logging
-                logging.getLogger(__name__).error(f"Failed to save analysis to DB: {db_err}")
+                logging.getLogger(__name__).error(
+                    f"Failed to save analysis to DB for user {user_id}: {db_err}",
+                    exc_info=True
+                )
+                return jsonify({
+                    "error": "The analysis completed but could not be saved. Your report may not appear in Previous Analyses. Please try again.",
+                    "saved": False
+                }), 500
 
         return jsonify(result)
 
@@ -273,6 +285,11 @@ def claim_analysis():
                 "fullName": filename.rsplit('.', 1)[0],
                 "summary": analysis_data.get("summary", ""),
                 "skills": ", ".join(analysis_data.get("suggested_keywords", [])),
+                "experience": analysis_data.get("experience", []),
+                "education": analysis_data.get("education", []),
+                "projects": analysis_data.get("projects", []),
+                "certifications": analysis_data.get("certifications", []),
+                "customSections": analysis_data.get("customSections", []),
                 "rawText": resume_text
             })
 

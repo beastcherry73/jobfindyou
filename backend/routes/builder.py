@@ -72,7 +72,21 @@ def handle_resumes():
                             "created_at": a["created_at"]
                         }
                         clean_name = fname.rsplit('.', 1)[0] if '.' in fname else fname
-                        data_payload = json.dumps({"fullName": clean_name, "summary": a["summary"]})
+                        full_json = {}
+                        try:
+                            full_json = json.loads(a["full_json"]) if a.get("full_json") else {}
+                        except Exception:
+                            full_json = {}
+                        data_payload = json.dumps({
+                            "fullName": clean_name,
+                            "summary": full_json.get("summary") or a["summary"],
+                            "skills": full_json.get("skills") or ", ".join(full_json.get("suggested_keywords", [])),
+                            "experience": full_json.get("experience", []),
+                            "education": full_json.get("education", []),
+                            "projects": full_json.get("projects", []),
+                            "certifications": full_json.get("certifications", []),
+                            "rawText": ""
+                        })
                         db.execute(
                             """INSERT INTO resumes (user_id, title, filename, template, overall_score, analysis_json, data_json)
                                VALUES (?, ?, ?, 'modern', ?, ?, ?)""",
