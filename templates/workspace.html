@@ -2204,8 +2204,8 @@
       </div>
 
       <div id="uploadComplete" style="display:none;margin-top:8px;">
-        <div style="font-size:40px;margin-bottom:8px;">🎉</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Analysis Complete!</div>
+        <div style="font-size:40px;margin-bottom:8px;" id="uploadCompleteIcon">🎉</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px;" id="uploadCompleteHeader">Analysis Complete!</div>
         <div style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:16px;" id="uploadResultScore"></div>
         <div class="ws-flex-center" style="gap:8px;">
           <button class="ws-btn ws-btn-primary" onclick="closeUploadModal(); loadDashboard();">View Dashboard</button>
@@ -2702,8 +2702,12 @@
         await new Promise(function(r) { setTimeout(r, 300); });
 
         // Show complete state
+        stopUploadElapsed();
         document.getElementById('uploadIcon').textContent = '🎉';
         document.getElementById('uploadTitle').textContent = 'Analysis Complete!';
+        document.getElementById('uploadCompleteIcon').textContent = '🎉';
+        document.getElementById('uploadCompleteHeader').textContent = 'Analysis Complete!';
+        document.getElementById('uploadCompleteHeader').style.color = 'var(--ws-text)';
         document.getElementById('uploadResultScore').textContent = 'ATS Score: ' + result.overall_score + '%';
         
         const viewBtn = document.getElementById('uploadComplete').querySelector('button');
@@ -2720,11 +2724,17 @@
         loadDashboard();
         loadHistory();
       } catch (err) {
+        stopUploadElapsed();
         document.getElementById('uploadIcon').textContent = '⚠️';
         document.getElementById('uploadTitle').textContent = 'Analysis Failed';
         document.getElementById('uploadFilename').textContent = err.message || 'Upload failed';
+        document.getElementById('uploadCompleteIcon').textContent = '⚠️';
+        document.getElementById('uploadCompleteHeader').textContent = 'Analysis Failed';
+        document.getElementById('uploadCompleteHeader').style.color = 'var(--ws-bad)';
+        document.getElementById('uploadResultScore').textContent = '';
         document.getElementById('uploadComplete').style.display = 'block';
         document.getElementById('uploadComplete').querySelector('button').textContent = 'Try Again';
+        document.getElementById('uploadComplete').querySelector('button').onclick = closeUploadModal;
         document.getElementById('uploadSteps').style.display = 'none';
       }
     }
@@ -4338,8 +4348,12 @@
         await new Promise(function(r) { setTimeout(r, 300); });
 
         // Show complete state
+        stopUploadElapsed();
         document.getElementById('uploadIcon').textContent = '🎉';
         document.getElementById('uploadTitle').textContent = 'Analysis Complete!';
+        document.getElementById('uploadCompleteIcon').textContent = '🎉';
+        document.getElementById('uploadCompleteHeader').textContent = 'Analysis Complete!';
+        document.getElementById('uploadCompleteHeader').style.color = 'var(--ws-text)';
         document.getElementById('uploadResultScore').textContent = 'ATS Score: ' + result.overall_score + '%';
         
         // Update view button to show report
@@ -4368,9 +4382,14 @@
           document.getElementById('uploadModal').style.display = 'none';
           return;
         }
+        stopUploadElapsed();
         document.getElementById('uploadIcon').textContent = '⚠️';
         document.getElementById('uploadTitle').textContent = 'Analysis Failed';
         document.getElementById('uploadFilename').textContent = err.message || 'Upload failed';
+        document.getElementById('uploadCompleteIcon').textContent = '⚠️';
+        document.getElementById('uploadCompleteHeader').textContent = 'Analysis Failed';
+        document.getElementById('uploadCompleteHeader').style.color = 'var(--ws-bad)';
+        document.getElementById('uploadResultScore').textContent = '';
         document.getElementById('uploadComplete').style.display = 'block';
         document.getElementById('uploadComplete').querySelector('button').textContent = 'Try Again';
         document.getElementById('uploadComplete').querySelector('button').onclick = closeUploadModal;
