@@ -494,6 +494,22 @@ def get_db():
     return _connect_sqlite()
 
 
+def _db_like_env_keys():
+    """Safely report which environment keys look DB-related.
+
+    Returns a list of {name, present, length} ONLY — never values. Used to spot
+    a misnamed/mis-scoped Database URL var (e.g. a differing key name or a key
+    holding an empty string) without leaking the variable's value.
+    """
+    keys = []
+    for name in sorted(os.environ):
+        upper = name.upper()
+        if "URL" in upper and ("DATABASE" in upper or "SUPABASE" in upper or "POSTGRES" in upper or upper.endswith("_URL")):
+            value = os.environ.get(name) or ""
+            keys.append({"name": name, "present": bool(value), "length": len(value)})
+    return keys
+
+
 def db_diagnostic():
     """Safe diagnostic — never exposes secrets.
 
@@ -511,6 +527,9 @@ def db_diagnostic():
         "project": None,
         "mode": "production" if is_vercel() else "development",
         "config_ok": True,
+        "vercel_env": os.environ.get("VERCEL_ENV"),
+        "vercel_git_commit_sha": os.environ.get("VERCEL_GIT_COMMIT_SHA"),
+        "db_like_env_keys": _db_like_env_keys(),
     }
 
     if pg_url:
