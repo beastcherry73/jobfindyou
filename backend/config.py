@@ -45,8 +45,8 @@ def configure_app(app):
         else:
             scheme = pg_url.split("://", 1)[0] if "://" in pg_url else pg_url[:8]
             # Host/project identifier only — never credentials or the full URL.
-            from urllib.parse import urlparse
-            parsed = urlparse(pg_url)
+            from backend.database import safe_parse_db_url
+            parsed = safe_parse_db_url(pg_url)
             host = parsed.hostname
             project = (parsed.path or "").lstrip("/").split("/")[0] or None
             app.logger.info(

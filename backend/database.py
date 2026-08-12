@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import sqlite3
+import re
 from collections.abc import Mapping
 from urllib.parse import urlparse
 from flask import current_app, g
@@ -13,6 +14,20 @@ _db_initialized = False
 
 def is_vercel():
     return bool(os.environ.get("VERCEL"))
+
+
+def safe_parse_db_url(url):
+    """Parse a PostgreSQL connection URL without crashing on bracket-wrapped hosts.
+
+    Python 3.11.4+ (Vercel runs 3.12) rejects a bracketed hostname that is not
+    an IPv4/IPv6 literal, e.g. postgresql://u:p@[db.example.com]:5432/db, with
+    ValueError from urllib.parse. Strip [ ] around non-IP hosts and retry.
+    """
+    try:
+        return urlparse(url)
+    except ValueError:
+        cleaned = re.sub(r"\[([^\[\]]+)\]", r"\1", url)
+        return urlparse(cleaned)
 
 
 def get_required_db_url():
@@ -377,7 +392,7 @@ def _connect_postgres(pg_url):
     import time
     import pg8000.dbapi
 
-    parsed = urlparse(pg_url)
+    parsed = safe_parse_db_url(pg_url)
 
     last_err = None
     for attempt in range(3):
@@ -534,7 +549,7 @@ def db_diagnostic():
 
     if pg_url:
         try:
-            parsed = urlparse(pg_url)
+            parsed = safe_parse_db_url(pg_url)
             info["scheme"] = parsed.scheme or "postgresql"
             info["host"] = parsed.hostname
             info["project"] = (parsed.path or "").lstrip("/").split("/")[0] or None
