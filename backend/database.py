@@ -209,13 +209,11 @@ class PgCursor:
 
 
 class PgConnection:
-    def __init__(self, conn):
+    def __init__(self, conn, pg_url=None):
         self.conn = conn
+        self._pg_url = pg_url
 
-    def execute(self, sql, parameters=None):
-        if parameters is None:
-            parameters = ()
-
+    def _run(self, sql, parameters):
         pg_sql = sql.replace("?", "%s")
         pg_sql = pg_sql.replace(
             "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -248,6 +246,21 @@ class PgConnection:
 
         return PgCursor(rows, cols, lastrowid=lastrowid, rowcount=cur.rowcount)
 
+    def execute(self, sql, parameters=None):
+        if parameters is None:
+            parameters = ()
+        try:
+            return self._run(sql, parameters)
+        except Exception as e:
+            if not _is_pg_conn_failure(e):
+                raise
+            # The shared Supabase connection went stale (idle recycling or the
+            # serverless instance was frozen). Drop it, open a fresh one once,
+            # and retry the identical statement so the request still succeeds.
+            attempt = _pg_connect_reliable(self._pg_url)
+            self.conn = attempt.conn
+            return self._run(sql, parameters)
+
     def commit(self):
         # A real commit failure must NOT be swallowed — callers treat an
         # exception from commit() as "save failed".
@@ -260,6 +273,13 @@ class PgConnection:
             pass
 
     def close(self):
+        # The PostgreSQL wrapper is a thin handle over the shared connection
+        # (module-level cache). Closing the handle must NOT tear down the
+        # underlying socket — that socket is reused across requests to avoid
+        # paying a full TCP+TLS round trip to Supabase on every call.
+        pass
+
+    def _close_raw(self):
         try:
             self.conn.close()
         except Exception:
@@ -394,7 +414,12 @@ def cleanup_expired_oauth_states():
         pass
 
 
-def _connect_postgres(pg_url):
+_PG_SHARED_WRAPPER = None
+_PG_SHARED_URL = None
+
+
+def _pg_connect_reliable(pg_url):
+    """Open a single pg8000 connection (3 attempts). Returns the PgConnection."""
     import time
     import pg8000.dbapi
 
@@ -403,7 +428,7 @@ def _connect_postgres(pg_url):
     last_err = None
     for attempt in range(3):
         try:
-            conn = pg8000.dbapi.connect(
+            raw = pg8000.dbapi.connect(
                 user=parsed.username or "postgres",
                 password=parsed.password or "",
                 host=parsed.hostname or "localhost",
@@ -412,7 +437,7 @@ def _connect_postgres(pg_url):
                 ssl_context=True,
                 timeout=10,
             )
-            return PgConnection(conn)
+            return PgConnection(raw, pg_url=pg_url)
         except Exception as e:
             last_err = e
             logger.warning(
@@ -426,6 +451,64 @@ def _connect_postgres(pg_url):
 
     raise RuntimeError(
         f"Database connection to Supabase PostgreSQL failed after 3 attempts: {last_err}"
+    )
+
+
+def _connect_postgres(pg_url):
+    """Return a PostgreSQL connection, REUSING one connection across requests.
+
+    On Vercel a module global survives across warm serverless invocations, so a
+    single connection (and its established TCP/TLS session to Supabase) is shared
+    by every request handled by the same instance. Without this, each API call
+    pays a full connection handshake (measured at 3-6s/request in production),
+    which is what made "Previous Analyses" appear empty/broken after a refresh.
+    """
+    global _PG_SHARED_WRAPPER, _PG_SHARED_URL
+
+    if _PG_SHARED_WRAPPER is not None:
+        if _PG_SHARED_URL == pg_url:
+            return _PG_SHARED_WRAPPER
+        # Config changed (e.g. test switching env between runs) — rebuild.
+        try:
+            _PG_SHARED_WRAPPER._close_raw()
+        except Exception:
+            pass
+        _PG_SHARED_WRAPPER = None
+
+    _PG_SHARED_WRAPPER = _pg_connect_reliable(pg_url)
+    _PG_SHARED_URL = pg_url
+    return _PG_SHARED_WRAPPER
+
+
+def _is_pg_conn_failure(e):
+    """True only for connection-level failures (never for SQL errors).
+
+    SQL-level errors (syntax, missing column, datatype_mismatch, etc.) must
+    propagate untouched — retrying those would double-execute and hide bugs.
+    """
+    try:
+        import pg8000.exceptions as pg_exceptions
+
+        if isinstance(e, pg_exceptions.InterfaceError):
+            return True
+        if isinstance(e, pg_exceptions.DatabaseError):
+            st = getattr(e, "sqlstate", None) or ""
+            if st.startswith("08"):
+                return True
+    except Exception:
+        pass
+    msg = str(e).lower()
+    return any(
+        k in msg
+        for k in (
+            "socket",
+            "connection is closed",
+            "connection lost",
+            "broken pipe",
+            "server closed",
+            "connection failed",
+            "connection refused",
+        )
     )
 
 
