@@ -262,6 +262,13 @@ class PgConnection:
             return self._run(sql, parameters)
         except Exception as e:
             if not _is_pg_conn_failure(e):
+                # A failed statement may abort the current transaction on the
+                # SHARED connection. Roll it back so the next request (or call)
+                # doesn't hit "current transaction is aborted" (25P02).
+                try:
+                    self.conn.rollback()
+                except Exception:
+                    pass
                 raise
             # The shared Supabase connection went stale (idle recycling or the
             # serverless instance was frozen). Drop it, open a fresh one once,
@@ -473,6 +480,7 @@ def _pg_connect_reliable(pg_url):
                 database=parsed.path.lstrip("/") or "postgres",
                 ssl_context=True,
                 timeout=10,
+                autocommit=True,
             )
             return PgConnection(raw, pg_url=pg_url)
         except Exception as e:
