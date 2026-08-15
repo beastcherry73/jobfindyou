@@ -1,8 +1,10 @@
 import os
 import json
 import logging
-import sqlite3
 import re
+import sqlite3
+import threading
+import time
 from collections.abc import Mapping
 from urllib.parse import urlparse
 from flask import current_app, g
@@ -221,6 +223,10 @@ class PgConnection:
     def __init__(self, conn, pg_url=None):
         self.conn = conn
         self._pg_url = pg_url
+        # Guards the SHARED socket so requests on the same warm instance can
+        # never interleave statements/cursors (defense in depth; Vercel Python
+        # normally serves one request at a time per instance).
+        self._lock = threading.RLock()
 
     def _table_has_id(self, sql):
         import re
@@ -269,25 +275,28 @@ class PgConnection:
     def execute(self, sql, parameters=None):
         if parameters is None:
             parameters = ()
-        try:
-            return self._run(sql, parameters)
-        except Exception as e:
-            if _is_pg_recoverable(e):
-                # Recoverable: either a stale shared connection (idle recycling,
-                # frozen serverless instance) or an aborted transaction left by
-                # an earlier failed statement on this SHARED connection. Roll
-                # back (or reconnect) and retry exactly once; statement-level
-                # atomicity guarantees the retry cannot double-effect.
-                self._safe_rollback()
-                if _is_pg_conn_failure(e):
-                    attempt = _pg_connect_reliable(self._pg_url)
-                    self.conn = attempt.conn
+        with self._lock:
+            try:
                 return self._run(sql, parameters)
-            # Non-recoverable SQL error (syntax, missing column, type mismatch,
-            # etc.). Clear any aborted-txn state so later requests on this
-            # shared connection still work, then surface the original error.
-            self._safe_rollback()
-            raise
+            except Exception as e:
+                if _is_pg_recoverable(e):
+                    # Recoverable: a stale shared connection (idle-dropped by the
+                    # Supabase pooler, frozen serverless instance) or an aborted
+                    # transaction left by an earlier failed statement on this
+                    # SHARED connection. Roll back (or reconnect) and retry
+                    # exactly once; statement-level atomicity guarantees the
+                    # retry cannot double-effect.
+                    self._safe_rollback()
+                    if _is_pg_conn_failure(e):
+                        attempt = _pg_connect_reliable(self._pg_url)
+                        self.conn = attempt.conn
+                    return self._run(sql, parameters)
+                # Non-recoverable SQL error (syntax, missing column, type
+                # mismatch, etc.). Clear any aborted-txn state so later requests
+                # on this shared connection still work, then surface the
+                # original error.
+                self._safe_rollback()
+                raise
 
     def _safe_rollback(self):
         try:
@@ -490,6 +499,14 @@ _PG_SHARED_URL = None
 # trip on every cold Vercel instance.
 _PK_NOT_ID_TABLES = frozenset({"app_meta", "rate_limits"})
 
+# Maximum trusted lifetime for the reused Supabase connection. Supabase's
+# connection pooler drops idle client sessions, so a socket older than this is
+# rotated proactively in _connect_postgres (rather than waiting for the
+# reconnect-on-error path). Reconnect cost is paid by at most one request per
+# instance per TTL interval.
+_PG_SHARED_CONN_TTL = 180.0
+_PG_SHARED_CREATED_AT = 0.0
+
 
 def _pg_connect_reliable(pg_url):
     """Open a single pg8000 connection (3 attempts). Returns the PgConnection."""
@@ -536,20 +553,28 @@ def _connect_postgres(pg_url):
     pays a full connection handshake (measured at 3-6s/request in production),
     which is what made "Previous Analyses" appear empty/broken after a refresh.
     """
-    global _PG_SHARED_WRAPPER, _PG_SHARED_URL
+    global _PG_SHARED_WRAPPER, _PG_SHARED_URL, _PG_SHARED_CREATED_AT
 
     if _PG_SHARED_WRAPPER is not None:
         if _PG_SHARED_URL == pg_url:
-            return _PG_SHARED_WRAPPER
-        # Config changed (e.g. test switching env between runs) — rebuild.
-        try:
-            _PG_SHARED_WRAPPER._close_raw()
-        except Exception:
-            pass
-        _PG_SHARED_WRAPPER = None
+            # Supabase's connection pooler drops idle client sessions, after
+            # which the cached socket is dead. Rotate proactively once the
+            # connection is older than the trusted lifetime so a request never
+            # depends on the reconnect-on-error path for a systematically idle
+            # session. (Ignores a future timestamp to stay correct across clock
+            # skew.) This is cheap: it triggers once per instance per lifetime.
+            ttl_passed = (time.monotonic() - _PG_SHARED_CREATED_AT) > _PG_SHARED_CONN_TTL
+            if not ttl_passed:
+                return _PG_SHARED_WRAPPER
+            try:
+                _PG_SHARED_WRAPPER._close_raw()
+            except Exception:
+                pass
+            _PG_SHARED_WRAPPER = None
 
     _PG_SHARED_WRAPPER = _pg_connect_reliable(pg_url)
     _PG_SHARED_URL = pg_url
+    _PG_SHARED_CREATED_AT = time.monotonic()
     return _PG_SHARED_WRAPPER
 
 
@@ -570,17 +595,44 @@ def _is_pg_conn_failure(e):
                 return True
     except Exception:
         pass
+
+    # Transport-layer failures. When the Supabase connection pooler drops a
+    # long-idle client session, the next read on the SHARED socket raises an
+    # OS-level/SSL error. The exact live message observed is
+    # "cannot read from timed out object" (CPython ssl), which pg8000 surfaces
+    # as a plain exception — NOT as pg8000.exceptions.InterfaceError — so it
+    # must be classified here or the shared connection can never self-heal and
+    # every request on that warm instance 500s until Vercel recycles it.
+    try:
+        import socket
+        import ssl
+
+        if isinstance(e, (OSError, ssl.SSLError)):
+            return True
+    except Exception:
+        if isinstance(e, OSError):
+            return True
+
     msg = str(e).lower()
     return any(
         k in msg
         for k in (
-            "socket",
+            "cannot read from timed out object",
+            "read from timed out",
+            "timed out object",
+            "read timed out",
+            "write timed out",
+            "connection reset",
             "connection is closed",
             "connection lost",
-            "broken pipe",
-            "server closed",
-            "connection failed",
             "connection refused",
+            "server closed the connection",
+            "server closed connection",
+            "broken pipe",
+            "socket",
+            "ssl",
+            "reported an error",
+            "timeout expired",
         )
     )
 
@@ -603,7 +655,10 @@ def _is_pg_recoverable(e):
                 return True
     except Exception:
         pass
-    return False
+    # Message fallback in case the aborted-transaction error ever surfaces
+    # without proper sqlstate/type metadata (e.g. wrapped by another layer).
+    msg = str(e).lower()
+    return "current transaction is aborted" in msg or "25p02" in msg
 
 
 def _connect_sqlite():
