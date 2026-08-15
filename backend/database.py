@@ -228,25 +228,10 @@ class PgConnection:
         m = re.search(r"INSERT\s+INTO\s+([^\s(]+)", sql, re.I | re.S)
         if not m:
             return False
-        table = m.group(1).strip('"').lower()
-        global _PG_ID_CACHE_LOADED, _PG_ID_CACHE_TABLES
-        if not _PG_ID_CACHE_LOADED:
-            try:
-                cur = self.conn.cursor()
-                cur.execute(
-                    "SELECT table_name FROM information_schema.columns "
-                    "WHERE column_name = 'id' AND table_schema = 'public'"
-                )
-                _PG_ID_CACHE_TABLES = {
-                    (row[0] or "").lower() for row in cur.fetchall()
-                }
-                _PG_ID_CACHE_LOADED = True
-            except Exception:
-                # Can't probe → keep legacy behavior (tables here usually have an
-                # id column) so lastrowid still resolves; id-less tables are only
-                # extent tables, so a missing RETURNING is acceptable there.
-                return True
-        return table in _PG_ID_CACHE_TABLES
+        # Schema is defined entirely by our own migrations; only these tables
+        # have a PRIMARY KEY that is NOT named `id`. Checking the set avoids an
+        # information_schema query on every cold Vercel instance (~0.4s).
+        return m.group(1).strip('"').lower() not in _PK_NOT_ID_TABLES
 
     def _run(self, sql, parameters):
         pg_sql = sql.replace("?", "%s")
@@ -497,11 +482,13 @@ def cleanup_expired_oauth_states():
 _PG_SHARED_WRAPPER = None
 _PG_SHARED_URL = None
 
-# Process-local cache of which tables actually have an `id` column. Populated by
-# ONE information_schema query, not N per-table probes. On Vercel cold instances
-# (one process per request) this saves several 200-450ms round trips.
-_PG_ID_CACHE_LOADED = False
-_PG_ID_CACHE_TABLES = set()
+# Tables whose PRIMARY KEY is NOT named `id`. PgConnection appends
+# RETURNING id to INSERTs (to surface lastrowid) only for tables NOT in this
+# set. Enumeration is exact because the schema is defined entirely by our own
+# migrations (users, analyses, resumes, oauth_states have id; app_meta and
+# rate_limits do not). Kept as a constant to avoid an information_schema round
+# trip on every cold Vercel instance.
+_PK_NOT_ID_TABLES = frozenset({"app_meta", "rate_limits"})
 
 
 def _pg_connect_reliable(pg_url):
