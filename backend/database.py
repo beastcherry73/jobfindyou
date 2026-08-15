@@ -227,6 +227,9 @@ class PgConnection:
         # never interleave statements/cursors (defense in depth; Vercel Python
         # normally serves one request at a time per instance).
         self._lock = threading.RLock()
+        # Runtime (request-scope) lock for the shared connection is the SAME
+        # object for every wrapper so reconnects keep one global serializer.
+        self._runtime_lock = _PG_SHARED_RUNTIME_LOCK
 
     def _table_has_id(self, sql):
         import re
@@ -332,11 +335,19 @@ class PgConnection:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type:
-            self.rollback()
-        else:
-            self.commit()
-        self.close()
+        try:
+            if exc_type:
+                self.rollback()
+            else:
+                self.commit()
+        finally:
+            self.close()
+            try:
+                # Release the request-scope lock acquired by get_db() so the
+                # shared connection can serve the next request on this instance.
+                self._runtime_lock.release()
+            except Exception:
+                pass
 
 
 def _create_tables_and_migrations(db):
@@ -490,6 +501,15 @@ def cleanup_expired_oauth_states():
 
 _PG_SHARED_WRAPPER = None
 _PG_SHARED_URL = None
+
+# Serializes the SINGLE reused Supabase connection across whole request
+# transactions. Vercel can run concurrent Python invocations on one warm
+# instance; with a single shared connection, interleaved statement sets across
+# two requests abort each other's transactions (25P02 / "in failed transaction
+# block"). The lock is acquired in get_db() and released by PgConnection.__exit__,
+# so at most one request uses the connection at a time per instance. Reentrant
+# so nested get_db() blocks (e.g. oauth_state helpers) cannot deadlock.
+_PG_SHARED_RUNTIME_LOCK = threading.RLock()
 
 # Tables whose PRIMARY KEY is NOT named `id`. PgConnection appends
 # RETURNING id to INSERTs (to surface lastrowid) only for tables NOT in this
@@ -711,18 +731,30 @@ def get_db():
 
     if pg_url:
         db = _connect_postgres(pg_url)
-        if not _db_initialized:
-            try:
+        if isinstance(db, PgConnection):
+            # Hold the shared connection EXCLUSIVELY for this request until the
+            # caller's `with get_db() as db` block exits (release in
+            # PgConnection.__exit__). Concurrent requests on the same warm
+            # instance are thus serialized and can't clobber each other's
+            # transactions on the single reused socket.
+            db._runtime_lock.acquire()
+        try:
+            if not _db_initialized:
                 # Gate on a marker persisted in the DB. On a warm one-shot
                 # Python process this re-runs the (cheap) marker check only;
                 # on a freshly provisioned DB it runs the full DDL suite once.
                 if isinstance(db, PgConnection) and not _pg_schema_up_to_date(db):
                     _create_tables_and_migrations(db)
                 _db_initialized = True
-            except Exception as e:
-                if current_app:
-                    current_app.logger.error(f"Error initializing Pg tables: {e}")
-                raise
+        except Exception as e:
+            if isinstance(db, PgConnection):
+                try:
+                    db._runtime_lock.release()
+                except Exception:
+                    pass
+            if current_app:
+                current_app.logger.error(f"Error initializing Pg tables: {e}")
+            raise
         return db
 
     # Below here is LOCAL DEVELOPMENT ONLY (no VERCEL, no PostgreSQL configured).
