@@ -221,9 +221,6 @@ class PgConnection:
     def __init__(self, conn, pg_url=None):
         self.conn = conn
         self._pg_url = pg_url
-        # Cache of {table_name: has_id_column} so lastrowid probing doesn't add
-        # a round trip per INSERT. Survives reconnects (schema is per-database).
-        self._id_col_cache = {}
 
     def _table_has_id(self, sql):
         import re
@@ -231,24 +228,25 @@ class PgConnection:
         m = re.search(r"INSERT\s+INTO\s+([^\s(]+)", sql, re.I | re.S)
         if not m:
             return False
-        table = m.group(1).strip('"')
-        table_lower = table.lower()
-        if table_lower in self._id_col_cache:
-            return self._id_col_cache[table_lower]
-        try:
-            cur = self.conn.cursor()
-            cur.execute(
-                "SELECT 1 FROM information_schema.columns "
-                "WHERE table_name = %s AND column_name = 'id'",
-                (table,),
-            )
-            has = cur.fetchone() is not None
-        except Exception:
-            # Can't probe → don't guess; skip RETURNING so the INSERT itself
-            # never fails on an absent id column.
-            has = False
-        self._id_col_cache[table_lower] = has
-        return has
+        table = m.group(1).strip('"').lower()
+        global _PG_ID_CACHE_LOADED, _PG_ID_CACHE_TABLES
+        if not _PG_ID_CACHE_LOADED:
+            try:
+                cur = self.conn.cursor()
+                cur.execute(
+                    "SELECT table_name FROM information_schema.columns "
+                    "WHERE column_name = 'id' AND table_schema = 'public'"
+                )
+                _PG_ID_CACHE_TABLES = {
+                    (row[0] or "").lower() for row in cur.fetchall()
+                }
+                _PG_ID_CACHE_LOADED = True
+            except Exception:
+                # Can't probe → keep legacy behavior (tables here usually have an
+                # id column) so lastrowid still resolves; id-less tables are only
+                # extent tables, so a missing RETURNING is acceptable there.
+                return True
+        return table in _PG_ID_CACHE_TABLES
 
     def _run(self, sql, parameters):
         pg_sql = sql.replace("?", "%s")
@@ -427,6 +425,9 @@ def _create_tables_and_migrations(db):
 
     if is_pg:
         db.execute(
+            "CREATE TABLE IF NOT EXISTS app_meta (meta_key TEXT PRIMARY KEY, meta_value TEXT)"
+        )
+        db.execute(
             "INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?) "
             "ON CONFLICT (meta_key) DO UPDATE SET meta_value = excluded.meta_value",
             (_SCHEMA_MARKER_KEY, _SCHEMA_MARKER_VALUE),
@@ -440,9 +441,9 @@ def _pg_schema_up_to_date(db):
     Uses a one-row marker table instead of a process-local flag so Vercel
     one-shot Python processes don't re-run all CREATE/ALTER statements."""
     try:
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS app_meta (meta_key TEXT PRIMARY KEY, meta_value TEXT)"
-        )
+        # Single round trip: if the table/marker is missing the SELECT itself
+        # raises (42P01/25P02) and we fall through to the full migration, which
+        # CREATEs app_meta and writes the marker.
         row = db.execute(
             "SELECT meta_value FROM app_meta WHERE meta_key = ?",
             (_SCHEMA_MARKER_KEY,),
@@ -495,6 +496,12 @@ def cleanup_expired_oauth_states():
 
 _PG_SHARED_WRAPPER = None
 _PG_SHARED_URL = None
+
+# Process-local cache of which tables actually have an `id` column. Populated by
+# ONE information_schema query, not N per-table probes. On Vercel cold instances
+# (one process per request) this saves several 200-450ms round trips.
+_PG_ID_CACHE_LOADED = False
+_PG_ID_CACHE_TABLES = set()
 
 
 def _pg_connect_reliable(pg_url):
