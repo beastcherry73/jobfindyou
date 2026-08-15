@@ -11,6 +11,15 @@ logger = logging.getLogger(__name__)
 
 _db_initialized = False
 
+# Schema migrations must run ONCE per database, not once per process/request.
+# Vercel may run Python functions in one-shot processes that don't reuse module
+# state, and _db_initialized (a process-local flag) can't survive that. So the
+# PG path records a marker ROW in the database itself; any process can check it
+# cheaply and skip the whole DDL suite when already applied. (The DDL suite is
+# ~17 CREATE/ALTER statements; running it on every request costs 1-3s each.)
+_SCHEMA_MARKER_KEY = "schema_version"
+_SCHEMA_MARKER_VALUE = "1"
+
 
 def is_vercel():
     return bool(os.environ.get("VERCEL"))
@@ -374,6 +383,34 @@ def _create_tables_and_migrations(db):
     add_col_safe("resumes", "file_size INTEGER DEFAULT 0")
     add_col_safe("resumes", "mime_type TEXT DEFAULT 'application/pdf'")
 
+    if is_pg:
+        db.execute(
+            "INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?) "
+            "ON CONFLICT (meta_key) DO UPDATE SET meta_value = excluded.meta_value",
+            (_SCHEMA_MARKER_KEY, _SCHEMA_MARKER_VALUE),
+        )
+        db.commit()
+
+
+def _pg_schema_up_to_date(db):
+    """Cheap DB-persisted check that skips the DDL suite on already-migrated DBs.
+
+    Uses a one-row marker table instead of a process-local flag so Vercel
+    one-shot Python processes don't re-run all CREATE/ALTER statements."""
+    try:
+        db.execute(
+            "CREATE TABLE IF NOT EXISTS app_meta (meta_key TEXT PRIMARY KEY, meta_value TEXT)"
+        )
+        row = db.execute(
+            "SELECT meta_value FROM app_meta WHERE meta_key = ?",
+            (_SCHEMA_MARKER_KEY,),
+        ).fetchone()
+        if row and row["meta_value"] == _SCHEMA_MARKER_VALUE:
+            return True
+    except Exception:
+        return False
+    return False
+
 
 def store_oauth_state(state):
     try:
@@ -564,7 +601,11 @@ def get_db():
         db = _connect_postgres(pg_url)
         if not _db_initialized:
             try:
-                _create_tables_and_migrations(db)
+                # Gate on a marker persisted in the DB. On a warm one-shot
+                # Python process this re-runs the (cheap) marker check only;
+                # on a freshly provisioned DB it runs the full DDL suite once.
+                if isinstance(db, PgConnection) and not _pg_schema_up_to_date(db):
+                    _create_tables_and_migrations(db)
                 _db_initialized = True
             except Exception as e:
                 if current_app:
