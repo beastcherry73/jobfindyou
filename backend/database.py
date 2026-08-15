@@ -221,6 +221,34 @@ class PgConnection:
     def __init__(self, conn, pg_url=None):
         self.conn = conn
         self._pg_url = pg_url
+        # Cache of {table_name: has_id_column} so lastrowid probing doesn't add
+        # a round trip per INSERT. Survives reconnects (schema is per-database).
+        self._id_col_cache = {}
+
+    def _table_has_id(self, sql):
+        import re
+
+        m = re.search(r"INSERT\s+INTO\s+([^\s(]+)", sql, re.I | re.S)
+        if not m:
+            return False
+        table = m.group(1).strip('"')
+        table_lower = table.lower()
+        if table_lower in self._id_col_cache:
+            return self._id_col_cache[table_lower]
+        try:
+            cur = self.conn.cursor()
+            cur.execute(
+                "SELECT 1 FROM information_schema.columns "
+                "WHERE table_name = %s AND column_name = 'id'",
+                (table,),
+            )
+            has = cur.fetchone() is not None
+        except Exception:
+            # Can't probe → don't guess; skip RETURNING so the INSERT itself
+            # never fails on an absent id column.
+            has = False
+        self._id_col_cache[table_lower] = has
+        return has
 
     def _run(self, sql, parameters):
         pg_sql = sql.replace("?", "%s")
@@ -237,7 +265,7 @@ class PgConnection:
             return PgCursor([], [], rowcount=0)
 
         is_insert = pg_sql.strip().upper().startswith("INSERT")
-        if is_insert and "RETURNING" not in pg_sql.upper():
+        if is_insert and "RETURNING" not in pg_sql.upper() and self._table_has_id(pg_sql):
             pg_sql = pg_sql.rstrip(";") + " RETURNING id;"
 
         cur = self.conn.cursor()
@@ -261,21 +289,28 @@ class PgConnection:
         try:
             return self._run(sql, parameters)
         except Exception as e:
-            if not _is_pg_conn_failure(e):
-                # A failed statement may abort the current transaction on the
-                # SHARED connection. Roll it back so the next request (or call)
-                # doesn't hit "current transaction is aborted" (25P02).
-                try:
-                    self.conn.rollback()
-                except Exception:
-                    pass
-                raise
-            # The shared Supabase connection went stale (idle recycling or the
-            # serverless instance was frozen). Drop it, open a fresh one once,
-            # and retry the identical statement so the request still succeeds.
-            attempt = _pg_connect_reliable(self._pg_url)
-            self.conn = attempt.conn
-            return self._run(sql, parameters)
+            if _is_pg_recoverable(e):
+                # Recoverable: either a stale shared connection (idle recycling,
+                # frozen serverless instance) or an aborted transaction left by
+                # an earlier failed statement on this SHARED connection. Roll
+                # back (or reconnect) and retry exactly once; statement-level
+                # atomicity guarantees the retry cannot double-effect.
+                self._safe_rollback()
+                if _is_pg_conn_failure(e):
+                    attempt = _pg_connect_reliable(self._pg_url)
+                    self.conn = attempt.conn
+                return self._run(sql, parameters)
+            # Non-recoverable SQL error (syntax, missing column, type mismatch,
+            # etc.). Clear any aborted-txn state so later requests on this
+            # shared connection still work, then surface the original error.
+            self._safe_rollback()
+            raise
+
+    def _safe_rollback(self):
+        try:
+            self.conn.rollback()
+        except Exception:
+            pass
 
     def commit(self):
         # A real commit failure must NOT be swallowed — callers treat an
@@ -480,7 +515,6 @@ def _pg_connect_reliable(pg_url):
                 database=parsed.path.lstrip("/") or "postgres",
                 ssl_context=True,
                 timeout=10,
-                autocommit=True,
             )
             return PgConnection(raw, pg_url=pg_url)
         except Exception as e:
@@ -555,6 +589,27 @@ def _is_pg_conn_failure(e):
             "connection refused",
         )
     )
+
+
+def _is_pg_recoverable(e):
+    """True when the SHARED connection can be safely retried after recovery.
+
+    Connection failures (stale/recycled socket: 08xxx, InterfaceError) and an
+    aborted transaction (25P02 — a leftover from an earlier failed statement on
+    this shared connection) are transient: rollback (or reconnect) then retry.
+    All other errors are genuine SQL failures and must NOT be retried.
+    """
+    if _is_pg_conn_failure(e):
+        return True
+    try:
+        import pg8000.exceptions as pg_exceptions
+
+        if isinstance(e, pg_exceptions.DatabaseError):
+            if (getattr(e, "sqlstate", None) or "") == "25P02":
+                return True
+    except Exception:
+        pass
+    return False
 
 
 def _connect_sqlite():
