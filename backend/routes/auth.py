@@ -38,7 +38,14 @@ def register():
                 session["user_name"] = name
                 return redirect(url_for("static_routes.index"))
             except Exception as e:
-                if "UNIQUE" in str(e) or "IntegrityError" in str(e):
+                # SQLite raises "UNIQUE constraint failed"; PostgreSQL (pg8000)
+                # raises "duplicate key value violates unique constraint".
+                emsg = str(e).lower()
+                if (
+                    "unique" in emsg
+                    or "duplicate key" in emsg
+                    or "integrityerror" in emsg
+                ):
                     flash("An account already exists for that email.", "error")
                 else:
                     flash("Registration failed. Please try again.", "error")

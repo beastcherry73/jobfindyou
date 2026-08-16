@@ -230,6 +230,14 @@ class PgConnection:
         # Runtime (request-scope) lock for the shared connection is the SAME
         # object for every wrapper so reconnects keep one global serializer.
         self._runtime_lock = _PG_SHARED_RUNTIME_LOCK
+        # Count of WRITE statements (INSERT/UPDATE/DELETE) executed in the
+        # current transaction. If the shared socket is replaced (reconnect)
+        # AFTER a write has already run in this transaction, those earlier
+        # writes are gone; committing the retried statement alone would persist
+        # a partial/orphaned row. `_reconnected_dirty` records that so commit()
+        # aborts instead of silently saving a partial. Reset on commit/rollback.
+        self._writes_in_txn = 0
+        self._reconnected_dirty = False
 
     def _table_has_id(self, sql):
         import re
@@ -275,12 +283,21 @@ class PgConnection:
 
         return PgCursor(rows, cols, lastrowid=lastrowid, rowcount=cur.rowcount)
 
+    @staticmethod
+    def _is_write(sql):
+        op = sql.lstrip()[:6].upper()
+        return op.startswith(("INSERT", "UPDATE", "DELETE"))
+
     def execute(self, sql, parameters=None):
         if parameters is None:
             parameters = ()
         with self._lock:
+            is_write = self._is_write(sql)
             try:
-                return self._run(sql, parameters)
+                result = self._run(sql, parameters)
+                if is_write:
+                    self._writes_in_txn += 1
+                return result
             except Exception as e:
                 if _is_pg_recoverable(e):
                     # Recoverable: a stale shared connection (idle-dropped by the
@@ -289,11 +306,26 @@ class PgConnection:
                     # SHARED connection. Roll back (or reconnect) and retry
                     # exactly once; statement-level atomicity guarantees the
                     # retry cannot double-effect.
+                    had_prior_writes = self._writes_in_txn > 0
                     self._safe_rollback()
+                    if had_prior_writes:
+                        # Earlier writes in this transaction were discarded by the
+                        # rollback/reconnect. Do NOT let commit() persist only the
+                        # retried statement — mark the transaction poisoned so the
+                        # caller gets an honest failure instead of a partial save.
+                        self._reconnected_dirty = True
                     if _is_pg_conn_failure(e):
                         attempt = _pg_connect_reliable(self._pg_url)
                         self.conn = attempt.conn
-                    return self._run(sql, parameters)
+                        # The reused socket is brand new; realign the shared TTL
+                        # clock so the next request doesn't rotate immediately.
+                        global _PG_SHARED_CREATED_AT
+                        _PG_SHARED_CREATED_AT = time.monotonic()
+                    result = self._run(sql, parameters)
+                    # rollback() reset the counter; this retried statement now
+                    # begins a fresh (implicit) transaction.
+                    self._writes_in_txn = 1 if is_write else 0
+                    return result
                 # Non-recoverable SQL error (syntax, missing column, type
                 # mismatch, etc.). Clear any aborted-txn state so later requests
                 # on this shared connection still work, then surface the
@@ -306,17 +338,33 @@ class PgConnection:
             self.conn.rollback()
         except Exception:
             pass
+        self._writes_in_txn = 0
 
     def commit(self):
         # A real commit failure must NOT be swallowed — callers treat an
         # exception from commit() as "save failed".
+        if self._reconnected_dirty:
+            # The shared socket was replaced mid-transaction after one or more
+            # writes had already run. Those writes are gone; committing now would
+            # persist only the statements that ran after the reconnect (a partial
+            # save / orphaned row). Discard and fail loudly so the caller retries.
+            self._reconnected_dirty = False
+            self._writes_in_txn = 0
+            self._safe_rollback()
+            raise RuntimeError(
+                "Shared database connection was reset mid-transaction; aborting "
+                "to avoid a partial save. Please retry."
+            )
         self.conn.commit()
+        self._writes_in_txn = 0
 
     def rollback(self):
         try:
             self.conn.rollback()
         except Exception:
             pass
+        self._writes_in_txn = 0
+        self._reconnected_dirty = False
 
     def close(self):
         # The PostgreSQL wrapper is a thin handle over the shared connection
@@ -491,9 +539,19 @@ def verify_oauth_state(state):
 def cleanup_expired_oauth_states():
     try:
         with get_db() as db:
-            db.execute(
-                "DELETE FROM oauth_states WHERE created_at < datetime('now', '-15 minutes')"
-            )
+            if isinstance(db, PgConnection):
+                # PostgreSQL has no datetime() function; the SQLite form below
+                # would raise (and be silently swallowed), so orphaned states —
+                # from OAuth flows a user never completes — never got pruned.
+                db.execute(
+                    "DELETE FROM oauth_states "
+                    "WHERE created_at < NOW() - INTERVAL '15 minutes'"
+                )
+            else:
+                db.execute(
+                    "DELETE FROM oauth_states "
+                    "WHERE created_at < datetime('now', '-15 minutes')"
+                )
             db.commit()
     except Exception:
         pass
@@ -547,6 +605,22 @@ def _pg_connect_reliable(pg_url):
                 ssl_context=True,
                 timeout=10,
             )
+            # Bound every server-side operation so a hung query on a half-open
+            # socket can NEVER stall the whole warm instance (the shared
+            # connection is serialized by a lock, so one stuck query would
+            # otherwise block every other request until an OS TCP timeout). These
+            # SET commands are committed so they become session defaults and are
+            # not reverted by a later per-request rollback.
+            try:
+                sc = raw.cursor()
+                sc.execute("SET statement_timeout = 20000")
+                sc.execute("SET idle_in_transaction_session_timeout = 30000")
+                raw.commit()
+            except Exception:
+                try:
+                    raw.rollback()
+                except Exception:
+                    pass
             return PgConnection(raw, pg_url=pg_url)
         except Exception as e:
             last_err = e
@@ -575,27 +649,35 @@ def _connect_postgres(pg_url):
     """
     global _PG_SHARED_WRAPPER, _PG_SHARED_URL, _PG_SHARED_CREATED_AT
 
-    if _PG_SHARED_WRAPPER is not None:
-        if _PG_SHARED_URL == pg_url:
-            # Supabase's connection pooler drops idle client sessions, after
-            # which the cached socket is dead. Rotate proactively once the
-            # connection is older than the trusted lifetime so a request never
-            # depends on the reconnect-on-error path for a systematically idle
-            # session. (Ignores a future timestamp to stay correct across clock
-            # skew.) This is cheap: it triggers once per instance per lifetime.
-            ttl_passed = (time.monotonic() - _PG_SHARED_CREATED_AT) > _PG_SHARED_CONN_TTL
-            if not ttl_passed:
-                return _PG_SHARED_WRAPPER
-            try:
-                _PG_SHARED_WRAPPER._close_raw()
-            except Exception:
-                pass
-            _PG_SHARED_WRAPPER = None
+    # Mutating the shared-connection globals (rotate/close/replace) MUST happen
+    # under the same serializer that guards request transactions. Otherwise a
+    # second concurrent invocation could close and replace the socket while the
+    # first request is mid-transaction on it. get_db() already holds this lock
+    # (RLock, so this reentrant re-acquire is free); db_diagnostic() does not,
+    # so acquiring here also serializes the health endpoint against live traffic.
+    with _PG_SHARED_RUNTIME_LOCK:
+        if _PG_SHARED_WRAPPER is not None:
+            if _PG_SHARED_URL == pg_url:
+                # Supabase's connection pooler drops idle client sessions, after
+                # which the cached socket is dead. Rotate proactively once the
+                # connection is older than the trusted lifetime so a request
+                # never depends on the reconnect-on-error path for a
+                # systematically idle session. (Ignores a future timestamp to
+                # stay correct across clock skew.) This is cheap: it triggers
+                # once per instance per lifetime.
+                ttl_passed = (time.monotonic() - _PG_SHARED_CREATED_AT) > _PG_SHARED_CONN_TTL
+                if not ttl_passed:
+                    return _PG_SHARED_WRAPPER
+                try:
+                    _PG_SHARED_WRAPPER._close_raw()
+                except Exception:
+                    pass
+                _PG_SHARED_WRAPPER = None
 
-    _PG_SHARED_WRAPPER = _pg_connect_reliable(pg_url)
-    _PG_SHARED_URL = pg_url
-    _PG_SHARED_CREATED_AT = time.monotonic()
-    return _PG_SHARED_WRAPPER
+        _PG_SHARED_WRAPPER = _pg_connect_reliable(pg_url)
+        _PG_SHARED_URL = pg_url
+        _PG_SHARED_CREATED_AT = time.monotonic()
+        return _PG_SHARED_WRAPPER
 
 
 def _is_pg_conn_failure(e):
@@ -730,15 +812,16 @@ def get_db():
     pg_url = get_required_db_url()
 
     if pg_url:
-        db = _connect_postgres(pg_url)
-        if isinstance(db, PgConnection):
-            # Hold the shared connection EXCLUSIVELY for this request until the
-            # caller's `with get_db() as db` block exits (release in
-            # PgConnection.__exit__). Concurrent requests on the same warm
-            # instance are thus serialized and can't clobber each other's
-            # transactions on the single reused socket.
-            db._runtime_lock.acquire()
+        # Acquire the shared serializer BEFORE touching the shared connection so
+        # that acquisition, TTL rotation, reconnect, AND the caller's whole
+        # transaction (through commit in PgConnection.__exit__) all run
+        # single-threaded on the one reused socket. Acquiring after
+        # _connect_postgres (the previous ordering) left a window where a second
+        # concurrent invocation could rotate/replace the socket while the first
+        # request was mid-transaction on it. Released in PgConnection.__exit__.
+        _PG_SHARED_RUNTIME_LOCK.acquire()
         try:
+            db = _connect_postgres(pg_url)
             if not _db_initialized:
                 # Gate on a marker persisted in the DB. On a warm one-shot
                 # Python process this re-runs the (cheap) marker check only;
@@ -747,11 +830,10 @@ def get_db():
                     _create_tables_and_migrations(db)
                 _db_initialized = True
         except Exception as e:
-            if isinstance(db, PgConnection):
-                try:
-                    db._runtime_lock.release()
-                except Exception:
-                    pass
+            try:
+                _PG_SHARED_RUNTIME_LOCK.release()
+            except Exception:
+                pass
             if current_app:
                 current_app.logger.error(f"Error initializing Pg tables: {e}")
             raise
