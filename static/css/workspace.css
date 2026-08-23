@@ -3,7 +3,7 @@
    Inspired by Linear, Arc, Notion, Stripe, Apple, Framer
    ═══════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:opsz@14..32&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Instrument+Serif:opsz@14..32&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,51 +12,56 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 
 /* ── Theme: Light (default) ── */
 :root, [data-theme="light"] {
-  --ws-bg: #F5F3EF;
-  --ws-surface: #FFFFFF;
-  --ws-surface-hover: #F0EDE8;
-  --ws-surface-active: #E8E4DE;
-  --ws-border: #E2DDD6;
-  --ws-border-light: #EDE9E3;
+  /* Direction C — warm ivory + cobalt (actions only) + semantic green */
+  --ws-bg: #F7F5F0;
+  --ws-surface: #FCFBF8;
+  --ws-elevated: #FFFFFF;
+  --ws-surface-hover: #EFEDE6;
+  --ws-surface-active: #E7E3DA;
+  --ws-border: #E5E2DB;
+  --ws-border-light: #EEEBE4;
 
-  --ws-text: #161618;
-  --ws-text-secondary: #6B6560;
-  --ws-text-tertiary: #9C9790;
+  --ws-text: #111214;
+  --ws-text-secondary: #45484F;
+  --ws-text-tertiary: #8A8D93;
   --ws-text-inverse: #FFFFFF;
 
-  --ws-primary: #1E3A5F;
-  --ws-primary-hover: #152B47;
-  --ws-primary-subtle: rgba(30,58,95,0.08);
-  --ws-primary-glass: rgba(30,58,95,0.04);
+  --ws-primary: #3B5BFF;
+  --ws-primary-hover: #2C48E0;
+  --ws-primary-subtle: rgba(59,91,255,0.08);
+  --ws-primary-glass: rgba(59,91,255,0.04);
 
+  /* JobSpike heritage gold — restrained secondary accent for premium moments, NOT actions */
   --ws-accent: #C9A84C;
   --ws-accent-hover: #B8942A;
-  --ws-accent-subtle: rgba(201,168,76,0.12);
+  --ws-accent-subtle: rgba(201,168,76,0.14);
 
-  --ws-good: #1A7D4E;
-  --ws-good-bg: rgba(26,125,78,0.08);
-  --ws-warn: #B8860B;
-  --ws-warn-bg: rgba(184,134,11,0.08);
-  --ws-bad: #B33A3A;
-  --ws-bad-bg: rgba(179,58,58,0.08);
+  --ws-good: #1E9E5A;
+  --ws-good-bg: rgba(30,158,90,0.09);
+  --ws-warn: #C88A16;
+  --ws-warn-bg: rgba(200,138,22,0.10);
+  --ws-bad: #C94A4A;
+  --ws-bad-bg: rgba(201,74,74,0.09);
 
-  --ws-shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
-  --ws-shadow-sm: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
-  --ws-shadow-md: 0 4px 16px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03);
-  --ws-shadow-lg: 0 8px 32px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.03);
-  --ws-shadow-xl: 0 16px 48px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+  /* Design Constitution: one card shadow, reused everywhere — no per-component tiers */
+  --ws-shadow-xs: 0 1px 2px rgba(31,37,54,0.05), 0 2px 8px rgba(31,37,54,0.04);
+  --ws-shadow-sm: 0 1px 2px rgba(31,37,54,0.05), 0 2px 8px rgba(31,37,54,0.04);
+  --ws-shadow-md: 0 1px 2px rgba(31,37,54,0.05), 0 2px 8px rgba(31,37,54,0.04);
+  --ws-shadow-lg: 0 1px 2px rgba(31,37,54,0.05), 0 2px 8px rgba(31,37,54,0.04);
+  --ws-shadow-xl: 0 1px 2px rgba(31,37,54,0.05), 0 2px 8px rgba(31,37,54,0.04);
 
+  /* Design Constitution: card radius is 12px everywhere (xs/sm/md kept for badges/pills/inputs, not cards) */
   --ws-radius-xs: 4px;
   --ws-radius-sm: 6px;
   --ws-radius-md: 8px;
   --ws-radius-lg: 12px;
-  --ws-radius-xl: 16px;
-  --ws-radius-2xl: 20px;
+  --ws-radius-xl: 12px;
+  --ws-radius-2xl: 12px;
   --ws-radius-full: 9999px;
 
   --ws-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --ws-font-serif: 'Instrument Serif', Georgia, serif;
-  --ws-font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --ws-font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, 'Fira Code', monospace;
 
   --ws-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ws-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -73,39 +78,42 @@ html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 
 /* ── Theme: Dark ── */
 [data-theme="dark"] {
-  --ws-bg: #0E0E10;
-  --ws-surface: #18181B;
-  --ws-surface-hover: #1F1F23;
-  --ws-surface-active: #27272B;
-  --ws-border: #2A2A2E;
-  --ws-border-light: #222226;
+  /* Design Constitution: warm near-black, not #000 or blue-black */
+  --ws-bg: #141310;
+  --ws-surface: #1B1A16;
+  --ws-elevated: #232220;
+  --ws-surface-hover: #232220;
+  --ws-surface-active: #2B2925;
+  --ws-border: #2B2925;
+  --ws-border-light: #211F1B;
 
-  --ws-text: #EBEBED;
-  --ws-text-secondary: #8B8B92;
-  --ws-text-tertiary: #5C5C62;
-  --ws-text-inverse: #161618;
+  --ws-text: #ECEAE4;
+  --ws-text-secondary: #B7BAC1;
+  --ws-text-tertiary: #7E828A;
+  --ws-text-inverse: #141310;
 
-  --ws-primary: #8AB4F8;
-  --ws-primary-hover: #6BA1F0;
-  --ws-primary-subtle: rgba(138,180,248,0.1);
-  --ws-primary-glass: rgba(138,180,248,0.05);
+  --ws-primary: #6F86FF;
+  --ws-primary-hover: #8598FF;
+  --ws-primary-subtle: rgba(111,134,255,0.14);
+  --ws-primary-glass: rgba(111,134,255,0.06);
 
   --ws-accent: #E2B93B;
   --ws-accent-hover: #D4A92A;
-  --ws-accent-subtle: rgba(226,185,59,0.12);
+  --ws-accent-subtle: rgba(226,185,59,0.14);
 
-  --ws-good: #4ADE80;
-  --ws-good-bg: rgba(74,222,128,0.08);
-  --ws-warn: #FBBF24;
-  --ws-warn-bg: rgba(251,191,36,0.08);
-  --ws-bad: #F87171;
-  --ws-bad-bg: rgba(248,113,113,0.08);
+  --ws-good: #35C286;
+  --ws-good-bg: rgba(53,194,134,0.10);
+  --ws-warn: #E0A93B;
+  --ws-warn-bg: rgba(224,169,59,0.10);
+  --ws-bad: #E06A6A;
+  --ws-bad-bg: rgba(224,106,106,0.10);
 
-  --ws-shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+  /* Design Constitution: one card shadow, reused everywhere */
+  --ws-shadow-xs: 0 2px 8px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.16);
   --ws-shadow-sm: 0 2px 8px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.16);
-  --ws-shadow-md: 0 4px 16px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.2);
-  --ws-shadow-lg: 0 8px 32px rgba(0,0,0,0.32), 0 2px 8px rgba(0,0,0,0.24);
-  --ws-shadow-xl: 0 16px 48px rgba(0,0,0,0.36), 0 4px 16px rgba(0,0,0,0.28);
+  --ws-shadow-md: 0 2px 8px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.16);
+  --ws-shadow-lg: 0 2px 8px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.16);
+  --ws-shadow-xl: 0 2px 8px rgba(0,0,0,0.24), 0 1px 2px rgba(0,0,0,0.16);
 
   color-scheme: dark;
 }
@@ -320,6 +328,13 @@ ul, ol { list-style: none; }
   flex-shrink: 0;
   font-size: 17px;
   line-height: 1;
+}
+
+.ws-nav-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.8;
+  flex-shrink: 0;
 }
 
 .ws-nav-label {
@@ -695,20 +710,18 @@ ul, ol { list-style: none; }
 }
 
 /* ── Glass Card ── */
+/* solid elevated card — glassmorphism removed for a calmer, more premium read */
 .ws-glass-card {
-  background: var(--ws-surface);
+  background: var(--ws-elevated, #FFFFFF);
   border: 1px solid var(--ws-border);
   border-radius: var(--ws-radius-2xl);
   box-shadow: var(--ws-shadow-md);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: all var(--ws-duration-slow) var(--ws-ease-out);
+  transition: box-shadow var(--ws-duration-slow) var(--ws-ease-out);
   width: 100%;
 }
 
 .ws-glass-card:hover {
   box-shadow: var(--ws-shadow-lg);
-  transform: translateY(-1px);
 }
 
 .ws-glass-card-body {
@@ -753,6 +766,95 @@ ul, ol { list-style: none; }
 }
 
 .ws-stat-change.up { color: var(--ws-good); }
+
+/* ── Section layer divider (numbered "Status / Action / Why" rows) ── */
+.ws-layer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px 0 12px;
+}
+
+.ws-layer:first-child { margin-top: 0; }
+
+.ws-layer-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--ws-primary-subtle);
+  color: var(--ws-primary);
+  display: grid;
+  place-items: center;
+  font-family: var(--ws-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.ws-layer-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--ws-border);
+}
+
+/* ── Dashboard stat strip (v0 visual system) ── */
+.ws-stat-tile-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ws-text-tertiary);
+}
+
+.ws-stat-tile-ic {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: var(--ws-surface-hover);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ws-stat-tile-ic svg {
+  width: 13px;
+  height: 13px;
+}
+
+.ws-stat-tile-label {
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+}
+
+.ws-stat-tile-value {
+  font-family: var(--ws-font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.ws-stat-tile-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-top: 4px;
+  color: var(--ws-text-tertiary);
+}
+
+.ws-stat-tile-status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.ws-stat-tile-status.good { color: var(--ws-good); }
+.ws-stat-tile-status.warn { color: var(--ws-warn); }
+.ws-stat-tile-status.bad { color: var(--ws-bad); }
+
+#dashStatStrip { scrollbar-width: none; }
+#dashStatStrip::-webkit-scrollbar { display: none; }
 .ws-stat-change.down { color: var(--ws-bad); }
 
 /* ── Buttons ── */
@@ -1463,6 +1565,19 @@ ul, ol { list-style: none; }
   .ws-grid-2, .ws-grid-3, .ws-grid-4 { grid-template-columns: 1fr; }
   .ws-page-header { flex-direction: column; }
   .ws-topbar { padding: 0 14px; }
+}
+
+/* small phones (down to 360px) */
+@media (max-width: 420px) {
+  .ws-content { padding: 14px 13px; }
+  .ws-page-title { font-size: 19px; }
+  .ws-page-actions { width: 100%; }
+  .ws-page-actions .ws-btn { flex: 1; }
+  .ws-card-body { padding: 16px; }
+  .ws-glass-card-body { padding: 18px; }
+  /* comfortable touch targets on small screens */
+  .ws-btn { min-height: 40px; }
+  .ws-topbar-btn, .ws-theme-btn { width: 36px; height: 36px; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════

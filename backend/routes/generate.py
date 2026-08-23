@@ -33,7 +33,7 @@ def generate_scratch():
         data_str = json.dumps(data, indent=2)
         prompt = SCRATCH_PROMPT.format(target_context=target_context, data=data_str)
         try:
-            resume = call_groq(prompt, max_tokens=3000)
+            resume = call_groq(prompt, max_tokens=6000)
         except GroqError:
             return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         resume = re.sub(r"^```(?:markdown)?", "", resume.strip()).strip()
@@ -76,7 +76,7 @@ def generate_improve():
             resume_text=resume_text[:12000]
         )
         try:
-            resume = call_groq(prompt, max_tokens=3000)
+            resume = call_groq(prompt, max_tokens=6000)
         except GroqError:
             return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         resume = re.sub(r"^```(?:markdown)?", "", resume.strip()).strip()
@@ -129,7 +129,7 @@ def generate_improve_with_diff():
             resume_text=resume_text[:12000]
         )
         try:
-            improved_resume = call_groq(improve_prompt, max_tokens=3000)
+            improved_resume = call_groq(improve_prompt, max_tokens=6000)
         except GroqError:
             return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         improved_resume = re.sub(r"^```(?:markdown)?", "", improved_resume.strip()).strip()

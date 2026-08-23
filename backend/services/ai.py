@@ -6,7 +6,7 @@ class GroqError(Exception):
     """Raised when the Groq AI service cannot produce a response."""
 
 
-def call_groq(prompt, max_tokens=3000):
+def call_groq(prompt, max_tokens=6000):
     """Call Groq and return the raw model output.
 
     Raises GroqError on any failure so callers fail loudly instead of
@@ -26,8 +26,8 @@ def call_groq(prompt, max_tokens=3000):
             current_app.logger.error(f"Failed to initialize Groq client: {client_err}")
             raise GroqError("AI service is misconfigured.")
 
-    models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "gemma2-9b-it"]
-    last_rate_limit = None
+    models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+    last_err = None
     for m in models:
         try:
             response = groq_client.chat.completions.create(
@@ -36,20 +36,18 @@ def call_groq(prompt, max_tokens=3000):
                 temperature=0.4,
                 max_tokens=max_tokens,
                 timeout=40.0,
+                reasoning_effort="low",
             )
             content = response.choices[0].message.content
-            if content is None:
-                raise GroqError(f"Groq model {m} returned an empty response.")
-            return content
-        except GroqError:
-            raise
-        except Exception as m_err:
-            if "rate_limit" in str(m_err).lower() or "429" in str(m_err):
-                current_app.logger.warning(f"Groq Model {m} rate limited, falling back to next model...")
-                last_rate_limit = m_err
+            if not content:
+                current_app.logger.warning(f"Groq model {m} returned an empty response, trying next model...")
+                last_err = GroqError(f"Groq model {m} returned an empty response.")
                 continue
-            current_app.logger.error(f"Groq Model {m} failed: {m_err}")
-            raise GroqError(f"Groq API error: {m_err}")
+            return content
+        except Exception as m_err:
+            current_app.logger.warning(f"Groq model {m} failed ({m_err}), trying next model...")
+            last_err = m_err
+            continue
 
-    current_app.logger.error("All Groq models rate limited or unavailable.")
-    raise GroqError(f"All Groq models are rate limited: {last_rate_limit}")
+    current_app.logger.error(f"All Groq models failed or are unavailable: {last_err}")
+    raise GroqError(f"All Groq models are unavailable: {last_err}")

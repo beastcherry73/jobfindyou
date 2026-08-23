@@ -1,0 +1,586 @@
+<title>JobSpike Minimal OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   JobSpike — "Minimal OS" structural pass.
+   Built from the user's own IA/hierarchy spec, not a template.
+   Status -> Insight -> Action -> Result, on every screen that
+   has a status to report. Ivory dominant, cobalt as the one
+   loud color, gold reserved for a single premium moment, green
+   only for real health/success. Quiet sidebar. Serif for
+   editorial headlines, Inter for UI, JetBrains Mono for data.
+   Preview only — sample data, clearly marked where illustrative.
+   ============================================================ */
+:root{
+  --bg:#F7F5F0; --surface:#FCFBF8; --elevated:#FFFFFF; --inset:#EFEDE6;
+  --ink:#16171B; --soft:#4A4D54; --muted:#8A8D93;
+  --border:#E3E0D8; --border-strong:#D3CFC5;
+  --cobalt:#2457E6; --cobalt-hover:#1D46C7; --cobalt-tint:rgba(36,87,230,.07);
+  --gold:#A9832A; --gold-tint:rgba(169,131,42,.13);
+  --good:#1F8F5F; --good-tint:rgba(31,143,95,.11);
+  --warn:#A56A0E; --warn-tint:rgba(165,106,14,.12);
+  --bad:#B5423F; --bad-tint:rgba(181,66,63,.11);
+  --track:#E7E3D9;
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --sh-1:0 1px 2px rgba(24,20,10,.05);
+  --sh-2:0 1px 2px rgba(24,20,10,.04), 0 6px 20px -10px rgba(24,20,10,.12);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#131316; --surface:#1A1B1F; --elevated:#212226; --inset:#0F1013;
+  --ink:#ECEAE3; --soft:#B5B7BD; --muted:#7B7E85;
+  --border:#2B2C31; --border-strong:#37383E;
+  --cobalt:#5680F2; --cobalt-hover:#7396F5; --cobalt-tint:rgba(86,128,242,.15);
+  --gold:#D2AB4E; --gold-tint:rgba(210,171,78,.14);
+  --good:#3FBE87; --good-tint:rgba(63,190,135,.13);
+  --warn:#D9A23B; --warn-tint:rgba(217,162,59,.13);
+  --bad:#DD716D; --bad-tint:rgba(221,113,109,.13);
+  --track:#2B2C31;
+  --sh-1:0 1px 2px rgba(0,0,0,.35); --sh-2:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -12px rgba(0,0,0,.55);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#131316; --surface:#1A1B1F; --elevated:#212226; --inset:#0F1013;
+  --ink:#ECEAE3; --soft:#B5B7BD; --muted:#7B7E85;
+  --border:#2B2C31; --border-strong:#37383E;
+  --cobalt:#5680F2; --cobalt-hover:#7396F5; --cobalt-tint:rgba(86,128,242,.15);
+  --gold:#D2AB4E; --gold-tint:rgba(210,171,78,.14);
+  --good:#3FBE87; --good-tint:rgba(63,190,135,.13);
+  --warn:#D9A23B; --warn-tint:rgba(217,162,59,.13);
+  --bad:#DD716D; --bad-tint:rgba(221,113,109,.13);
+  --track:#2B2C31;
+  --sh-1:0 1px 2px rgba(0,0,0,.35); --sh-2:0 1px 2px rgba(0,0,0,.35), 0 10px 26px -12px rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4,p{margin:0;}
+button{font-family:inherit;cursor:pointer;color:inherit;border:none;background:none;}
+a{color:inherit;text-decoration:none;}
+svg{display:block;flex-shrink:0;}
+:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px;border-radius:4px;}
+.serif{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-style:italic;}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;}
+.eyebrow{font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;transition-duration:.001ms!important;}}
+
+/* ---- SHELL ---- */
+.app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh;}
+.side{border-right:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+.side-head{display:flex;align-items:center;gap:9px;padding:18px 18px 14px;}
+.mark{width:24px;height:24px;border-radius:7px;background:var(--cobalt);display:grid;place-items:center;flex-shrink:0;}
+.brand{font-weight:700;font-size:14px;letter-spacing:-.01em;}
+.side-nav{flex:1;overflow-y:auto;padding:4px 12px;display:flex;flex-direction:column;gap:1px;}
+.nlabel{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px;}
+.nlabel:first-child{padding-top:6px;}
+.nitem{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:36px;border-radius:var(--r-sm);font-size:13.5px;font-weight:500;color:var(--soft);position:relative;}
+.nitem svg{width:16px;height:16px;stroke-width:1.7;color:var(--muted);}
+.nitem:hover{background:var(--inset);color:var(--ink);}
+.nitem.active{background:var(--cobalt-tint);color:var(--cobalt);font-weight:600;}
+.nitem.active svg{color:var(--cobalt);}
+.nrule{height:1px;background:var(--border);margin:10px 10px;}
+.side-foot{padding:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:1px;}
+.avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--cobalt),#6E93F4);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:600;flex-shrink:0;}
+.side-user{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);margin-top:4px;}
+.side-user:hover{background:var(--inset);}
+.side-user b{font-size:12.5px;font-weight:600;display:block;}
+.side-user span{font-size:11px;color:var(--muted);}
+
+.main{min-width:0;display:flex;flex-direction:column;}
+.topbar{position:sticky;top:0;z-index:20;height:54px;display:flex;align-items:center;gap:12px;padding:0 26px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(6px);}
+.crumb{font-size:13px;color:var(--muted);}
+.crumb b{color:var(--ink);font-weight:600;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.icon-btn{width:32px;height:32px;border-radius:var(--r-sm);display:grid;place-items:center;color:var(--soft);border:1px solid var(--border);background:var(--surface);}
+.icon-btn:hover{background:var(--inset);}
+.icon-btn svg{width:15px;height:15px;stroke-width:1.8;}
+.hamburger{display:none;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;padding:8px 14px;border-radius:var(--r-sm);border:1px solid transparent;white-space:nowrap;min-height:36px;}
+.btn svg{width:15px;height:15px;stroke-width:1.9;}
+.btn-primary{background:var(--cobalt);color:#fff;}
+.btn-primary:hover{background:var(--cobalt-hover);}
+.btn-secondary{background:var(--surface);border-color:var(--border-strong);color:var(--ink);}
+.btn-secondary:hover{background:var(--inset);}
+.btn-ghost{color:var(--soft);}
+.btn-ghost:hover{background:var(--inset);color:var(--ink);}
+.btn-sm{padding:6px 10px;font-size:12.5px;min-height:30px;}
+
+.content{flex:1;overflow-y:auto;padding:30px 32px 56px;}
+.wrap{max-width:960px;margin:0 auto;}
+.view[hidden]{display:none;}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+.page-head h1{font-size:15px;font-weight:700;letter-spacing:-.01em;}
+.page-head .sub{font-size:12.5px;color:var(--muted);margin-top:3px;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--sh-1);}
+.pad{padding:20px 22px;}
+.card-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.card-t{font-size:13px;font-weight:600;}
+
+@keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.anim{animation:rise .32s ease-out both;}
+.anim.d1{animation-delay:.03s;} .anim.d2{animation-delay:.07s;} .anim.d3{animation-delay:.11s;}
+
+/* ---- A. STATUS (dashboard greeting) ---- */
+.status-card{display:flex;align-items:center;gap:26px;flex-wrap:wrap;}
+.health-bar-wrap{flex:1;min-width:220px;}
+.health-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+.health-num{font-family:"JetBrains Mono",monospace;font-size:26px;font-weight:600;color:var(--good);}
+.health-track{height:8px;border-radius:20px;background:var(--track);overflow:hidden;}
+.health-fill{height:100%;border-radius:20px;background:var(--good);}
+.health-meta{margin-top:8px;font-size:12px;color:var(--muted);}
+.status-actions{display:flex;gap:9px;flex-shrink:0;}
+
+/* ---- B. NEXT STEP (the dominant actionable block) ---- */
+.next-step{background:var(--elevated);border-color:var(--border-strong);box-shadow:var(--sh-2);}
+.next-step .pad{display:flex;gap:18px;align-items:flex-start;}
+.ns-icon{width:38px;height:38px;border-radius:var(--r-sm);background:var(--cobalt-tint);color:var(--cobalt);display:grid;place-items:center;flex-shrink:0;}
+.ns-icon svg{width:19px;height:19px;stroke-width:1.9;}
+.ns-body{flex:1;min-width:0;}
+.ns-body h3{font-size:15.5px;font-weight:600;margin-bottom:5px;letter-spacing:-.005em;}
+.ns-body p{font-size:13px;color:var(--soft);line-height:1.5;}
+.ns-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap;}
+
+/* ---- C. Resume overview strip ---- */
+.overview{display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.ov-file{display:flex;align-items:center;gap:11px;flex:1;min-width:180px;}
+.ov-ic{width:34px;height:34px;border-radius:var(--r-sm);background:var(--inset);border:1px solid var(--border);color:var(--soft);display:grid;place-items:center;flex-shrink:0;}
+.ov-ic svg{width:16px;height:16px;stroke-width:1.7;}
+.ov-file b{font-size:13px;font-weight:600;display:block;}
+.ov-file span{font-size:11.5px;color:var(--muted);}
+.ov-stats{display:flex;gap:26px;}
+.ov-stat{text-align:left;}
+.ov-stat .l{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:3px;}
+.ov-stat .v{font-family:"JetBrains Mono",monospace;font-size:14px;font-weight:600;}
+.ov-actions{display:flex;gap:8px;}
+
+/* ---- D. Recent activity ---- */
+.activity{display:flex;flex-direction:column;}
+.act-row{display:flex;align-items:center;gap:11px;padding:9px 2px;}
+.act-row+.act-row{border-top:1px solid var(--border);}
+.act-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.act-dot.good{background:var(--good);}
+.act-row .t{flex:1;font-size:12.5px;color:var(--soft);}
+.act-row .d{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);}
+
+/* ---- Resume Analysis (report) ---- */
+.report-head{display:flex;gap:26px;align-items:center;flex-wrap:wrap;}
+.report-score{text-align:center;flex-shrink:0;}
+.report-score .n{font-family:"JetBrains Mono",monospace;font-size:38px;font-weight:600;line-height:1;color:var(--good);}
+.report-score .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:5px;}
+.report-verdict h2{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-weight:400;font-size:22px;line-height:1.25;margin-bottom:5px;}
+.report-verdict p{font-size:12.5px;color:var(--soft);}
+.strength-list{display:flex;flex-direction:column;gap:9px;}
+.strength-row{display:flex;align-items:flex-start;gap:9px;font-size:13px;}
+.strength-row svg{width:15px;height:15px;stroke-width:2.4;color:var(--good);flex-shrink:0;margin-top:1.5px;}
+.opp-row{display:flex;gap:14px;padding:13px 2px;align-items:flex-start;}
+.opp-row+.opp-row{border-top:1px solid var(--border);}
+.opp-n{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;color:var(--muted);width:20px;flex-shrink:0;padding-top:2px;}
+.opp-row b{font-size:13.5px;font-weight:600;display:block;margin-bottom:3px;}
+.opp-row p{font-size:12.5px;color:var(--soft);}
+.opp-row .go{margin-left:auto;flex-shrink:0;align-self:center;}
+
+/* ---- Improve — three choices ---- */
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.choice{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px;text-align:left;transition:border-color .15s,box-shadow .15s;}
+.choice:hover{border-color:var(--border-strong);box-shadow:var(--sh-2);}
+.choice.sel{border-color:var(--cobalt);box-shadow:var(--sh-2);}
+.choice .cic{width:34px;height:34px;border-radius:var(--r-sm);background:var(--cobalt-tint);color:var(--cobalt);display:grid;place-items:center;margin-bottom:13px;}
+.choice.sel .cic{background:var(--cobalt);color:#fff;}
+.choice .cic svg{width:17px;height:17px;stroke-width:1.8;}
+.choice h3{font-size:14px;font-weight:600;margin-bottom:5px;}
+.choice p{font-size:12px;color:var(--soft);line-height:1.45;}
+.loop{display:flex;align-items:center;gap:0;margin:22px 0 16px;}
+.loop-step{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
+.loop-step b{color:var(--ink);font-weight:600;}
+.loop-step.on{color:var(--cobalt);}
+.loop-step.on b{color:var(--cobalt);}
+.loop-arrow{width:22px;height:1px;background:var(--border-strong);margin:0 8px;}
+.diffrow{display:grid;grid-template-columns:auto 1fr;gap:11px;padding:11px 2px;font-size:13px;line-height:1.5;}
+.diffrow+.diffrow{border-top:1px solid var(--border);}
+.diffmark{width:18px;height:18px;border-radius:5px;display:grid;place-items:center;flex-shrink:0;margin-top:1px;}
+.diffmark svg{width:11px;height:11px;stroke-width:2.6;}
+.diffmark.add{background:var(--good-tint);color:var(--good);}
+.diffmark.rm{background:var(--warn-tint);color:var(--warn);}
+.diffrow .old{color:var(--muted);text-decoration:line-through;}
+.diffrow .new{color:var(--ink);}
+.diffrow .why{font-size:11.5px;color:var(--muted);margin-top:2px;}
+
+/* ---- Builder ---- */
+.builder-shell{display:grid;grid-template-columns:200px minmax(0,1fr);gap:0;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--surface);min-height:520px;}
+.b-sections{border-right:1px solid var(--border);padding:14px 10px;}
+.b-sec-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);font-size:13px;font-weight:500;color:var(--soft);margin-bottom:1px;}
+.b-sec-item svg{width:15px;height:15px;stroke-width:1.7;color:var(--muted);}
+.b-sec-item:hover{background:var(--inset);}
+.b-sec-item.active{background:var(--cobalt-tint);color:var(--cobalt);font-weight:600;}
+.b-sec-item.active svg{color:var(--cobalt);}
+.b-preview{background:var(--inset);padding:28px;display:flex;justify-content:center;}
+.paper{background:var(--elevated);width:100%;max-width:460px;padding:34px 32px;border-radius:6px;box-shadow:var(--sh-2);font-size:12px;}
+.paper h2{font-size:17px;font-weight:700;margin-bottom:2px;}
+.paper .role{font-size:12px;color:var(--soft);margin-bottom:12px;}
+.paper h4{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 6px;border-bottom:1px solid var(--border);padding-bottom:4px;}
+.paper li{margin-bottom:4px;color:var(--soft);}
+.paper ul{margin:0;padding-left:16px;}
+
+/* ---- Applications — honest empty state ---- */
+.empty-state{text-align:center;padding:52px 30px;}
+.empty-ic{width:44px;height:44px;border-radius:var(--r-md);background:var(--inset);color:var(--muted);display:grid;place-items:center;margin:0 auto 16px;}
+.empty-ic svg{width:21px;height:21px;stroke-width:1.6;}
+.empty-state h3{font-size:14.5px;font-weight:600;margin-bottom:6px;}
+.empty-state p{font-size:12.5px;color:var(--muted);max-width:38ch;margin:0 auto;line-height:1.55;}
+.roadmap-pill{display:inline-flex;align-items:center;gap:6px;margin-top:16px;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:600;color:var(--gold);background:var(--gold-tint);padding:4px 10px;border-radius:20px;}
+
+/* ---- Career Workspace ---- */
+.cw-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.cw-stat{text-align:center;padding:18px;}
+.cw-stat .v{font-family:"JetBrains Mono",monospace;font-size:24px;font-weight:600;}
+.cw-stat .l{font-size:11px;color:var(--muted);margin-top:5px;}
+
+/* ---- Settings (deliberately quiet) ---- */
+.settings-group{margin-bottom:26px;}
+.settings-group:last-child{margin-bottom:0;}
+.sg-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border);margin-bottom:2px;}
+.sg-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 2px;}
+.sg-row+.sg-row{border-top:1px solid var(--border);}
+.sg-row .l{font-size:13px;font-weight:500;}
+.sg-row .d{font-size:12px;color:var(--muted);margin-top:2px;}
+.sg-row .v{font-size:12.5px;color:var(--soft);}
+
+.preview-flag{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:600;color:var(--muted);background:var(--inset);padding:3px 8px;border-radius:20px;}
+
+@media (max-width:980px){
+  .app{grid-template-columns:1fr;}
+  .side{position:fixed;left:0;top:0;height:100vh;width:248px;z-index:200;transform:translateX(-100%);transition:transform .25s ease;}
+  .side.open{transform:translateX(0);box-shadow:0 0 0 100vmax rgba(15,13,8,.35);}
+  .hamburger{display:grid;place-items:center;width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface);}
+  .hamburger svg{width:16px;height:16px;stroke-width:1.9;}
+  .content{padding:22px 18px 44px;}
+  .choices{grid-template-columns:1fr;}
+  .builder-shell{grid-template-columns:1fr;}
+  .b-sections{border-right:none;border-bottom:1px solid var(--border);display:flex;overflow-x:auto;gap:4px;}
+  .cw-stats{grid-template-columns:1fr;}
+  .status-card,.overview{flex-direction:column;align-items:stretch;}
+  .status-actions,.ov-actions{width:100%;}
+  .status-actions .btn,.ov-actions .btn{flex:1;}
+  .report-head{flex-direction:column;align-items:flex-start;}
+}
+</style>
+
+<div class="app">
+  <!-- SIDEBAR — quiet, grouped exactly by function, not decoration -->
+  <aside class="side" id="side">
+    <div class="side-head">
+      <span class="mark"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6"/><path d="m6 12 6-6 6 6"/></svg></span>
+      <span class="brand">JobSpike</span>
+    </div>
+    <nav class="side-nav">
+      <div class="nlabel">Workspace</div>
+      <a class="nitem active" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.3"/><rect x="14" y="3" width="7" height="5" rx="1.3"/><rect x="14" y="12" width="7" height="9" rx="1.3"/><rect x="3" y="16" width="7" height="5" rx="1.3"/></svg>Dashboard</a>
+      <a class="nitem" data-view="analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>Resume Analysis</a>
+      <a class="nitem" data-view="improve"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>Improve</a>
+      <a class="nitem" data-view="builder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Builder</a>
+      <div class="nrule"></div>
+      <div class="nlabel">Career</div>
+      <a class="nitem" data-view="applications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>Applications</a>
+      <a class="nitem" data-view="career"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 5-4 1 2-5z"/></svg>Career Workspace</a>
+    </nav>
+    <div class="side-foot">
+      <a class="nitem" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 14H3.4a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 5 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.5V3.4a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V10a2 2 0 0 1 0 4h-.1Z"/></svg>Settings</a>
+      <div class="side-user">
+        <span class="avatar">SC</span>
+        <span><b>Sri Charith</b><span>Free plan</span></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
+      <span class="crumb">JobSpike <b id="crumbPage">/ Dashboard</b></span>
+      <div class="tb-right">
+        <span class="preview-flag">Preview &middot; sample data</span>
+        <button class="icon-btn" id="themeBtn" aria-label="Toggle theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg></button>
+        <button class="icon-btn" aria-label="Help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.8 1c0 1.5-2.3 1.7-2.3 3.3"/><path d="M12 17h.01"/></svg></button>
+        <span class="avatar" style="cursor:pointer;">SC</span>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ============ DASHBOARD ============ -->
+      <div class="view wrap" id="v-dashboard">
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Good morning, Charith.</h1><p class="sub">Your resume is ready to improve.</p></div></div>
+
+        <!-- A. Status -->
+        <section class="card status-card pad anim d1">
+          <div class="health-bar-wrap">
+            <div class="health-row"><span class="eyebrow">Resume health</span><span class="health-num">82</span></div>
+            <div class="health-track"><div class="health-fill" style="width:82%"></div></div>
+            <div class="health-meta">Last analyzed 2 hours ago</div>
+          </div>
+          <div class="status-actions">
+            <button class="btn btn-secondary" data-goto="analysis">View analysis</button>
+            <button class="btn btn-primary" data-goto="improve">Improve my resume</button>
+          </div>
+        </section>
+
+        <!-- B. Next step -->
+        <section class="card next-step anim d2" style="margin-top:14px;">
+          <div class="pad">
+            <span class="ns-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
+            <div class="ns-body">
+              <div class="eyebrow" style="color:var(--cobalt);margin-bottom:6px;">Next step</div>
+              <h3>Improve your experience section</h3>
+              <p>Your analysis found 3 opportunities to make your impact clearer &mdash; unquantified bullets, generic verbs, and one section with no measurable outcome.</p>
+              <div class="ns-foot">
+                <span style="font-size:11.5px;color:var(--muted);">From your last scan, 2 hours ago</span>
+                <button class="btn btn-primary btn-sm" data-goto="improve">Improve experience<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- C. Resume overview -->
+        <section class="card overview pad anim d3" style="margin-top:14px;">
+          <div class="ov-file">
+            <span class="ov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/></svg></span>
+            <div><b>Software Engineer Resume</b><span>Updated Aug 23</span></div>
+          </div>
+          <div class="ov-stats">
+            <div class="ov-stat"><div class="l">Health</div><div class="v">82</div></div>
+            <div class="ov-stat"><div class="l">Sections</div><div class="v">8/8</div></div>
+            <div class="ov-stat"><div class="l">Last analysis</div><div class="v" style="font-size:13px;">Today</div></div>
+          </div>
+          <div class="ov-actions">
+            <button class="btn btn-secondary btn-sm" data-goto="builder">View resume</button>
+            <button class="btn btn-secondary btn-sm">Analyze again</button>
+          </div>
+        </section>
+
+        <!-- D. Recent activity -->
+        <section class="card pad anim d3" style="margin-top:14px;">
+          <div class="card-h"><span class="card-t">Recent activity</span></div>
+          <div class="activity">
+            <div class="act-row"><span class="act-dot good"></span><span class="t">Resume analyzed</span><span class="d">Today</span></div>
+            <div class="act-row"><span class="act-dot"></span><span class="t">Experience section improved</span><span class="d">Yesterday</span></div>
+            <div class="act-row"><span class="act-dot"></span><span class="t">Resume exported</span><span class="d">Aug 20</span></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ RESUME ANALYSIS ============ -->
+      <div class="view wrap" id="v-analysis" hidden>
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Resume Analysis</h1><p class="sub">Software Engineer Resume &middot; Analyzed Aug 23</p></div></div>
+
+        <section class="card pad report-head anim d1">
+          <div class="report-score"><div class="n">82</div><div class="l">/ 100</div></div>
+          <div class="report-verdict">
+            <h2>Strong foundation. Three areas need attention.</h2>
+            <p>Your structure and keyword coverage are solid — the gap is in how your impact reads to a recruiter skimming for ten seconds.</p>
+          </div>
+        </section>
+
+        <div class="eyebrow" style="margin:22px 0 10px;">Strengths</div>
+        <section class="card pad anim d2">
+          <div class="strength-list">
+            <div class="strength-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Clear technical skills, grouped and scannable</div>
+            <div class="strength-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Strong, well-scoped project section</div>
+            <div class="strength-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Clean, ATS-safe formatting</div>
+          </div>
+        </section>
+
+        <div class="eyebrow" style="margin:22px 0 10px;">Opportunities</div>
+        <section class="card pad anim d3">
+          <div class="opp-row">
+            <span class="opp-n">01</span>
+            <div style="flex:1;"><b>Experience</b><p>Quantify your impact more clearly — most bullets describe duties, not outcomes.</p></div>
+            <button class="btn btn-ghost btn-sm go" data-goto="improve">Fix<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="opp-row">
+            <span class="opp-n">02</span>
+            <div style="flex:1;"><b>Summary</b><p>Make the opening line more specific to the role you're targeting.</p></div>
+            <button class="btn btn-ghost btn-sm go" data-goto="improve">Fix<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+          <div class="opp-row">
+            <span class="opp-n">03</span>
+            <div style="flex:1;"><b>Skills</b><p>Reduce redundant keywords — three tools are listed twice, in two sections.</p></div>
+            <button class="btn btn-ghost btn-sm go" data-goto="improve">Fix<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ IMPROVE ============ -->
+      <div class="view wrap" id="v-improve" hidden>
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Improve your resume</h1><p class="sub">What would you like to improve?</p></div></div>
+
+        <div class="choices anim d1">
+          <button class="choice sel" data-choice="entire">
+            <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
+            <h3>Entire Resume</h3><p>Improve overall quality across every section.</p>
+          </button>
+          <button class="choice" data-choice="section">
+            <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
+            <h3>A Section</h3><p>Focus on one area — summary, a role, or skills.</p>
+          </button>
+          <button class="choice" data-choice="compare">
+            <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h7v12H3zM14 6h7v12h-7z"/><path d="M10 12h4"/></svg></span>
+            <h3>Compare Changes</h3><p>Review before and after, side by side.</p>
+          </button>
+        </div>
+
+        <div class="loop anim d2">
+          <span class="loop-step on"><span class="mark" style="width:14px;height:14px;background:var(--cobalt);border-radius:50%;"></span><b>What</b></span>
+          <span class="loop-arrow"></span>
+          <span class="loop-step"><b>Why</b></span>
+          <span class="loop-arrow"></span>
+          <span class="loop-step"><b>Changed</b></span>
+          <span class="loop-arrow"></span>
+          <span class="loop-step"><b>Accept</b></span>
+        </div>
+
+        <section class="card pad anim d3">
+          <div class="card-h"><span class="card-t">What changed</span><span class="mono" style="font-size:11.5px;color:var(--good);">82 &rarr; 91</span></div>
+          <div class="diffrow"><span class="diffmark rm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></span><div><span class="old">Worked on the checkout flow and improved performance.</span></div></div>
+          <div class="diffrow"><span class="diffmark add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div><span class="new">Rebuilt the checkout flow, cutting drop-off 18% for 2M monthly users.</span><div class="why">Added a quantified outcome and scope.</div></div></div>
+          <div style="display:flex;justify-content:flex-end;gap:9px;margin-top:16px;">
+            <button class="btn btn-secondary btn-sm">Reject</button>
+            <button class="btn btn-primary btn-sm">Accept changes</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ BUILDER ============ -->
+      <div class="view wrap" id="v-builder" hidden style="max-width:1080px;">
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Builder</h1><p class="sub">One place to build the resume — the preview leads, the form follows.</p></div></div>
+        <div class="builder-shell anim d1">
+          <div class="b-sections">
+            <div class="b-sec-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>Personal</div>
+            <div class="b-sec-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/></svg>Experience</div>
+            <div class="b-sec-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="M3 12l9 5 9-5"/></svg>Education</div>
+            <div class="b-sec-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 1.4 0l1.6-1.6a1 1 0 0 1 1.4 0l1.2 1.2a1 1 0 0 1 0 1.4l-1.6 1.6a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 1 0 1.4l-1.2 1.2a1 1 0 0 1-1.4 0l-1.6-1.6a1 1 0 0 0-1.4 0L5.3 21.7a1 1 0 0 1-1.4 0l-1.6-1.6a1 1 0 0 1 0-1.4L14.7 6.3Z"/></svg>Skills</div>
+            <div class="b-sec-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>Projects</div>
+            <div style="height:1px;background:var(--border);margin:10px 4px;"></div>
+            <div class="b-sec-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.3"/><rect x="14" y="3" width="7" height="7" rx="1.3"/><rect x="3" y="14" width="7" height="7" rx="1.3"/><rect x="14" y="14" width="7" height="7" rx="1.3"/></svg>Template</div>
+          </div>
+          <div class="b-preview">
+            <div class="paper">
+              <h2>Charith Sri</h2>
+              <div class="role">Senior Software Engineer · San Francisco</div>
+              <h4>Summary</h4>
+              <p style="color:var(--soft);">Backend engineer with 6 years building distributed systems and APIs at scale.</p>
+              <h4>Experience</h4>
+              <p style="font-weight:600;margin-bottom:2px;">Senior Software Engineer, Acme Corp</p>
+              <ul>
+                <li>Cut deployment overhead 40% by containerizing services on AWS.</li>
+                <li>Shipped releases to 30+ stakeholders in hours, not days.</li>
+              </ul>
+              <h4>Skills</h4>
+              <p style="color:var(--soft);">Python &middot; Go &middot; Kubernetes &middot; PostgreSQL &middot; AWS</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ APPLICATIONS — honest, no fake rows ============ -->
+      <div class="view wrap" id="v-applications" hidden>
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Applications</h1><p class="sub">0 active applications</p></div></div>
+        <section class="card anim d1">
+          <div class="empty-state">
+            <span class="empty-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 13h8M8 17h5"/></svg></span>
+            <h3>Application tracking isn't live yet</h3>
+            <p>When it ships, you'll log the roles you've applied to and see status move from Applied to Interview to Offer — pulled from what you actually track, never estimated.</p>
+            <span class="roadmap-pill"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 8l6 .9-4.5 4.3L18 20l-6-3.2L6 20l1.5-6.8L3 8.9 9 8z"/></svg>On the roadmap</span>
+          </div>
+        </section>
+      </div>
+
+      <!-- ============ CAREER WORKSPACE ============ -->
+      <div class="view wrap" id="v-career" hidden>
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Career Workspace</h1><p class="sub">Your career, in one place — populated only with what's real.</p></div></div>
+        <section class="card pad anim d1">
+          <div class="card-h"><span class="card-t">Your career</span></div>
+          <div class="cw-stats">
+            <div class="cw-stat"><div class="v">82</div><div class="l">Resume health</div></div>
+            <div class="cw-stat"><div class="v">1</div><div class="l">Analyses run</div></div>
+            <div class="cw-stat"><div class="v">8/8</div><div class="l">Sections complete</div></div>
+          </div>
+        </section>
+        <section class="card pad anim d2" style="margin-top:14px;">
+          <div class="card-h"><span class="card-t">Recommended next actions</span></div>
+          <div class="activity">
+            <div class="act-row"><span class="act-dot"></span><span class="t">Improve your experience section for stronger impact</span><span class="d mono">+6 est.</span></div>
+            <div class="act-row"><span class="act-dot"></span><span class="t">Run a second analysis after your edits land</span><span class="d">&mdash;</span></div>
+          </div>
+        </section>
+        <div style="margin-top:14px;padding:14px 2px;font-size:12px;color:var(--muted);">Applications and skill-gap tracking join this view once they're wired to real data — see <a data-goto="applications" style="color:var(--cobalt);font-weight:600;">Applications</a>.</div>
+      </div>
+
+      <!-- ============ SETTINGS — deliberately boring ============ -->
+      <div class="view wrap" id="v-settings" hidden style="max-width:640px;">
+        <div class="page-head anim"><div><h1 class="serif" style="font-size:22px;">Settings</h1></div></div>
+        <section class="card pad anim d1">
+          <div class="settings-group">
+            <div class="sg-label">Account</div>
+            <div class="sg-row"><span class="l">Name</span><span class="v">Sri Charith Thondapu</span></div>
+            <div class="sg-row"><span class="l">Email</span><span class="v">sri.charith@email.com</span></div>
+            <div class="sg-row"><span class="l">Google account</span><span class="v">Not connected</span></div>
+          </div>
+          <div class="settings-group">
+            <div class="sg-label">Preferences</div>
+            <div class="sg-row"><div><span class="l">Appearance</span><div class="d">Follows your system by default</div></div><span class="v">System</span></div>
+            <div class="sg-row"><div><span class="l">Notifications</span><div class="d">Email when an analysis finishes</div></div><span class="v">On</span></div>
+          </div>
+          <div class="settings-group">
+            <div class="sg-label">Security</div>
+            <div class="sg-row"><span class="l">Authentication</span><span class="v">Password</span></div>
+            <div class="sg-row"><span class="l">Sessions</span><span class="v">1 active</span></div>
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    root.setAttribute('data-theme', cur==='dark'?'light':'dark');
+  });
+
+  var side=document.getElementById('side');
+  document.getElementById('hamburgerBtn').addEventListener('click',function(){ side.classList.toggle('open'); });
+  side.addEventListener('click',function(e){ if(e.target===side) side.classList.remove('open'); });
+
+  var names={dashboard:'Dashboard',analysis:'Resume Analysis',improve:'Improve',builder:'Builder',applications:'Applications',career:'Career Workspace',settings:'Settings'};
+  var navItems=[].slice.call(document.querySelectorAll('[data-view]'));
+  function show(v){
+    Object.keys(names).forEach(function(k){
+      var el=document.getElementById('v-'+k);
+      if(el) el.hidden = (k!==v);
+    });
+    navItems.forEach(function(el){ el.classList.toggle('active', el.getAttribute('data-view')===v); });
+    document.getElementById('crumbPage').textContent='/ '+names[v];
+    side.classList.remove('open');
+    document.querySelector('.content').scrollTop = 0;
+  }
+  navItems.forEach(function(el){ el.addEventListener('click',function(){ show(el.getAttribute('data-view')); }); });
+  [].slice.call(document.querySelectorAll('[data-goto]')).forEach(function(el){
+    el.addEventListener('click',function(e){ e.preventDefault(); show(el.getAttribute('data-goto')); });
+  });
+
+  [].slice.call(document.querySelectorAll('.choice')).forEach(function(c){
+    c.addEventListener('click',function(){
+      document.querySelectorAll('.choice').forEach(function(x){ x.classList.remove('sel'); });
+      c.classList.add('sel');
+    });
+  });
+})();
+</script>

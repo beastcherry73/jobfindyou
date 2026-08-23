@@ -1,0 +1,584 @@
+<title>Analysis Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ============================================================
+   JobSpike — Analysis Report (preview). Direction C.
+   Shares the dashboard token system + shell (one product).
+   Density: working. Vanilla CSS + inline SVG only.
+   ============================================================ */
+
+/* ---- LIGHT ---- */
+:root{
+  --js-bg:#F7F5F0; --js-surface:#FCFBF8; --js-elevated:#FFFFFF; --js-inset:#EFEDE6;
+  --js-text:#111214; --js-text-soft:#45484F; --js-text-muted:#8A8D93;
+  --js-border:#E5E2DB; --js-border-strong:#D8D4CB;
+  --js-primary:#2457E6; --js-primary-hover:#1D46C7;
+  --js-primary-tint:color-mix(in srgb, var(--js-primary) 10%, transparent);
+  --js-success:#22A66F; --js-warning:#C88A16; --js-error:#C94A4A; --js-info:#3B82F6;
+  --js-bar:#CDC9BE; --js-ring-track:#E7E3DA;
+  --js-radar:#5A5E66;
+  --js-shadow-sm:0 1px 2px rgba(38,34,26,.05), 0 1px 1px rgba(38,34,26,.04);
+  --js-shadow-md:0 1px 2px rgba(38,34,26,.05), 0 10px 26px -12px rgba(41,44,66,.16);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --js-bg:#131417; --js-surface:#1A1C21; --js-elevated:#22252B; --js-inset:#14161A;
+    --js-text:#ECEAE4; --js-text-soft:#B7BAC1; --js-text-muted:#7E828A;
+    --js-border:#2A2E35; --js-border-strong:#343943;
+    --js-primary:#4E7BF0; --js-primary-hover:#6E93F4;
+    --js-primary-tint:color-mix(in srgb, var(--js-primary) 18%, transparent);
+    --js-success:#35C286; --js-warning:#E0A93B; --js-error:#E06A6A; --js-info:#5B93F6;
+    --js-bar:#3A3F48; --js-ring-track:#2A2E35; --js-radar:#9498A0;
+    --js-shadow-sm:0 1px 2px rgba(0,0,0,.30);
+    --js-shadow-md:0 2px 4px rgba(0,0,0,.30), 0 14px 30px -14px rgba(0,0,0,.55);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --js-bg:#131417; --js-surface:#1A1C21; --js-elevated:#22252B; --js-inset:#14161A;
+  --js-text:#ECEAE4; --js-text-soft:#B7BAC1; --js-text-muted:#7E828A;
+  --js-border:#2A2E35; --js-border-strong:#343943;
+  --js-primary:#4E7BF0; --js-primary-hover:#6E93F4;
+  --js-primary-tint:color-mix(in srgb, var(--js-primary) 18%, transparent);
+  --js-success:#35C286; --js-warning:#E0A93B; --js-error:#E06A6A; --js-info:#5B93F6;
+  --js-bar:#3A3F48; --js-ring-track:#2A2E35; --js-radar:#9498A0;
+  --js-shadow-sm:0 1px 2px rgba(0,0,0,.30);
+  --js-shadow-md:0 2px 4px rgba(0,0,0,.30), 0 14px 30px -14px rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0; background:var(--js-bg); color:var(--js-text);
+  font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4,p{margin:0;}
+button{font-family:inherit;cursor:pointer;color:inherit;}
+a{color:inherit;text-decoration:none;}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;}
+.tnum{font-variant-numeric:tabular-nums;}
+.serif{font-family:"Instrument Serif",Georgia,"Times New Roman",serif;}
+:focus-visible{outline:2px solid var(--js-primary);outline-offset:2px;border-radius:4px;}
+
+.eyebrow{
+  font-family:"JetBrains Mono",monospace; font-size:11px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--js-text-muted);
+  display:inline-flex; align-items:center; gap:9px;
+}
+.eyebrow .dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;}
+
+/* ---- SHELL ---- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh;}
+.side{
+  border-right:1px solid var(--js-border); background:var(--js-surface);
+  padding:20px 14px; display:flex; flex-direction:column; gap:6px;
+  position:sticky; top:0; height:100vh;
+}
+.brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;}
+.brand-mark{width:30px;height:30px;border-radius:8px;background:var(--js-primary);display:grid;place-items:center;flex:none;box-shadow:var(--js-shadow-sm);}
+.brand-name{font-weight:600;font-size:16px;letter-spacing:-.01em;}
+.brand-name b{font-weight:700;}
+.nav-label{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--js-text-muted);padding:14px 10px 6px;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:8px 10px;border-radius:8px;color:var(--js-text-soft);font-size:14px;font-weight:450;transition:background .15s ease,color .15s ease;position:relative;}
+.nav-item svg{width:17px;height:17px;flex:none;stroke-width:1.7;}
+.nav-item:hover{background:var(--js-inset);color:var(--js-text);}
+.nav-item.active{background:var(--js-primary-tint);color:var(--js-primary);font-weight:500;}
+.nav-item.active::before{content:"";position:absolute;left:-14px;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--js-primary);}
+.nav-badge{margin-left:auto;font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--js-text-muted);background:var(--js-inset);padding:1px 7px;border-radius:20px;font-weight:500;}
+.side-spacer{flex:1;}
+.side-user{display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:9px;border:1px solid var(--js-border);background:var(--js-elevated);}
+.avatar{width:30px;height:30px;border-radius:50%;flex:none;background:linear-gradient(135deg,#2457E6,#5B93F6);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600;}
+.side-user .who{display:flex;flex-direction:column;line-height:1.25;min-width:0;}
+.side-user .who b{font-size:13px;font-weight:600;}
+.side-user .who span{font-size:11.5px;color:var(--js-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.main{min-width:0;display:flex;flex-direction:column;}
+.topbar{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;padding:14px 32px;
+  background:color-mix(in srgb, var(--js-bg) 82%, transparent);
+  backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);
+  border-bottom:1px solid var(--js-border);
+}
+.mobile-brand{display:none;align-items:center;gap:9px;}
+.crumb{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--js-text-muted);min-width:0;}
+.crumb a{color:var(--js-text-muted);transition:color .15s ease;white-space:nowrap;}
+.crumb a:hover{color:var(--js-text);}
+.crumb svg{width:14px;height:14px;stroke-width:1.8;flex:none;}
+.crumb .here{color:var(--js-text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+
+.appearance{display:inline-flex;align-items:center;position:relative;background:var(--js-inset);border:1px solid var(--js-border);border-radius:9px;padding:3px;gap:2px;}
+.appearance .thumb{position:absolute;top:3px;left:3px;width:32px;height:28px;border-radius:6px;background:var(--js-elevated);box-shadow:var(--js-shadow-sm);transition:transform .22s cubic-bezier(.4,.05,.2,1);border:1px solid var(--js-border);}
+.appearance button{position:relative;z-index:1;width:32px;height:28px;border:0;background:transparent;display:grid;place-items:center;border-radius:6px;color:var(--js-text-muted);transition:color .15s ease;}
+.appearance button svg{width:15px;height:15px;stroke-width:1.8;}
+.appearance button[aria-pressed="true"]{color:var(--js-primary);}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--js-border);background:var(--js-surface);display:grid;place-items:center;color:var(--js-text-soft);transition:background .15s ease;position:relative;}
+.icon-btn:hover{background:var(--js-inset);}
+.icon-btn svg{width:17px;height:17px;stroke-width:1.7;}
+
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;border-radius:9px;font-size:14px;font-weight:500;line-height:1;padding:10px 15px;border:1px solid transparent;transition:background .15s ease,border-color .15s ease,transform .1s ease;}
+.btn svg{width:16px;height:16px;stroke-width:1.9;}
+.btn:active{transform:translateY(1px);}
+.btn-primary{background:var(--js-primary);color:#fff;box-shadow:var(--js-shadow-sm);}
+.btn-primary:hover{background:var(--js-primary-hover);}
+.btn-secondary{background:var(--js-surface);border-color:var(--js-border-strong);color:var(--js-text);}
+.btn-secondary:hover{background:var(--js-inset);}
+.btn-ghost{background:transparent;color:var(--js-text-soft);}
+.btn-ghost:hover{background:var(--js-inset);color:var(--js-text);}
+.btn-sm{padding:7px 11px;font-size:13px;border-radius:8px;}
+
+/* ---- CONTENT ---- */
+.content{padding:26px 32px 56px;max-width:1160px;width:100%;margin:0 auto;}
+
+.report-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px;}
+.rh-left{display:flex;gap:15px;min-width:0;}
+.doc-badge{width:44px;height:44px;border-radius:10px;flex:none;background:var(--js-inset);border:1px solid var(--js-border);display:grid;place-items:center;color:var(--js-text-soft);}
+.doc-badge svg{width:21px;height:21px;stroke-width:1.6;}
+.rh-title{min-width:0;}
+.rh-title h1{font-size:20px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.rh-meta{margin-top:5px;font-size:13px;color:var(--js-text-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rh-meta .mono{font-size:12px;}
+.rh-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+.pill{font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:20px;white-space:nowrap;}
+.pill svg{width:12px;height:12px;stroke-width:2.4;}
+.pill.good{color:var(--js-success);background:color-mix(in srgb,var(--js-success) 13%,transparent);}
+.pill.warn{color:var(--js-warning);background:color-mix(in srgb,var(--js-warning) 15%,transparent);}
+.pill.bad{color:var(--js-error);background:color-mix(in srgb,var(--js-error) 13%,transparent);}
+.pill .w{font-family:"Inter",sans-serif;font-weight:500;font-size:11px;}
+
+.card{background:var(--js-surface);border:1px solid var(--js-border);border-radius:14px;box-shadow:var(--js-shadow-sm);}
+.card-pad{padding:20px 22px;}
+
+/* verdict band */
+.verdict{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:0;background:var(--js-elevated);box-shadow:var(--js-shadow-md);overflow:hidden;}
+.verdict-left{padding:24px 24px;display:flex;gap:22px;align-items:center;border-right:1px solid var(--js-border);}
+.verdict-right{padding:22px 24px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center;}
+
+.ring-wrap{position:relative;width:132px;height:132px;flex:none;}
+.ring-wrap svg{width:132px;height:132px;transform:rotate(-90deg);}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-center .num{font-size:40px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--js-success);}
+.ring-center .den{font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--js-text-muted);margin-top:3px;}
+.ring-center .word{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--js-success);margin-top:6px;background:color-mix(in srgb,var(--js-success) 12%,transparent);padding:2px 7px;border-radius:20px;}
+.verdict-copy .eyebrow{margin-bottom:9px;}
+.verdict-copy h2{font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-size:25px;line-height:1.18;letter-spacing:.005em;text-wrap:balance;}
+.verdict-copy .qk{margin-top:12px;display:flex;flex-wrap:wrap;gap:7px 16px;}
+.qk .qk-i{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--js-text-soft);}
+.qk .qk-i b{font-family:"JetBrains Mono",monospace;font-weight:600;color:var(--js-text);}
+.qk .qk-i .d{width:6px;height:6px;border-radius:50%;flex:none;}
+
+/* radar */
+.radar-wrap{width:180px;height:180px;flex:none;position:relative;}
+.radar-wrap svg{width:180px;height:180px;display:block;overflow:visible;}
+.radar-ax{font-family:"JetBrains Mono",monospace;font-size:8.5px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;fill:var(--js-text-muted);}
+.dim-list{display:flex;flex-direction:column;gap:9px;min-width:0;}
+.dim-row{display:grid;grid-template-columns:104px 1fr auto;align-items:center;gap:11px;}
+.dim-row .dl{font-size:12.5px;color:var(--js-text-soft);white-space:nowrap;}
+.dim-row .dt{height:6px;border-radius:6px;background:var(--js-inset);overflow:hidden;}
+.dim-row .df{height:100%;border-radius:6px;background:var(--js-bar);}
+.dim-row .dv{font-family:"JetBrains Mono",monospace;font-size:12.5px;font-weight:600;text-align:right;min-width:26px;}
+.dv.g{color:var(--js-success);} .dv.a{color:var(--js-warning);} .dv.r{color:var(--js-error);}
+
+/* tabs */
+.tabs-wrap{margin-top:22px;}
+.tablist{display:flex;gap:4px;border-bottom:1px solid var(--js-border);margin-bottom:20px;overflow-x:auto;scrollbar-width:none;}
+.tablist::-webkit-scrollbar{display:none;}
+.tab{border:0;background:transparent;padding:10px 14px;font-size:13.5px;font-weight:500;color:var(--js-text-muted);position:relative;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;transition:color .15s ease;}
+.tab:hover{color:var(--js-text);}
+.tab[aria-selected="true"]{color:var(--js-text);}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:8px;right:8px;bottom:-1px;height:2px;border-radius:2px;background:var(--js-primary);}
+.tab .cnt{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;color:var(--js-text-muted);background:var(--js-inset);border-radius:20px;padding:1px 7px;}
+.tabpanel[hidden]{display:none;}
+
+.col2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.sub-h{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--js-text-muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.sw{display:flex;flex-direction:column;gap:2px;}
+.sw-item{display:grid;grid-template-columns:auto 1fr;gap:11px;padding:11px 4px;font-size:13.5px;color:var(--js-text-soft);line-height:1.5;}
+.sw-item + .sw-item{border-top:1px solid var(--js-border);}
+.sw-ic{width:20px;height:20px;border-radius:6px;display:grid;place-items:center;flex:none;margin-top:1px;}
+.sw-ic svg{width:13px;height:13px;stroke-width:2.4;}
+.sw-ic.pos{background:color-mix(in srgb,var(--js-success) 14%,transparent);color:var(--js-success);}
+.sw-ic.neg{background:color-mix(in srgb,var(--js-warning) 16%,transparent);color:var(--js-warning);}
+
+.miss-row{display:flex;flex-wrap:wrap;gap:9px;}
+.miss-chip{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:9px;border:1px dashed var(--js-border-strong);background:var(--js-surface);font-size:13px;color:var(--js-text-soft);}
+.miss-chip svg{width:14px;height:14px;stroke-width:2;color:var(--js-text-muted);}
+
+/* ATS issues */
+.ats-row{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start;padding:15px 4px;}
+.ats-row + .ats-row{border-top:1px solid var(--js-border);}
+.sev{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:6px;white-space:nowrap;margin-top:1px;}
+.sev.med{color:var(--js-warning);background:color-mix(in srgb,var(--js-warning) 14%,transparent);}
+.sev.low{color:var(--js-text-muted);background:var(--js-inset);}
+.ats-body .at{font-size:13.5px;font-weight:500;color:var(--js-text);}
+.ats-body .af{font-size:12.5px;color:var(--js-text-muted);margin-top:3px;line-height:1.5;}
+.ats-body .af b{color:var(--js-text-soft);font-weight:500;}
+
+/* keywords */
+.kw-cover{display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+.kw-cover .cnum{font-size:30px;font-weight:600;letter-spacing:-.02em;color:var(--js-success);line-height:1;}
+.kw-cover .cx{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--js-text-muted);}
+.kw-cover .ctrack{flex:1;min-width:180px;height:8px;border-radius:8px;background:var(--js-inset);overflow:hidden;}
+.kw-cover .cfill{height:100%;border-radius:8px;background:var(--js-success);}
+.kw-group + .kw-group{margin-top:18px;}
+.kw-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;}
+.kw{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:20px;font-size:12.5px;font-weight:450;border:1px solid var(--js-border);}
+.kw svg{width:12px;height:12px;stroke-width:2.4;}
+.kw.have{color:var(--js-text-soft);background:var(--js-surface);}
+.kw.have svg{color:var(--js-success);}
+.kw.miss{color:var(--js-text-soft);background:var(--js-inset);border-style:dashed;}
+.kw.miss svg{color:var(--js-warning);}
+
+/* suggestions */
+.sugg-row{display:grid;grid-template-columns:auto 1fr auto;gap:15px;align-items:center;padding:15px 4px;}
+.sugg-row + .sugg-row{border-top:1px solid var(--js-border);}
+.sugg-n{width:26px;height:26px;border-radius:7px;flex:none;display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;color:var(--js-primary);background:var(--js-primary-tint);}
+.sugg-body .st{font-size:13.5px;font-weight:500;color:var(--js-text);}
+.sugg-body .ss{font-size:12.5px;color:var(--js-text-muted);margin-top:3px;line-height:1.5;}
+.sugg-right{display:flex;align-items:center;gap:12px;flex:none;}
+.impact-tag{display:inline-flex;align-items:center;gap:5px;font-family:"JetBrains Mono",monospace;font-size:12px;font-weight:600;color:var(--js-success);white-space:nowrap;}
+.impact-tag svg{width:13px;height:13px;stroke-width:2.4;}
+
+.foot-note{margin-top:30px;padding-top:16px;border-top:1px solid var(--js-border);display:flex;align-items:center;gap:9px;color:var(--js-text-muted);font-size:12px;}
+.foot-note svg{width:14px;height:14px;stroke-width:1.8;}
+
+@keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+.anim{animation:rise .5s cubic-bezier(.2,.6,.2,1) both;}
+.anim.d1{animation-delay:.05s;} .anim.d2{animation-delay:.12s;}
+
+@media (max-width:1000px){
+  .app{grid-template-columns:1fr;}
+  .side{display:none;}
+  .mobile-brand{display:flex;}
+  .topbar{padding:12px 18px;}
+  .content{padding:20px 18px 48px;}
+  .verdict{grid-template-columns:1fr;}
+  .verdict-left{border-right:0;border-bottom:1px solid var(--js-border);}
+}
+@media (max-width:720px){
+  .col2{grid-template-columns:1fr;}
+  .verdict-right{grid-template-columns:1fr;justify-items:center;text-align:center;}
+  .dim-list{width:100%;max-width:400px;}
+  .verdict-left{flex-direction:column;text-align:center;}
+}
+@media (max-width:420px){
+  .content{padding:16px 13px 40px;}
+  .card-pad{padding:16px 15px;}
+  .verdict-left,.verdict-right{padding:18px 16px;}
+  .rh-actions .btn{flex:1;}
+  .sugg-row{grid-template-columns:auto 1fr;}
+  .sugg-right{grid-column:1 / -1;justify-content:space-between;padding-left:41px;}
+  .ats-row{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;animation-delay:0ms !important;transition-duration:.001ms !important;}
+  .appearance .thumb{transition:none;}
+}
+</style>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6"/><path d="m6 12 6-6 6 6"/></svg></span>
+      <span class="brand-name">Job<b>Spike</b></span>
+    </div>
+    <div class="nav-label">Workspace</div>
+    <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</a>
+    <a class="nav-item active" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M11 8v6M8 11h6"/><path d="m20 20-3.2-3.2"/></svg>Resume Analysis</a>
+    <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>Improve Resume</a>
+    <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/></svg>Resume Builder</a>
+    <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.4"/><rect x="10" y="4" width="5" height="11" rx="1.4"/><rect x="17" y="4" width="4" height="7" rx="1.4"/></svg>Applications<span class="nav-badge tnum">4</span></a>
+    <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m15 9-2 5-4 1 2-5z"/></svg>Career Workspace</a>
+    <div class="side-spacer"></div>
+    <div class="side-user">
+      <span class="avatar" aria-hidden="true">AS</span>
+      <span class="who"><b>Aarav Sharma</b><span>beastcherry73@gmail.com</span></span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <header class="topbar">
+      <div class="mobile-brand">
+        <span class="brand-mark" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6"/><path d="m6 12 6-6 6 6"/></svg></span>
+      </div>
+      <nav class="crumb" aria-label="Breadcrumb">
+        <a href="#">Resume Analysis</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        <span class="here">Aarav_Sharma_PM.pdf</span>
+      </nav>
+      <div class="topbar-right">
+        <div class="appearance" role="group" aria-label="Appearance">
+          <span class="thumb" id="thumb"></span>
+          <button data-theme-set="light" aria-pressed="false" title="Light" aria-label="Light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+          <button data-theme-set="system" aria-pressed="false" title="System" aria-label="System"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="1.6"/><path d="M8 20h8M12 16v4"/></svg></button>
+          <button data-theme-set="dark" aria-pressed="false" title="Dark" aria-label="Dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8Z"/></svg></button>
+        </div>
+        <button class="icon-btn" aria-label="Download report" title="Download report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></button>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- report header -->
+      <div class="report-head anim">
+        <div class="rh-left">
+          <span class="doc-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4"/><path d="M9 12h6M9 16h4"/></svg></span>
+          <div class="rh-title">
+            <h1>Aarav_Sharma_PM.pdf
+              <span class="pill good"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>ATS-ready</span>
+            </h1>
+            <div class="rh-meta">
+              <span>Analyzed against</span><b style="color:var(--js-text-soft);font-weight:500;">Senior Product Manager &middot; Razorpay</b>
+              <span aria-hidden="true">&middot;</span><span class="mono">21 Aug 2026</span>
+            </div>
+          </div>
+        </div>
+        <div class="rh-actions">
+          <button class="btn btn-secondary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13H5.5L4 18.5z"/></svg>Re-analyze</button>
+          <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>Improve this resume</button>
+        </div>
+      </div>
+
+      <!-- verdict band -->
+      <section class="card verdict anim d1" aria-label="Overall verdict">
+        <div class="verdict-left">
+          <div class="ring-wrap" role="img" aria-label="Overall score 84 of 100, healthy">
+            <svg viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="54" fill="none" stroke="var(--js-ring-track)" stroke-width="12"/>
+              <circle cx="66" cy="66" r="54" fill="none" stroke="var(--js-success)" stroke-width="12" stroke-linecap="round" stroke-dasharray="284.9 339.3"/>
+            </svg>
+            <div class="ring-center"><span class="num tnum">84</span><span class="den">/ 100</span><span class="word">Healthy</span></div>
+          </div>
+          <div class="verdict-copy">
+            <span class="eyebrow"><span class="dot"></span>Verdict</span>
+            <h2>A strong, ATS-ready resume &mdash; its biggest lift is quantifying impact.</h2>
+            <div class="qk">
+              <span class="qk-i"><span class="d" style="background:var(--js-success)"></span>Keywords matched <b class="tnum">24/31</b></span>
+              <span class="qk-i"><span class="d" style="background:var(--js-success)"></span>ATS parse <b>Clean</b></span>
+              <span class="qk-i"><span class="d" style="background:var(--js-warning)"></span>Quantified bullets <b class="tnum">4/12</b></span>
+            </div>
+          </div>
+        </div>
+        <div class="verdict-right">
+          <div class="radar-wrap" role="img" aria-label="Dimension scores: ATS 92, Keywords 77, Experience 81, Impact 68, Structure 88, Skills 79">
+            <svg viewBox="0 0 260 260">
+              <!-- grid hexagons -->
+              <g fill="none" stroke="var(--js-border)" stroke-width="1">
+                <polygon points="130,55 195,92.5 195,167.5 130,205 65,167.5 65,92.5"/>
+                <polygon points="130,80 173,105 173,155 130,180 87,155 87,105"/>
+                <polygon points="130,105 152,117.5 152,142.5 130,155 108,142.5 108,117.5"/>
+              </g>
+              <!-- outer hexagon + axes -->
+              <polygon points="130,30 216.6,80 216.6,180 130,230 43.4,180 43.4,80" fill="none" stroke="var(--js-border-strong)" stroke-width="1"/>
+              <g stroke="var(--js-border)" stroke-width="1">
+                <line x1="130" y1="130" x2="130" y2="30"/><line x1="130" y1="130" x2="216.6" y2="80"/><line x1="130" y1="130" x2="216.6" y2="180"/>
+                <line x1="130" y1="130" x2="130" y2="230"/><line x1="130" y1="130" x2="43.4" y2="180"/><line x1="130" y1="130" x2="43.4" y2="80"/>
+              </g>
+              <!-- data polygon -->
+              <polygon points="130,38 196.7,91.5 200.1,170.5 130,198 53.8,174 61.6,90.5" fill="color-mix(in srgb, var(--js-radar) 16%, transparent)" stroke="var(--js-radar)" stroke-width="2" stroke-linejoin="round"/>
+              <g fill="var(--js-radar)">
+                <circle cx="130" cy="38" r="3"/><circle cx="196.7" cy="91.5" r="3"/><circle cx="200.1" cy="170.5" r="3"/>
+                <circle cx="130" cy="198" r="3"/><circle cx="53.8" cy="174" r="3"/><circle cx="61.6" cy="90.5" r="3"/>
+              </g>
+              <!-- axis labels -->
+              <text class="radar-ax" x="130" y="22" text-anchor="middle">ATS</text>
+              <text class="radar-ax" x="224" y="78" text-anchor="start">Keywords</text>
+              <text class="radar-ax" x="224" y="186" text-anchor="start">Experience</text>
+              <text class="radar-ax" x="130" y="246" text-anchor="middle">Impact</text>
+              <text class="radar-ax" x="36" y="186" text-anchor="end">Structure</text>
+              <text class="radar-ax" x="36" y="78" text-anchor="end">Skills</text>
+            </svg>
+          </div>
+          <div class="dim-list">
+            <div class="dim-row"><span class="dl">ATS compatibility</span><span class="dt"><span class="df" style="width:92%"></span></span><span class="dv g tnum">92</span></div>
+            <div class="dim-row"><span class="dl">Keyword match</span><span class="dt"><span class="df" style="width:77%"></span></span><span class="dv g tnum">77</span></div>
+            <div class="dim-row"><span class="dl">Experience fit</span><span class="dt"><span class="df" style="width:81%"></span></span><span class="dv g tnum">81</span></div>
+            <div class="dim-row"><span class="dl">Impact &amp; metrics</span><span class="dt"><span class="df" style="width:68%"></span></span><span class="dv a tnum">68</span></div>
+            <div class="dim-row"><span class="dl">Structure</span><span class="dt"><span class="df" style="width:88%"></span></span><span class="dv g tnum">88</span></div>
+            <div class="dim-row"><span class="dl">Skills coverage</span><span class="dt"><span class="df" style="width:79%"></span></span><span class="dv g tnum">79</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- tabs -->
+      <div class="tabs-wrap anim d2">
+        <div class="tablist" role="tablist" aria-label="Report sections">
+          <button class="tab" role="tab" id="tab-overview" aria-controls="p-overview" aria-selected="true">Overview</button>
+          <button class="tab" role="tab" id="tab-ats" aria-controls="p-ats" aria-selected="false">ATS issues<span class="cnt tnum">4</span></button>
+          <button class="tab" role="tab" id="tab-keywords" aria-controls="p-keywords" aria-selected="false">Keywords<span class="cnt tnum">31</span></button>
+          <button class="tab" role="tab" id="tab-sugg" aria-controls="p-sugg" aria-selected="false">Suggestions<span class="cnt tnum">4</span></button>
+        </div>
+
+        <!-- Overview -->
+        <section class="tabpanel" role="tabpanel" id="p-overview" aria-labelledby="tab-overview">
+          <div class="col2">
+            <div class="card card-pad">
+              <div class="sub-h"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--js-success)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Strengths</div>
+              <div class="sw">
+                <div class="sw-item"><span class="sw-ic pos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>Clean single-column layout parses cleanly &mdash; no tables or text boxes to trip ATS engines.</span></div>
+                <div class="sw-item"><span class="sw-ic pos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>Most bullets open with strong action verbs (Led, Shipped, Drove).</span></div>
+                <div class="sw-item"><span class="sw-ic pos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>Relevant PM tooling is present and named: Jira, Amplitude, SQL, Figma.</span></div>
+                <div class="sw-item"><span class="sw-ic pos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>Reverse-chronological history with consistent, unbroken employment dates.</span></div>
+              </div>
+            </div>
+            <div class="card card-pad">
+              <div class="sub-h"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--js-warning)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 4 3 17a2 2 0 0 0 1.7 3h14.6a2 2 0 0 0 1.7-3L13.7 4a2 2 0 0 0-3.4 0Z"/></svg>Weaknesses</div>
+              <div class="sw">
+                <div class="sw-item"><span class="sw-ic neg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></span><span>Only 4 of 12 bullets include a measurable outcome &mdash; the rest read as duties.</span></div>
+                <div class="sw-item"><span class="sw-ic neg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></span><span>The summary is generic &mdash; it doesn't name the target role or domain.</span></div>
+                <div class="sw-item"><span class="sw-ic neg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></span><span>Two roles exceed five bullets each, diluting your strongest points.</span></div>
+                <div class="sw-item"><span class="sw-ic neg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></span><span>No stated scope &mdash; team size, budget, or users owned is missing.</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card card-pad" style="margin-top:18px;">
+            <div class="sub-h">Missing sections</div>
+            <div class="miss-row">
+              <span class="miss-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Role-tailored professional summary</span>
+              <span class="miss-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Certifications</span>
+              <span class="miss-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Quantified project outcomes</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ATS issues -->
+        <section class="tabpanel" role="tabpanel" id="p-ats" aria-labelledby="tab-ats" hidden>
+          <div class="card card-pad">
+            <div class="ats-row">
+              <span class="sev med">Medium</span>
+              <div class="ats-body"><div class="at">Inconsistent date formats across roles</div><div class="af">Found <b>&ldquo;Jan 2022&rdquo;</b> and <b>&ldquo;03/2020&rdquo;</b> in the same document. Some parsers misread mixed formats. Standardize to <b>MMM YYYY</b>.</div></div>
+              <span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+1</span>
+            </div>
+            <div class="ats-row">
+              <span class="sev med">Medium</span>
+              <div class="ats-body"><div class="at">Skills split across two sections</div><div class="af">A &ldquo;Tools&rdquo; block and a &ldquo;Skills&rdquo; block list overlapping terms. Consolidating raises keyword density where ATS weighs it.</div></div>
+              <span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+2</span>
+            </div>
+            <div class="ats-row">
+              <span class="sev low">Low</span>
+              <div class="ats-body"><div class="at">Non-standard section title &ldquo;Curriculum Vitae&rdquo;</div><div class="af">Use a conventional header. Unusual titles occasionally confuse section detection.</div></div>
+              <span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+1</span>
+            </div>
+            <div class="ats-row">
+              <span class="sev low">Low</span>
+              <div class="ats-body"><div class="at">One bullet exceeds two lines</div><div class="af">A single bullet in your 2022 role runs long and risks truncation in compact ATS previews. Tighten to one line.</div></div>
+              <span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+1</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Keywords -->
+        <section class="tabpanel" role="tabpanel" id="p-keywords" aria-labelledby="tab-keywords" hidden>
+          <div class="card card-pad">
+            <div class="kw-cover">
+              <span class="cnum tnum">77%</span>
+              <span class="cx">24 of 31 target keywords</span>
+              <span class="ctrack"><span class="cfill" style="width:77%"></span></span>
+            </div>
+            <div class="kw-group">
+              <div class="sub-h">Matched &mdash; keep these</div>
+              <div class="kw-chips">
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Product roadmap</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>A/B testing</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>SQL</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Stakeholder management</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Agile</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>User research</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Go-to-market</span>
+                <span class="kw have"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Amplitude</span>
+              </div>
+            </div>
+            <div class="kw-group">
+              <div class="sub-h">Missing &mdash; add where truthful</div>
+              <div class="kw-chips">
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Product-led growth</span>
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Experimentation platform</span>
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Retention</span>
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>OKRs</span>
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Roadmap prioritization</span>
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Churn</span>
+                <span class="kw miss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Cross-functional leadership</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Suggestions -->
+        <section class="tabpanel" role="tabpanel" id="p-sugg" aria-labelledby="tab-sugg" hidden>
+          <div class="card card-pad">
+            <div class="sugg-row">
+              <span class="sugg-n tnum">1</span>
+              <div class="sugg-body"><div class="st">Quantify your top three experience bullets</div><div class="ss">Add scope, percentages, or revenue. Your lead bullets describe responsibilities, not results &mdash; the fastest available lift.</div></div>
+              <div class="sugg-right"><span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+6</span><button class="btn btn-ghost btn-sm">Apply in Improve</button></div>
+            </div>
+            <div class="sugg-row">
+              <span class="sugg-n tnum">2</span>
+              <div class="sugg-body"><div class="st">Rewrite the summary for this role</div><div class="ss">Name the target role and domain (Senior PM, payments) in the first line so recruiters and ATS see the match immediately.</div></div>
+              <div class="sugg-right"><span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+3</span><button class="btn btn-ghost btn-sm">Apply in Improve</button></div>
+            </div>
+            <div class="sugg-row">
+              <span class="sugg-n tnum">3</span>
+              <div class="sugg-body"><div class="st">Add an experimentation &amp; OKRs keyword cluster</div><div class="ss">Fold in missing terms (OKRs, experimentation, retention) where they truthfully describe your work, then consolidate Skills.</div></div>
+              <div class="sugg-right"><span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+2</span><button class="btn btn-ghost btn-sm">Apply in Improve</button></div>
+            </div>
+            <div class="sugg-row">
+              <span class="sugg-n tnum">4</span>
+              <div class="sugg-body"><div class="st">Standardize all dates to MMM YYYY</div><div class="ss">Resolve the mixed date formats flagged under ATS issues so every role reads consistently.</div></div>
+              <div class="sugg-right"><span class="impact-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg>+1</span><button class="btn btn-ghost btn-sm">Apply in Improve</button></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="foot-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        <span>Preview with <b>sample data</b> &mdash; layout, tabs, and interactions are live; scores and copy are illustrative.</span>
+        <span class="mono" style="margin-left:auto;">JobSpike &middot; Direction C</span>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement, thumb=document.getElementById('thumb');
+  var btns=[].slice.call(document.querySelectorAll('[data-theme-set]'));
+  var order={light:0,system:1,dark:2}, STORE='js-appearance';
+  function stored(){try{return localStorage.getItem(STORE);}catch(e){return null;}}
+  function save(v){try{localStorage.setItem(STORE,v);}catch(e){}}
+  function apply(mode){
+    if(mode==='system'){root.removeAttribute('data-theme');}else{root.setAttribute('data-theme',mode);}
+    if(thumb){thumb.style.transform='translateX('+(order[mode]*34)+'px)';}
+    btns.forEach(function(b){b.setAttribute('aria-pressed', b.getAttribute('data-theme-set')===mode?'true':'false');});
+  }
+  btns.forEach(function(b){b.addEventListener('click',function(){var m=b.getAttribute('data-theme-set');apply(m);save(m);});});
+  apply(stored()||'system');
+
+  // tabs
+  var tabs=[].slice.call(document.querySelectorAll('.tab'));
+  function selectTab(tab){
+    tabs.forEach(function(t){
+      var on=t===tab;
+      t.setAttribute('aria-selected', on?'true':'false');
+      document.getElementById(t.getAttribute('aria-controls')).hidden=!on;
+    });
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener('click',function(){selectTab(t);});
+    t.addEventListener('keydown',function(e){
+      var idx=null;
+      if(e.key==='ArrowRight')idx=(i+1)%tabs.length;
+      else if(e.key==='ArrowLeft')idx=(i-1+tabs.length)%tabs.length;
+      if(idx!==null){e.preventDefault();tabs[idx].focus();selectTab(tabs[idx]);}
+    });
+  });
+})();
+</script>
