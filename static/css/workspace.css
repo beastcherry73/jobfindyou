@@ -855,6 +855,9 @@ ul, ol { list-style: none; }
 
 #dashStatStrip { scrollbar-width: none; }
 #dashStatStrip::-webkit-scrollbar { display: none; }
+
+.ws-step-label { display: flex; align-items: center; gap: 7px; }
+.ws-step-status { display: inline-flex; align-items: center; }
 .ws-stat-change.down { color: var(--ws-bad); }
 
 /* ── Buttons ── */
