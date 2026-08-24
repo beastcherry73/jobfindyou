@@ -5,7 +5,7 @@ from backend.decorators import login_required
 from backend.services.helpers import extract_text_from_pdf, estimate_resume_score
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
-from backend.prompts import SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT, EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT
+from backend.prompts import SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT, EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT, OPTIMIZE_STANDARD
 
 generate_bp = Blueprint("generate", __name__)
 
@@ -71,6 +71,7 @@ def generate_improve():
         job_context = f"Target role:\n{job_description}" if job_description else ""
 
         prompt = IMPROVE_PROMPT.format(
+            optimize_standard=OPTIMIZE_STANDARD,
             instructions_context=instructions_context,
             job_context=job_context,
             resume_text=resume_text[:12000]
@@ -124,6 +125,7 @@ def generate_improve_with_diff():
             selected_prompt = SAFE_OPTIMIZE_PROMPT
 
         improve_prompt = selected_prompt.format(
+            optimize_standard=OPTIMIZE_STANDARD,
             instructions_context=instructions_context,
             job_context=job_context,
             resume_text=resume_text[:12000]

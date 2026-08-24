@@ -117,9 +117,23 @@ Rules:
 Here is the candidate's information:
 {data}"""
 
-SAFE_OPTIMIZE_PROMPT = """You are an elite executive resume writer and ATS optimization specialist. 
+OPTIMIZE_STANDARD = """REFERENCE STANDARD — rewrite the resume so it moves toward how a top-1% resume reads, WITHOUT inventing anything:
+- Lead every experience bullet with a strong, specific action verb; kill passive voice, first-person pronouns, and filler ("responsible for", "helped with", "various", "duties included").
+- Surface real impact that is ALREADY in the text — pull any existing number, scope, tool, or outcome up into the bullet where it belongs. If the original has no metric, sharpen the verb and specificity; do NOT fabricate a number, percentage, scale, or dollar amount.
+- Standard ATS-safe structure and headings; consistent tense and formatting.
+- Keep every real fact — companies, dates, tools, awards, certifications — exactly as given.
+
+CALIBRATION (weak -> strong, fact-preserving; note no invented numbers are added where the original had none):
+- "Responsible for working on the backend systems." -> "Designed and maintained core backend systems and services."
+- "Helped the team with various tasks." -> "Partnered with the engineering team to deliver features and resolve production issues."
+- If the original already says "reduced load time by 40%", make it lead: "Cut page load time 40% by optimizing backend queries."
+
+"""
+
+SAFE_OPTIMIZE_PROMPT = """You are an elite executive resume writer and ATS optimization specialist.
 Your goal is to optimize the resume below for maximum ATS compatibility, grammar, and professional polish.
 
+{optimize_standard}
 STRICT FACT PRESERVATION RULES:
 - DO NOT invent fake percentages, metrics, team sizes, or dollar amounts.
 - DO NOT invent fake companies, projects, awards, certifications, or employment history.
@@ -141,6 +155,7 @@ Original Resume:
 ROLE_OPTIMIZE_PROMPT = """You are an ATS Keyword Optimization Consultant and Executive Resume Writer.
 Your goal is to tailor the candidate's existing resume to match the target job description while strictly maintaining factual accuracy.
 
+{optimize_standard}
 STRICT RULES:
 - Reorder and emphasize relevant experience and skills matching the target role.
 - DO NOT claim skills or experience the candidate does not possess.
@@ -157,6 +172,7 @@ Original Resume:
 EXECUTIVE_OPTIMIZE_PROMPT = """You are an Executive Talent Partner and Master Resume Coach.
 Your goal is to elevate the resume's tone, executive leadership language, and overall flow.
 
+{optimize_standard}
 STRICT RULES:
 - Elevate vocabulary to executive C-suite / VP / Senior Director level.
 - DO NOT invent fake facts, metrics, or false accomplishments.
