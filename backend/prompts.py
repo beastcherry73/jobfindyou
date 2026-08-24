@@ -1,6 +1,9 @@
 ANALYSIS_PROMPT = """You are an elite executive tech recruiter and ATS optimization director. Perform a rigorous, multi-dimension analysis of the candidate's resume and return ONLY a valid JSON object.
 
+First, check whether the text below is actually a resume/CV at all (a document describing one person's work experience, education, or skills for the purpose of job applications). It is common for people to accidentally upload the wrong file — a report, an article, a recipe, a job description, random text, etc.
+
 Keys required in JSON response:
+- is_resume (boolean — false if the text is clearly not a resume/CV. When false, every other field should still be filled with safe defaults, but strengths, weaknesses, and priority_action_list MUST be empty arrays — never invent specific praise or criticism for content that isn't a resume)
 - overall_score (integer 0-100)
 - dimension_scores (object with integer 0-100 values for clarity, experience, skills, ats_readiness, impact, completeness)
 - summary (string, concise recruiter verdict)

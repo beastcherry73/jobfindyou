@@ -66,6 +66,11 @@ def analyze():
         if not isinstance(parsed, dict) or not parsed:
             return jsonify({"error": "AI service returned an empty result. Please try again."}), 502
 
+        if parsed.get("is_resume") is False:
+            return jsonify({
+                "error": "This file doesn't look like a resume. Please upload an actual resume or CV (PDF or TXT)."
+            }), 400
+
         result = normalize_analysis_dict(parsed)
         result["filename"] = file.filename
         result["raw_text"] = resume_text
