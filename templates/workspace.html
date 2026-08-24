@@ -357,10 +357,10 @@
                 <div class="ws-stat-tile-value" id="statSkillsValue">—</div>
                 <div class="ws-stat-tile-status good" id="statSkillsStatus"><span class="dot"></span>—</div>
               </div>
-              <div class="ws-stat-tile" style="flex:1;min-width:150px;padding:18px 20px;border-left:1px solid var(--ws-border);" title="Not computed yet — no job-matching feature exists behind this card today. Shown as a placeholder for when it does.">
+              <div class="ws-stat-tile" style="flex:1;min-width:150px;padding:18px 20px;border-left:1px solid var(--ws-border);" title="Based on the job description pasted in with your most recent analysis. Paste one in when you upload to see this.">
                 <div class="ws-stat-tile-head"><span class="ws-stat-tile-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg></span><span class="ws-mono ws-stat-tile-label">JOB MATCH</span></div>
                 <div class="ws-stat-tile-value" id="statMatchValue">—</div>
-                <div class="ws-stat-tile-status" id="statMatchStatus"><span class="dot"></span>Coming soon</div>
+                <div class="ws-stat-tile-status" id="statMatchStatus"><span class="dot"></span>No JD provided</div>
               </div>
               <div class="ws-stat-tile" style="flex:1;min-width:150px;padding:18px 20px;border-left:1px solid var(--ws-border);">
                 <div class="ws-stat-tile-head"><span class="ws-stat-tile-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></span><span class="ws-mono ws-stat-tile-label">APPLICATIONS</span></div>
@@ -1735,6 +1735,33 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Job Match — only shown when a job description was provided at analyze time -->
+              <div class="ws-card ws-mb-md" id="reportJobMatchCard" style="display:none;border:1px solid var(--ws-border);border-radius:12px;background:var(--ws-surface);">
+                <div class="ws-card-body" style="padding:20px;">
+                  <div class="ws-card-header" style="margin-bottom:12px;">
+                    <div>
+                      <div class="ws-card-title" style="font-size:14px; font-weight:700;">Job Match</div>
+                      <div class="ws-card-subtitle" style="font-size:12px;">How this resume lines up against the job description you provided</div>
+                    </div>
+                    <span class="ws-badge" id="reportJobMatchBadge" style="font-size:13px;font-weight:700;padding:4px 12px;"></span>
+                  </div>
+                  <div class="ws-progress" style="height:6px;margin-bottom:16px;">
+                    <div class="ws-progress-bar" id="reportJobMatchBar" style="width:0%;"></div>
+                  </div>
+                  <div class="ws-grid-2" style="gap:16px;margin-bottom:12px;">
+                    <div>
+                      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:8px;">Matching</div>
+                      <div id="reportJobMatchKeywordsGood"></div>
+                    </div>
+                    <div>
+                      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:8px;">Missing</div>
+                      <div id="reportJobMatchKeywordsMissing"></div>
+                    </div>
+                  </div>
+                  <p id="reportJobMatchGap" style="font-size:12.5px;color:var(--ws-text-secondary);line-height:1.55;margin:0;"></p>
+                </div>
+              </div>
             </div>
 
             <!-- TAB 2: ATS Metrics -->
@@ -2969,6 +2996,21 @@
             skillsEl.textContent = '—';
             skillsStatusEl.innerHTML = '<span class="dot"></span>—';
           }
+
+          // Job Match — only real if the latest analysis actually had a JD
+          const jm = detail && detail.job_match;
+          const matchEl = document.getElementById('statMatchValue');
+          const matchStatusEl = document.getElementById('statMatchStatus');
+          if (jm && typeof jm.match_percent === 'number') {
+            const mTone = jm.match_percent >= 70 ? 'good' : jm.match_percent >= 40 ? 'warn' : 'bad';
+            matchEl.textContent = jm.match_percent + '%';
+            matchStatusEl.className = 'ws-stat-tile-status ' + mTone;
+            matchStatusEl.innerHTML = '<span class="dot"></span>' + (jm.match_percent >= 70 ? 'Strong' : jm.match_percent >= 40 ? 'Partial' : 'Weak');
+          } else {
+            matchEl.textContent = '—';
+            matchStatusEl.className = 'ws-stat-tile-status';
+            matchStatusEl.innerHTML = '<span class="dot"></span>No JD provided';
+          }
         } catch (e) {
           // Fallback to static defaults
           topRecText.textContent = 'Quantify Experience - Add numerical metrics to your experiences.';
@@ -3896,6 +3938,51 @@
       const reportSummary = document.getElementById('reportSummary');
       if (reportSummary) {
         reportSummary.textContent = recs.overall_action_plan || 'Based on your overall score of ' + score + '%, we recommend focusing on adding metrics, incorporating missing technical skills keywords, and re-wording passive experience bullets.';
+      }
+
+      // Job Match — only rendered when the analysis actually computed one
+      // (i.e. a job description was provided at analyze time). No JD, no card.
+      const jobMatchCard = document.getElementById('reportJobMatchCard');
+      if (jobMatchCard) {
+        const jm = data.job_match;
+        if (jm && typeof jm.match_percent === 'number') {
+          jobMatchCard.style.display = 'block';
+          const pct = Math.max(0, Math.min(100, jm.match_percent));
+          const tone = pct >= 70 ? 'good' : pct >= 40 ? 'warn' : 'bad';
+          const badge = document.getElementById('reportJobMatchBadge');
+          badge.textContent = pct + '% match';
+          badge.className = 'ws-badge ws-badge-' + tone;
+          const bar = document.getElementById('reportJobMatchBar');
+          bar.style.width = pct + '%';
+          bar.className = 'ws-progress-bar ' + tone;
+          const goodWrap = document.getElementById('reportJobMatchKeywordsGood');
+          const missingWrap = document.getElementById('reportJobMatchKeywordsMissing');
+          goodWrap.innerHTML = '';
+          missingWrap.innerHTML = '';
+          (jm.matching_keywords || []).forEach(function(kw) {
+            const badgeEl = document.createElement('span');
+            badgeEl.className = 'ws-badge ws-badge-good';
+            badgeEl.style.margin = '3px';
+            badgeEl.textContent = kw;
+            goodWrap.appendChild(badgeEl);
+          });
+          if (!(jm.matching_keywords || []).length) {
+            goodWrap.innerHTML = '<span style="color:var(--ws-text-tertiary);font-size:12px;">None found</span>';
+          }
+          (jm.missing_keywords || []).forEach(function(kw) {
+            const badgeEl = document.createElement('span');
+            badgeEl.className = 'ws-badge ws-badge-bad';
+            badgeEl.style.margin = '3px';
+            badgeEl.textContent = kw;
+            missingWrap.appendChild(badgeEl);
+          });
+          if (!(jm.missing_keywords || []).length) {
+            missingWrap.innerHTML = '<span style="color:var(--ws-text-tertiary);font-size:12px;">None found</span>';
+          }
+          document.getElementById('reportJobMatchGap').textContent = jm.gap_summary || '';
+        } else {
+          jobMatchCard.style.display = 'none';
+        }
       }
 
       // ATS Compatibility metrics

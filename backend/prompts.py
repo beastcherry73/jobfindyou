@@ -38,6 +38,20 @@ And the following Level 5 Analysis fields:
 Resume:
 {resume_text}"""
 
+JOB_MATCH_PROMPT = """You are an ATS keyword-matching engine. Compare the candidate's resume against the target job description and return ONLY a valid JSON object — no prose, no markdown fences.
+
+Keys required in JSON response:
+- match_percent (integer 0-100: how well this resume's skills, experience, and keywords align with what the job description asks for. Be honest and specific — do not default to a generic mid-range number)
+- matching_keywords (array of strings: skills/technologies/qualifications the job description asks for that ARE present in the resume, ranked most important first, max 15)
+- missing_keywords (array of strings: skills/technologies/qualifications the job description asks for that are NOT present anywhere in the resume, ranked most important first, max 10)
+- gap_summary (string, one honest paragraph: what would most improve this candidate's fit for this specific role)
+
+Job description:
+{job_description}
+
+Resume:
+{resume_text}"""
+
 SCRATCH_PROMPT = """You are a professional resume writer. Create a polished, ATS-friendly resume in clean Markdown format.
 
 Use this structure:

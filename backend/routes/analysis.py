@@ -6,7 +6,10 @@ from backend.decorators import login_required
 from backend.services.helpers import extract_text_from_pdf, clean_json, normalize_analysis_dict
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
-from backend.prompts import ANALYSIS_PROMPT
+from backend.prompts import ANALYSIS_PROMPT, JOB_MATCH_PROMPT
+import logging
+
+logger = logging.getLogger(__name__)
 
 analysis_bp = Blueprint("analysis", __name__)
 
@@ -66,6 +69,33 @@ def analyze():
         result = normalize_analysis_dict(parsed)
         result["filename"] = file.filename
         result["raw_text"] = resume_text
+
+        if job_description:
+            try:
+                match_prompt = JOB_MATCH_PROMPT.format(
+                    job_description=job_description[:4000],
+                    resume_text=resume_text[:12000],
+                )
+                match_raw = clean_json(call_groq(match_prompt, max_tokens=1500))
+                match_parsed = json.loads(match_raw)
+                if isinstance(match_parsed, dict) and "match_percent" in match_parsed:
+                    try:
+                        match_percent = max(0, min(100, int(match_parsed.get("match_percent", 0))))
+                    except (ValueError, TypeError):
+                        match_percent = 0
+                    matching_keywords = match_parsed.get("matching_keywords")
+                    missing_keywords = match_parsed.get("missing_keywords")
+                    result["job_match"] = {
+                        "match_percent": match_percent,
+                        "matching_keywords": matching_keywords if isinstance(matching_keywords, list) else [],
+                        "missing_keywords": missing_keywords if isinstance(missing_keywords, list) else [],
+                        "gap_summary": str(match_parsed.get("gap_summary", "")).strip(),
+                    }
+            except Exception as match_err:
+                # Job match is a bonus, not core to the analysis — never fail
+                # the whole request over it. No job_match key means the UI
+                # correctly shows nothing rather than a fabricated number.
+                logger.warning(f"Job match computation failed: {match_err}")
 
         content_hash = hashlib.sha256(resume_text.encode("utf-8", errors="ignore")).hexdigest()
 
