@@ -6,7 +6,7 @@ from backend.decorators import login_required
 from backend.services.helpers import extract_text_from_pdf, clean_json, normalize_analysis_dict
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
-from backend.prompts import ANALYSIS_PROMPT, JOB_MATCH_PROMPT
+from backend.prompts import ANALYSIS_PROMPT, JOB_MATCH_PROMPT, REFERENCE_STANDARD
 import logging
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,11 @@ def analyze():
             else "No specific job description provided. Give a general analysis."
         )
 
-        prompt = ANALYSIS_PROMPT.format(job_context=job_context, resume_text=resume_text[:12000])
+        prompt = ANALYSIS_PROMPT.format(
+            reference_standard=REFERENCE_STANDARD,
+            job_context=job_context,
+            resume_text=resume_text[:12000],
+        )
         try:
             raw = clean_json(call_groq(prompt))
         except GroqError:

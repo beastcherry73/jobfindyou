@@ -5003,9 +5003,15 @@
           });
         }
 
-        document.getElementById('enhanceResultGrid').style.display = 'grid';
+        const resultGrid = document.getElementById('enhanceResultGrid');
+        resultGrid.style.display = 'grid';
         renderInstantFormattedPreview();
         showToast('Enhancement complete ✓', 'success');
+        // Take the user straight to the optimized result instead of leaving
+        // them looking at the input controls with the result off-screen below.
+        requestAnimationFrame(function() {
+          resultGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
       } catch (err) {
         showToast('Enhancement failed: ' + (err.message || 'Server timeout'), 'error');
       } finally {

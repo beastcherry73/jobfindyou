@@ -1,4 +1,32 @@
+REFERENCE_STANDARD = """REFERENCE STANDARD — what a top-1% resume actually does (score and critique against THIS bar, not a lenient one):
+
+IMPACT & EVIDENCE
+- Every experience bullet leads with a strong action verb and states a measurable outcome, not a duty. "Responsible for X" is a failure; "Cut X 40% by doing Y" is the bar.
+- Roughly two-thirds or more of bullets carry a hard number ($ saved, % changed, scale, time, volume, headcount). A resume with no metrics is weak no matter how senior.
+- Scope is explicit: team size, user/revenue scale, system throughput — the reader must grasp the magnitude.
+
+STRUCTURE & ATS
+- Clean reverse-chronological order; standard section headings (Summary, Experience, Skills, Education, Projects); no tables, columns, text boxes, headers/footers, or graphics that break ATS parsing.
+- A complete contact header (name, email, phone, location, and a relevant link). One page for <10 yrs experience, two pages max otherwise.
+- A tight professional summary (2-3 lines) that names the role/domain and the candidate's strongest proof — not generic adjectives ("hardworking team player").
+
+LANGUAGE & KEYWORDS
+- Active voice throughout; no passive phrasing, no first-person pronouns, no filler ("various", "etc.", "duties included").
+- Concrete role-relevant keywords/tools appear naturally in context, not keyword-stuffed into a list divorced from evidence.
+- Consistent tense (past for prior roles, present for current), consistent date and formatting conventions.
+
+EXEMPLAR TRANSFORMATIONS (weak -> strong, use as the calibration bar):
+- "Worked on the checkout flow and improved performance." -> "Rebuilt the checkout flow, cutting p95 latency from 800ms to 120ms and drop-off 18% for 2M monthly users."
+- "Responsible for managing the data team." -> "Led a 6-engineer data team; shipped a real-time pipeline processing 10TB/day, reducing reporting lag from 24h to 15min."
+- "Helped with AWS migration." -> "Drove migration of 40+ services to AWS/Kubernetes, cutting infra cost 22% ($200K/yr) with zero downtime."
+
+Hold the candidate's resume to this standard. Do not inflate scores for effort or seniority — score the evidence actually on the page.
+
+"""
+
 ANALYSIS_PROMPT = """You are an elite executive tech recruiter and ATS optimization director. Perform a rigorous, multi-dimension analysis of the candidate's resume and return ONLY a valid JSON object.
+
+{reference_standard}
 
 First, check whether the text below is actually a resume/CV at all (a document describing one person's work experience, education, or skills for the purpose of job applications). It is common for people to accidentally upload the wrong file — a report, an article, a recipe, a job description, random text, etc.
 
