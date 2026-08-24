@@ -76,6 +76,7 @@ Keys required in JSON response:
 - matching_keywords (array of strings: skills/technologies/qualifications the job description asks for that ARE present in the resume, ranked most important first, max 15)
 - missing_keywords (array of strings: skills/technologies/qualifications the job description asks for that are NOT present anywhere in the resume, ranked most important first, max 10)
 - gap_summary (string, one honest paragraph: what would most improve this candidate's fit for this specific role)
+- skill_gaps (array of the 3-5 MOST important gaps only — prioritized guidance, never an exhaustive list. Each is an object with keys: skill (string), why_it_matters (string, one sentence on why this role needs it), how_to_address (string, one concrete sentence — e.g. add a bullet quantifying related work, take a specific type of course, or reframe existing experience to surface it))
 
 Job description:
 {job_description}

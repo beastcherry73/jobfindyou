@@ -1760,6 +1760,10 @@
                     </div>
                   </div>
                   <p id="reportJobMatchGap" style="font-size:12.5px;color:var(--ws-text-secondary);line-height:1.55;margin:0;"></p>
+                  <div id="reportSkillGapsWrap" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--ws-border-light);">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:10px;">Skill gaps — how to close them</div>
+                    <div id="reportSkillGapsList" style="display:flex;flex-direction:column;gap:10px;"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -3980,6 +3984,34 @@
             missingWrap.innerHTML = '<span style="color:var(--ws-text-tertiary);font-size:12px;">None found</span>';
           }
           document.getElementById('reportJobMatchGap').textContent = jm.gap_summary || '';
+
+          const gapsWrap = document.getElementById('reportSkillGapsWrap');
+          const gapsList = document.getElementById('reportSkillGapsList');
+          const gaps = Array.isArray(jm.skill_gaps) ? jm.skill_gaps : [];
+          if (gaps.length) {
+            gapsList.innerHTML = '';
+            gaps.forEach(function(g) {
+              const row = document.createElement('div');
+              row.style.cssText = 'display:flex;gap:10px;align-items:flex-start;';
+              const dot = document.createElement('span');
+              dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:var(--ws-bad);flex-shrink:0;margin-top:6px;';
+              const body = document.createElement('div');
+              const name = document.createElement('div');
+              name.style.cssText = 'font-size:13px;font-weight:600;color:var(--ws-text);';
+              name.textContent = g.skill || '';
+              const how = document.createElement('div');
+              how.style.cssText = 'font-size:12px;color:var(--ws-text-secondary);line-height:1.45;margin-top:1px;';
+              how.textContent = g.how_to_address || g.why_it_matters || '';
+              body.appendChild(name);
+              body.appendChild(how);
+              row.appendChild(dot);
+              row.appendChild(body);
+              gapsList.appendChild(row);
+            });
+            gapsWrap.style.display = 'block';
+          } else {
+            gapsWrap.style.display = 'none';
+          }
         } else {
           jobMatchCard.style.display = 'none';
         }

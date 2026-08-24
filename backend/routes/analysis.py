@@ -94,11 +94,22 @@ def analyze():
                         match_percent = 0
                     matching_keywords = match_parsed.get("matching_keywords")
                     missing_keywords = match_parsed.get("missing_keywords")
+                    raw_gaps = match_parsed.get("skill_gaps")
+                    skill_gaps = []
+                    if isinstance(raw_gaps, list):
+                        for g in raw_gaps[:5]:
+                            if isinstance(g, dict) and g.get("skill"):
+                                skill_gaps.append({
+                                    "skill": str(g.get("skill", "")).strip(),
+                                    "why_it_matters": str(g.get("why_it_matters", "")).strip(),
+                                    "how_to_address": str(g.get("how_to_address", "")).strip(),
+                                })
                     result["job_match"] = {
                         "match_percent": match_percent,
                         "matching_keywords": matching_keywords if isinstance(matching_keywords, list) else [],
                         "missing_keywords": missing_keywords if isinstance(missing_keywords, list) else [],
                         "gap_summary": str(match_parsed.get("gap_summary", "")).strip(),
+                        "skill_gaps": skill_gaps,
                     }
             except Exception as match_err:
                 # Job match is a bonus, not core to the analysis — never fail
