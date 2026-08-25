@@ -4,7 +4,10 @@ from flask import Blueprint, request, jsonify, session, render_template
 
 from backend.database import get_db
 from backend.decorators import login_required
-from backend.services.adzuna_service import search_jobs, AdzunaError, adzuna_configured
+from backend.services.adzuna_service import (
+    search_jobs, list_categories, AdzunaError, AdzunaValidationError,
+    adzuna_configured,
+)
 from backend.services.ai import call_groq, GroqError
 from backend.services.helpers import clean_json
 from backend.prompts import JOB_MATCH_PROMPT
@@ -35,16 +38,40 @@ def tracker_page():
 def api_jobs_search():
     if not adzuna_configured():
         return jsonify({"error": "Job search isn't configured yet.", "configured": False}), 503
+
+    args = request.args
+    job_type = (args.get("job_type") or "").strip().lower() or None
     try:
         data = search_jobs(
-            what=request.args.get("what", "").strip(),
-            where=request.args.get("where", "").strip(),
-            page=request.args.get("page", 1),
-            salary_min=request.args.get("salary_min"),
-            full_time=request.args.get("full_time"),
-            sort_by=request.args.get("sort_by"),
+            what=(args.get("what") or "").strip(),
+            where=(args.get("where") or "").strip(),
+            page=args.get("page", 1),
+            distance=args.get("distance"),
+            salary_min=args.get("salary_min"),
+            salary_max=args.get("salary_max"),
+            salary_include_unknown=args.get("salary_include_unknown"),
+            job_type=job_type,
+            category=(args.get("category") or "").strip() or None,
+            sort_by=(args.get("sort_by") or "").strip() or None,
+            max_days_old=args.get("max_days_old"),
         )
         return jsonify(data)
+    except AdzunaValidationError as e:
+        # Bad/conflicting user filters — 400, with a clear message, never a
+        # silent empty result set.
+        return jsonify({"error": str(e)}), 400
+    except AdzunaError as e:
+        return jsonify({"error": str(e)}), 502
+
+
+@jobs_bp.route("/api/jobs/categories", methods=["GET"])
+@login_required
+@rate_limit(limit=60, window_seconds=300)
+def api_jobs_categories():
+    if not adzuna_configured():
+        return jsonify({"error": "Job search isn't configured yet.", "configured": False}), 503
+    try:
+        return jsonify({"categories": list_categories()})
     except AdzunaError as e:
         return jsonify({"error": str(e)}), 502
 

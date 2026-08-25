@@ -15,8 +15,15 @@
     .jp-brand { font-weight:700; font-size:15px; margin-right:auto; display:flex; align-items:center; gap:8px; }
     .jp-brand .mark { width:24px;height:24px;border-radius:7px;background:var(--ws-primary);display:grid;place-items:center; }
     .jp-brand .mark span { width:7px;height:7px;border-radius:2px;background:var(--ws-accent); }
-    .jp-search { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+    .jp-search { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
     .jp-search input { flex:1; min-width:160px; }
+    .jp-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 12px; margin-bottom:14px; padding:14px 16px; background:var(--ws-surface); border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); }
+    .jp-filter { display:flex; flex-direction:column; gap:5px; }
+    .jp-filter label { font-size:10.5px; font-weight:700; color:var(--ws-text-tertiary); text-transform:uppercase; letter-spacing:0.05em; }
+    .jp-filter .ws-input, .jp-filter .ws-select { font-size:13px; width:100%; }
+    .jp-attribution { font-size:11px; color:var(--ws-text-tertiary); margin-bottom:14px; }
+    .jp-attribution a { color:var(--ws-text-secondary); text-decoration:none; }
+    .jp-attribution a:hover { text-decoration:underline; }
     .jp-card { padding:18px 20px; margin-bottom:12px; }
     .jp-card-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; }
     .jp-title { font-size:15px; font-weight:700; color:var(--ws-text); }
@@ -41,13 +48,73 @@
 
     <div id="jpConfigNotice" class="jp-notice" style="display:none;">Job search isn't configured yet — an admin needs to add the Adzuna API keys.</div>
 
-    <form class="jp-search" id="jpForm" onsubmit="return doSearch(event)">
-      <input class="ws-input" id="jpWhat" placeholder="Job title, keywords (e.g. product manager)">
-      <input class="ws-input" id="jpWhere" placeholder="Location (e.g. Bengaluru)" style="max-width:220px;">
-      <button class="ws-btn ws-btn-primary" type="submit">Search</button>
+    <form id="jpForm" onsubmit="return doSearch(event)">
+      <div class="jp-search">
+        <input class="ws-input" id="jpWhat" placeholder="Job title, keywords (e.g. product manager)">
+        <input class="ws-input" id="jpWhere" placeholder="Location (e.g. Bengaluru)" style="max-width:220px;">
+        <button class="ws-btn ws-btn-primary" type="submit">Search</button>
+      </div>
+
+      <div class="jp-filters">
+        <div class="jp-filter">
+          <label for="jpDistance">Radius</label>
+          <select class="ws-select" id="jpDistance">
+            <option value="">Any distance</option>
+            <option value="5">Within 5 km</option>
+            <option value="10">Within 10 km</option>
+            <option value="25">Within 25 km</option>
+            <option value="50">Within 50 km</option>
+            <option value="100">Within 100 km</option>
+          </select>
+        </div>
+        <div class="jp-filter">
+          <label for="jpCategory">Category</label>
+          <select class="ws-select" id="jpCategory">
+            <option value="">All categories</option>
+          </select>
+        </div>
+        <div class="jp-filter">
+          <label for="jpJobType">Job type</label>
+          <select class="ws-select" id="jpJobType">
+            <option value="">Any type</option>
+            <option value="full_time">Full time</option>
+            <option value="part_time">Part time</option>
+            <option value="contract">Contract</option>
+            <option value="permanent">Permanent</option>
+          </select>
+        </div>
+        <div class="jp-filter">
+          <label for="jpSalaryMin">Salary min (₹)</label>
+          <input class="ws-input" id="jpSalaryMin" type="number" min="0" step="10000" placeholder="e.g. 600000">
+        </div>
+        <div class="jp-filter">
+          <label for="jpSalaryMax">Salary max (₹)</label>
+          <input class="ws-input" id="jpSalaryMax" type="number" min="0" step="10000" placeholder="e.g. 2000000">
+        </div>
+        <div class="jp-filter">
+          <label for="jpMaxDays">Posted within</label>
+          <select class="ws-select" id="jpMaxDays">
+            <option value="">Any time</option>
+            <option value="1">Last 24 hours</option>
+            <option value="3">Last 3 days</option>
+            <option value="7">Last week</option>
+            <option value="14">Last 2 weeks</option>
+            <option value="30">Last 30 days</option>
+          </select>
+        </div>
+        <div class="jp-filter">
+          <label for="jpSortBy">Sort by</label>
+          <select class="ws-select" id="jpSortBy">
+            <option value="relevance">Most relevant</option>
+            <option value="date">Newest first</option>
+            <option value="salary">Highest salary</option>
+          </select>
+        </div>
+      </div>
     </form>
 
-    <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:12px;"></div>
+    <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
+    <div class="jp-attribution">Results powered by <a href="https://www.adzuna.in/" target="_blank" rel="noopener noreferrer">Adzuna</a></div>
     <div id="jpResults"></div>
   </div>
 
@@ -74,18 +141,53 @@
     }
     function toneClass(pct) { return pct >= 70 ? 'ws-badge-good' : pct >= 40 ? 'ws-badge-warn' : 'ws-badge-bad'; }
 
+    function val(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+    async function loadCategories() {
+      try {
+        var res = await fetch('/api/jobs/categories');
+        if (!res.ok) return;              // not configured / upstream issue: leave "All categories"
+        var data = await res.json();
+        var sel = document.getElementById('jpCategory');
+        (data.categories || []).forEach(function(c){
+          if (!c || !c.tag) return;
+          var opt = document.createElement('option');
+          opt.value = c.tag; opt.textContent = c.label || c.tag;
+          sel.appendChild(opt);
+        });
+      } catch (e) { /* leave default option */ }
+    }
+
     async function doSearch(e) {
       if (e) e.preventDefault();
-      var what = document.getElementById('jpWhat').value.trim();
-      var where = document.getElementById('jpWhere').value.trim();
       var status = document.getElementById('jpStatus');
       var results = document.getElementById('jpResults');
+
+      var salaryMin = val('jpSalaryMin');
+      var salaryMax = val('jpSalaryMax');
+      // Client-side guard so a conflicting range gives instant, honest feedback
+      // instead of a confusing empty result (the backend validates too).
+      if (salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax)) {
+        status.textContent = "Minimum salary can't be higher than maximum salary.";
+        results.innerHTML = '';
+        return false;
+      }
+
       status.textContent = 'Searching…';
       results.innerHTML = '';
       try {
         var params = new URLSearchParams();
+        var what = val('jpWhat'), where = val('jpWhere');
         if (what) params.set('what', what);
         if (where) params.set('where', where);
+        var distance = val('jpDistance'); if (distance) params.set('distance', distance);
+        var category = val('jpCategory'); if (category) params.set('category', category);
+        var jobType = val('jpJobType'); if (jobType) params.set('job_type', jobType);
+        if (salaryMin) params.set('salary_min', salaryMin);
+        if (salaryMax) params.set('salary_max', salaryMax);
+        var maxDays = val('jpMaxDays'); if (maxDays) params.set('max_days_old', maxDays);
+        var sortBy = val('jpSortBy'); if (sortBy) params.set('sort_by', sortBy);
+
         var res = await fetch('/api/jobs/search?' + params.toString());
         if (res.status === 503) {
           document.getElementById('jpConfigNotice').style.display = 'block';
@@ -93,6 +195,7 @@
           return false;
         }
         var data = await res.json();
+        // 400 (bad/conflicting filters) and other errors both surface honestly.
         if (data.error) { status.textContent = data.error; return false; }
         renderResults(data.results || [], data.count || 0);
       } catch (err) {
@@ -248,6 +351,7 @@
     }
 
     (function(){ try { var t = localStorage.getItem('ws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){} })();
-  </script>
+    loadCategories();
+</script>
 </body>
 </html>
