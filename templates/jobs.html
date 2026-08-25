@@ -159,8 +159,15 @@
       }
     }
 
+    // Confirmations queued when the user clicks Apply and leaves for the
+    // listing. We NEVER inspect the opened tab or the third-party site — the
+    // application is self-reported only, when the user returns to this tab.
+    var pendingConfirms = [];
+    var confirmOpen = false;
+
     async function applyJob(job, card, btn) {
-      // External redirect only — never fill or submit a third-party form.
+      // External redirect only — never fill or submit a third-party form,
+      // and never read anything back from the opened tab.
       if (job.redirect_url) window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
       btn.disabled = true;
       try {
@@ -171,9 +178,73 @@
             listing_url: job.redirect_url, match_percent: (job._match != null ? job._match : null)
           })
         });
-        if (res.ok) { btn.textContent = 'Applied ✓'; btn.className = 'ws-btn ws-btn-secondary ws-btn-sm'; toast('Added to your tracker'); }
-        else { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+        if (res.ok) {
+          var data = await res.json();
+          btn.textContent = 'Opened ↗';
+          btn.className = 'ws-btn ws-btn-secondary ws-btn-sm';
+          toast('Opened listing — saved to your tracker.');
+          // Queue a self-report prompt for when they come back to this tab.
+          if (data && data.id != null) {
+            pendingConfirms.push({ id: data.id, company: job.company || '', role: job.title || 'this role' });
+          }
+        } else { btn.disabled = false; toast('Opened listing, but could not track it.'); }
       } catch (e) { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+    }
+
+    // ── Return-to-tab confirmation ───────────────────────────────────────
+    // Scoped: this only surfaces a prompt when pendingConfirms is non-empty,
+    // i.e. after an Apply click. Ordinary tab switches do nothing.
+    function maybeShowConfirm() {
+      if (document.visibilityState !== 'visible') return;
+      if (confirmOpen || !pendingConfirms.length) return;
+      showConfirm(pendingConfirms[0]);
+    }
+    document.addEventListener('visibilitychange', maybeShowConfirm);
+    window.addEventListener('focus', maybeShowConfirm);
+
+    function dismissConfirm() {
+      var el = document.getElementById('jpApplyPrompt');
+      if (el) el.remove();
+      confirmOpen = false;
+      pendingConfirms.shift();      // Leave the row as 'Viewed' — no assumption.
+      setTimeout(maybeShowConfirm, 250);  // Surface the next queued one, if any.
+    }
+
+    async function confirmApplied(item) {
+      try {
+        var res = await fetch('/api/tracker/' + item.id, {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ status: 'Applied' })
+        });
+        toast(res.ok ? 'Marked as applied ✓' : 'Could not update — try the tracker.');
+      } catch (e) { toast('Could not update — try the tracker.'); }
+      dismissConfirm();
+    }
+
+    function showConfirm(item) {
+      confirmOpen = true;
+      var label = esc(item.company ? (item.company + ' — ' + item.role) : item.role);
+      var el = document.createElement('div');
+      el.id = 'jpApplyPrompt';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-label', 'Confirm application');
+      el.style.cssText = 'position:fixed;bottom:20px;right:20px;max-width:340px;'
+        + 'background:var(--ws-surface);color:var(--ws-text);border:1px solid var(--ws-border);'
+        + 'border-radius:var(--ws-radius-lg);box-shadow:var(--ws-shadow-lg);'
+        + 'padding:16px 18px;z-index:200;font-size:13px;';
+      el.innerHTML =
+        '<button id="jpPromptX" aria-label="Dismiss" style="position:absolute;top:8px;right:10px;'
+          + 'background:none;border:none;color:var(--ws-text-tertiary);font-size:18px;line-height:1;cursor:pointer;">&times;</button>'
+        + '<div style="font-weight:600;margin-bottom:2px;">Did you apply?</div>'
+        + '<div style="color:var(--ws-text-secondary);margin-bottom:12px;">' + label + '</div>'
+        + '<div style="display:flex;gap:8px;">'
+          + '<button id="jpPromptYes" class="ws-btn ws-btn-primary ws-btn-sm">Yes, mark as applied</button>'
+          + '<button id="jpPromptNo" class="ws-btn ws-btn-ghost ws-btn-sm">Not yet</button>'
+        + '</div>';
+      document.body.appendChild(el);
+      document.getElementById('jpPromptYes').addEventListener('click', function(){ confirmApplied(item); });
+      document.getElementById('jpPromptNo').addEventListener('click', dismissConfirm);
+      document.getElementById('jpPromptX').addEventListener('click', dismissConfirm);
     }
 
     (function(){ try { var t = localStorage.getItem('ws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){} })();

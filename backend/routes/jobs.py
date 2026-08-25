@@ -117,7 +117,11 @@ def api_jobs_match():
     })
 
 
-# ── Apply → seed a tracker row ─────────────────────────────────────────
+# ── Apply → seed a 'Viewed' tracker row ────────────────────────────────
+# A click on Apply only opens the third-party listing; it is NOT an
+# application. We record it as 'Viewed' and let the user self-report the
+# actual application later (return-to-tab prompt, or "Mark as Applied" in the
+# tracker). JobSpike never inspects the opened tab or the third-party site.
 @jobs_bp.route("/api/jobs/track", methods=["POST"])
 @login_required
 def api_jobs_track():
@@ -138,15 +142,16 @@ def api_jobs_track():
         with get_db() as db:
             cursor = db.execute(
                 """INSERT INTO jobs_tracker
-                   (user_id, job_title, company, location, listing_url, match_percent, status)
-                   VALUES (?, ?, ?, ?, ?, ?, 'Applied')""",
+                   (user_id, job_title, company, location, listing_url, match_percent,
+                    status, viewed_date)
+                   VALUES (?, ?, ?, ?, ?, ?, 'Viewed', CURRENT_TIMESTAMP)""",
                 (session["user_id"], title, company, location, listing_url, match_percent),
             )
             new_id = cursor.lastrowid
-        return jsonify({"id": new_id, "status": "Applied"}), 201
+        return jsonify({"id": new_id, "status": "Viewed"}), 201
     except Exception as e:
         logger.error(f"Tracker insert failed: {e}")
-        return jsonify({"error": "Could not save this application."}), 500
+        return jsonify({"error": "Could not save this listing."}), 500
 
 
 # ── Tracker list + status update ───────────────────────────────────────
@@ -157,8 +162,9 @@ def api_tracker_list():
         with get_db() as db:
             rows = db.execute(
                 """SELECT id, job_title, company, location, listing_url, match_percent,
-                          status, applied_date FROM jobs_tracker
-                   WHERE user_id = ? ORDER BY applied_date DESC""",
+                          status, viewed_date, applied_date FROM jobs_tracker
+                   WHERE user_id = ?
+                   ORDER BY COALESCE(applied_date, viewed_date) DESC""",
                 (session["user_id"],),
             ).fetchall()
         return jsonify([dict(r) for r in rows])
@@ -187,10 +193,21 @@ def api_tracker_update(row_id):
         return jsonify({"error": "Invalid status."}), 400
     try:
         with get_db() as db:
-            db.execute(
-                "UPDATE jobs_tracker SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
-                (status, row_id, user_id),
-            )
+            if status == "Applied":
+                # Self-reported application (confirmation prompt or the tracker's
+                # "Mark as Applied"): stamp applied_date now so it reflects the
+                # real moment, not the earlier 'Viewed' placeholder.
+                db.execute(
+                    "UPDATE jobs_tracker SET status = ?, applied_date = CURRENT_TIMESTAMP, "
+                    "updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?",
+                    (status, row_id, user_id),
+                )
+            else:
+                db.execute(
+                    "UPDATE jobs_tracker SET status = ?, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ? AND user_id = ?",
+                    (status, row_id, user_id),
+                )
         return jsonify({"id": row_id, "status": status})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

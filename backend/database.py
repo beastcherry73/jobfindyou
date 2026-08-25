@@ -20,7 +20,7 @@ _db_initialized = False
 # cheaply and skip the whole DDL suite when already applied. (The DDL suite is
 # ~17 CREATE/ALTER statements; running it on every request costs 1-3s each.)
 _SCHEMA_MARKER_KEY = "schema_version"
-_SCHEMA_MARKER_VALUE = "2"
+_SCHEMA_MARKER_VALUE = "3"
 
 
 def is_vercel():
@@ -489,6 +489,14 @@ def _create_tables_and_migrations(db):
         updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )""")
+    # Clicking Apply only opens the listing; it seeds a 'Viewed' row and stamps
+    # viewed_date. applied_date is only meaningful once status leaves 'Viewed' —
+    # set when the user self-reports the application (the return-to-tab
+    # confirmation prompt, or the tracker's "Mark as Applied" action). We never
+    # infer an application from the click itself. (applied_date keeps its
+    # existing NOT NULL DEFAULT for backward compatibility; callers gate on
+    # status rather than treating its insert-time placeholder as an apply time.)
+    add_col_safe("jobs_tracker", "viewed_date TIMESTAMPTZ")
 
     if is_pg:
         db.execute(

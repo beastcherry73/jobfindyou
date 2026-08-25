@@ -31,7 +31,7 @@
     </div>
 
     <h1 style="font-size:24px;font-weight:600;margin-bottom:4px;">Application tracker</h1>
-    <p style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:20px;">Applications you started from Job Search land here automatically.</p>
+    <p style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:20px;">Listings you open from Job Search land here as <strong>Viewed</strong>. Mark one as Applied once you’ve actually submitted it.</p>
 
     <div class="ws-card" style="padding:0;overflow:hidden;">
       <div class="ws-table-wrap" style="border:none;">
@@ -40,7 +40,7 @@
             <th class="sortable" onclick="sortBy('job_title')">Role</th>
             <th class="sortable" onclick="sortBy('match_percent')">Match</th>
             <th class="sortable" onclick="sortBy('status')">Status</th>
-            <th class="sortable" onclick="sortBy('applied_date')">Applied</th>
+            <th class="sortable" onclick="sortBy('applied_date')">Date</th>
             <th></th>
           </tr></thead>
           <tbody id="trkBody"></tbody>
@@ -96,20 +96,39 @@
         var matchCell = (r.match_percent!=null)
           ? '<span class="ws-badge ' + toneClass(r.match_percent) + '">' + r.match_percent + '%</span>'
           : '<span style="color:var(--ws-text-tertiary);font-size:12px;">—</span>';
-        var opts = STATUSES.map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+s+'</option>'; }).join('');
         var titleHtml = r.listing_url
           ? '<a href="'+esc(r.listing_url)+'" target="_blank" rel="noopener noreferrer" style="color:var(--ws-text);font-weight:600;text-decoration:none;">'+esc(r.job_title)+'</a>'
           : '<span style="font-weight:600;">'+esc(r.job_title)+'</span>';
+
+        // Viewed rows never auto-progress: offer an explicit "Mark as Applied"
+        // action instead of the status dropdown. Everything else uses the
+        // normal progression select.
+        var isViewed = (r.status === 'Viewed');
+        var statusHtml, dateHtml;
+        if (isViewed) {
+          statusHtml = '<span class="ws-badge" style="background:var(--ws-surface-hover);color:var(--ws-text-secondary);margin-right:8px;">Viewed</span>'+
+            '<button class="ws-btn ws-btn-primary ws-btn-sm jp-mark-applied">Mark as Applied</button>';
+          dateHtml = '<span style="color:var(--ws-text-tertiary);">Viewed '+fmtDate(r.viewed_date)+'</span>';
+        } else {
+          var opts = STATUSES.map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+s+'</option>'; }).join('');
+          statusHtml = '<select class="ws-select ws-select-sm" style="width:130px;">'+opts+'</select>';
+          dateHtml = 'Applied '+fmtDate(r.applied_date);
+        }
+
         tr.innerHTML =
           '<td>'+titleHtml+'<div style="font-size:12px;color:var(--ws-text-tertiary);">'+esc(r.company||'')+(r.location?' · '+esc(r.location):'')+'</div></td>'+
           '<td>'+matchCell+'</td>'+
-          '<td><select class="ws-select ws-select-sm" style="width:130px;">'+opts+'</select></td>'+
-          '<td style="color:var(--ws-text-tertiary);font-size:12px;">'+fmtDate(r.applied_date)+'</td>'+
-          '<td><button class="ws-btn ws-btn-ghost ws-btn-sm" title="Remove">&times;</button></td>';
-        var sel = tr.querySelector('select');
-        sel.addEventListener('change', function(){ updateStatus(r.id, sel.value); });
-        var del = tr.querySelector('button');
-        del.addEventListener('click', function(){ removeRow(r.id); });
+          '<td>'+statusHtml+'</td>'+
+          '<td style="color:var(--ws-text-tertiary);font-size:12px;">'+dateHtml+'</td>'+
+          '<td><button class="ws-btn ws-btn-ghost ws-btn-sm jp-del" title="Remove">&times;</button></td>';
+
+        if (isViewed) {
+          tr.querySelector('.jp-mark-applied').addEventListener('click', function(){ updateStatus(r.id, 'Applied'); });
+        } else {
+          var sel = tr.querySelector('select');
+          sel.addEventListener('change', function(){ updateStatus(r.id, sel.value); });
+        }
+        tr.querySelector('.jp-del').addEventListener('click', function(){ removeRow(r.id); });
         body.appendChild(tr);
       });
     }
@@ -117,7 +136,18 @@
     async function updateStatus(id, status) {
       try {
         var res = await fetch('/api/tracker/'+id, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status:status}) });
-        if (res.ok) { var row = rows.find(function(r){return r.id===id;}); if (row) row.status = status; toast('Status updated'); }
+        if (res.ok) {
+          var row = rows.find(function(r){return r.id===id;});
+          if (row) {
+            var wasViewed = (row.status === 'Viewed');
+            row.status = status;
+            // Marking a Viewed row Applied stamps applied_date server-side; mirror
+            // it locally and re-render so the row swaps to the progression select.
+            if (status === 'Applied') row.applied_date = new Date().toISOString();
+            if (wasViewed) render();
+          }
+          toast(status === 'Applied' ? 'Marked as applied ✓' : 'Status updated');
+        }
         else toast('Could not update status');
       } catch(e){ toast('Could not update status'); }
     }
