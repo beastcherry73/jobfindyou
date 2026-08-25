@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Search — JobSpike</title>
+  <link rel="stylesheet" href="/static/css/workspace.css">
+  <style>
+    body { background: var(--ws-bg); color: var(--ws-text); }
+    .jp-shell { max-width: 900px; margin: 0 auto; padding: 24px 20px 64px; }
+    .jp-topbar { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+    .jp-topbar a { font-size:13px; color:var(--ws-text-secondary); text-decoration:none; padding:6px 10px; border-radius:8px; }
+    .jp-topbar a:hover { background:var(--ws-surface-hover); color:var(--ws-text); }
+    .jp-topbar a.active { background:var(--ws-primary-subtle); color:var(--ws-primary); font-weight:600; }
+    .jp-brand { font-weight:700; font-size:15px; margin-right:auto; display:flex; align-items:center; gap:8px; }
+    .jp-brand .mark { width:24px;height:24px;border-radius:7px;background:var(--ws-primary);display:grid;place-items:center; }
+    .jp-brand .mark span { width:7px;height:7px;border-radius:2px;background:var(--ws-accent); }
+    .jp-search { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+    .jp-search input { flex:1; min-width:160px; }
+    .jp-card { padding:18px 20px; margin-bottom:12px; }
+    .jp-card-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; }
+    .jp-title { font-size:15px; font-weight:700; color:var(--ws-text); }
+    .jp-meta { font-size:12.5px; color:var(--ws-text-secondary); margin-top:3px; }
+    .jp-sub { font-size:12px; color:var(--ws-text-tertiary); margin-top:6px; display:flex; gap:12px; flex-wrap:wrap; }
+    .jp-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+    .jp-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 20px; }
+    .jp-notice { padding:14px 16px; border-radius:var(--ws-radius-lg); background:var(--ws-warn-bg); color:var(--ws-warn); font-size:13px; margin-bottom:20px; }
+  </style>
+</head>
+<body>
+  <div class="jp-shell">
+    <div class="jp-topbar">
+      <span class="jp-brand"><span class="mark"><span></span></span> JobSpike</span>
+      <a href="/">Dashboard</a>
+      <a href="/app/jobs" class="active">Job Search</a>
+      <a href="/app/tracker">Tracker</a>
+    </div>
+
+    <h1 style="font-size:24px;font-weight:600;margin-bottom:4px;">Find your next role</h1>
+    <p style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:20px;">Search live listings and check how well each one matches your resume.</p>
+
+    <div id="jpConfigNotice" class="jp-notice" style="display:none;">Job search isn't configured yet — an admin needs to add the Adzuna API keys.</div>
+
+    <form class="jp-search" id="jpForm" onsubmit="return doSearch(event)">
+      <input class="ws-input" id="jpWhat" placeholder="Job title, keywords (e.g. product manager)">
+      <input class="ws-input" id="jpWhere" placeholder="Location (e.g. Bengaluru)" style="max-width:220px;">
+      <button class="ws-btn ws-btn-primary" type="submit">Search</button>
+    </form>
+
+    <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:12px;"></div>
+    <div id="jpResults"></div>
+  </div>
+
+  <div id="jpToast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ws-text);color:var(--ws-bg);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;"></div>
+
+  <script>
+    function toast(msg) {
+      var t = document.getElementById('jpToast');
+      t.textContent = msg; t.style.opacity = '1';
+      setTimeout(function(){ t.style.opacity = '0'; }, 2200);
+    }
+    function esc(s){ return (s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+    function fmtSalary(min, max, predicted) {
+      if (!min && !max) return '';
+      var f = function(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); };
+      var s = min && max ? f(min) + '–' + f(max) : f(min || max);
+      return s + (predicted ? ' (est.)' : '');
+    }
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      if (isNaN(d)) return '';
+      return d.toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' });
+    }
+    function toneClass(pct) { return pct >= 70 ? 'ws-badge-good' : pct >= 40 ? 'ws-badge-warn' : 'ws-badge-bad'; }
+
+    async function doSearch(e) {
+      if (e) e.preventDefault();
+      var what = document.getElementById('jpWhat').value.trim();
+      var where = document.getElementById('jpWhere').value.trim();
+      var status = document.getElementById('jpStatus');
+      var results = document.getElementById('jpResults');
+      status.textContent = 'Searching…';
+      results.innerHTML = '';
+      try {
+        var params = new URLSearchParams();
+        if (what) params.set('what', what);
+        if (where) params.set('where', where);
+        var res = await fetch('/api/jobs/search?' + params.toString());
+        if (res.status === 503) {
+          document.getElementById('jpConfigNotice').style.display = 'block';
+          status.textContent = '';
+          return false;
+        }
+        var data = await res.json();
+        if (data.error) { status.textContent = data.error; return false; }
+        renderResults(data.results || [], data.count || 0);
+      } catch (err) {
+        status.textContent = 'Search failed. Please try again.';
+      }
+      return false;
+    }
+
+    function renderResults(list, count) {
+      var status = document.getElementById('jpStatus');
+      var wrap = document.getElementById('jpResults');
+      if (!list.length) {
+        status.textContent = '';
+        wrap.innerHTML = '<div class="jp-empty">No listings found. Try broader keywords or a different location.</div>';
+        return;
+      }
+      status.textContent = count.toLocaleString() + ' result' + (count !== 1 ? 's' : '') + ' found';
+      wrap.innerHTML = '';
+      list.forEach(function(job) {
+        var card = document.createElement('div');
+        card.className = 'ws-card jp-card';
+        var salary = fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
+        var sub = [];
+        if (salary) sub.push('<span>' + esc(salary) + '</span>');
+        if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
+        card.innerHTML =
+          '<div class="jp-card-head">' +
+            '<div>' +
+              '<div class="jp-title">' + esc(job.title || 'Untitled role') + '</div>' +
+              '<div class="jp-meta">' + esc(job.company || 'Company undisclosed') + (job.location ? ' · ' + esc(job.location) : '') + '</div>' +
+              (sub.length ? '<div class="jp-sub">' + sub.join('') + '</div>' : '') +
+            '</div>' +
+            '<div class="jp-actions">' +
+              '<button class="ws-btn ws-btn-ghost ws-btn-sm jp-match-btn">Check match</button>' +
+              '<button class="ws-btn ws-btn-primary ws-btn-sm jp-apply-btn">Apply</button>' +
+            '</div>' +
+          '</div>';
+        var matchBtn = card.querySelector('.jp-match-btn');
+        matchBtn.addEventListener('click', function(){ checkMatch(job, matchBtn); });
+        var applyBtn = card.querySelector('.jp-apply-btn');
+        applyBtn.addEventListener('click', function(){ applyJob(job, card, applyBtn); });
+        wrap.appendChild(card);
+      });
+    }
+
+    async function checkMatch(job, btn) {
+      btn.disabled = true; btn.textContent = 'Checking…';
+      try {
+        var res = await fetch('/api/jobs/match', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ description: job.description || (job.title + ' at ' + job.company) })
+        });
+        var d = await res.json();
+        if (d.no_resume) { btn.disabled = false; btn.textContent = 'Check match'; toast('Analyze a resume first to see matches.'); return; }
+        if (d.error) { btn.disabled = false; btn.textContent = 'Check match'; toast(d.error); return; }
+        job._match = d.match_percent;
+        var badge = document.createElement('span');
+        badge.className = 'ws-badge ' + toneClass(d.match_percent);
+        badge.style.fontWeight = '700';
+        badge.textContent = d.match_percent + '% match';
+        btn.replaceWith(badge);
+      } catch (e) {
+        btn.disabled = false; btn.textContent = 'Check match'; toast('Could not compute match.');
+      }
+    }
+
+    async function applyJob(job, card, btn) {
+      // External redirect only — never fill or submit a third-party form.
+      if (job.redirect_url) window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
+      btn.disabled = true;
+      try {
+        var res = await fetch('/api/jobs/track', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            job_title: job.title, company: job.company, location: job.location,
+            listing_url: job.redirect_url, match_percent: (job._match != null ? job._match : null)
+          })
+        });
+        if (res.ok) { btn.textContent = 'Applied ✓'; btn.className = 'ws-btn ws-btn-secondary ws-btn-sm'; toast('Added to your tracker'); }
+        else { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+      } catch (e) { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+    }
+
+    (function(){ try { var t = localStorage.getItem('ws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){} })();
+  </script>
+</body>
+</html>

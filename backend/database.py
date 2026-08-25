@@ -20,7 +20,7 @@ _db_initialized = False
 # cheaply and skip the whole DDL suite when already applied. (The DDL suite is
 # ~17 CREATE/ALTER statements; running it on every request costs 1-3s each.)
 _SCHEMA_MARKER_KEY = "schema_version"
-_SCHEMA_MARKER_VALUE = "1"
+_SCHEMA_MARKER_VALUE = "2"
 
 
 def is_vercel():
@@ -475,6 +475,20 @@ def _create_tables_and_migrations(db):
     add_col_safe("resumes", "file_path TEXT")
     add_col_safe("resumes", "file_size INTEGER DEFAULT 0")
     add_col_safe("resumes", "mime_type TEXT DEFAULT 'application/pdf'")
+
+    db.execute("""CREATE TABLE IF NOT EXISTS jobs_tracker (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        job_title TEXT NOT NULL,
+        company TEXT,
+        location TEXT,
+        listing_url TEXT,
+        match_percent INTEGER,
+        status TEXT NOT NULL DEFAULT 'Applied',
+        applied_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    )""")
 
     if is_pg:
         db.execute(

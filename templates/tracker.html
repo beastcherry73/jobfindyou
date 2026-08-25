@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Tracker — JobSpike</title>
+  <link rel="stylesheet" href="/static/css/workspace.css">
+  <style>
+    body { background: var(--ws-bg); color: var(--ws-text); }
+    .jp-shell { max-width: 960px; margin: 0 auto; padding: 24px 20px 64px; }
+    .jp-topbar { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+    .jp-topbar a { font-size:13px; color:var(--ws-text-secondary); text-decoration:none; padding:6px 10px; border-radius:8px; }
+    .jp-topbar a:hover { background:var(--ws-surface-hover); color:var(--ws-text); }
+    .jp-topbar a.active { background:var(--ws-primary-subtle); color:var(--ws-primary); font-weight:600; }
+    .jp-brand { font-weight:700; font-size:15px; margin-right:auto; display:flex; align-items:center; gap:8px; }
+    .jp-brand .mark { width:24px;height:24px;border-radius:7px;background:var(--ws-primary);display:grid;place-items:center; }
+    .jp-brand .mark span { width:7px;height:7px;border-radius:2px;background:var(--ws-accent); }
+    .jp-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 20px; }
+    .jp-empty a { color:var(--ws-primary); font-weight:600; text-decoration:none; }
+    th.sortable { cursor:pointer; user-select:none; }
+    th.sortable:hover { color:var(--ws-text); }
+  </style>
+</head>
+<body>
+  <div class="jp-shell">
+    <div class="jp-topbar">
+      <span class="jp-brand"><span class="mark"><span></span></span> JobSpike</span>
+      <a href="/">Dashboard</a>
+      <a href="/app/jobs">Job Search</a>
+      <a href="/app/tracker" class="active">Tracker</a>
+    </div>
+
+    <h1 style="font-size:24px;font-weight:600;margin-bottom:4px;">Application tracker</h1>
+    <p style="font-size:13px;color:var(--ws-text-secondary);margin-bottom:20px;">Applications you started from Job Search land here automatically.</p>
+
+    <div class="ws-card" style="padding:0;overflow:hidden;">
+      <div class="ws-table-wrap" style="border:none;">
+        <table class="ws-table" id="trkTable">
+          <thead><tr>
+            <th class="sortable" onclick="sortBy('job_title')">Role</th>
+            <th class="sortable" onclick="sortBy('match_percent')">Match</th>
+            <th class="sortable" onclick="sortBy('status')">Status</th>
+            <th class="sortable" onclick="sortBy('applied_date')">Applied</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="trkBody"></tbody>
+        </table>
+      </div>
+      <div id="trkEmpty" class="jp-empty" style="display:none;">
+        No applications tracked yet. <a href="/app/jobs">Find jobs →</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="jpToast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ws-text);color:var(--ws-bg);padding:10px 18px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:100;"></div>
+
+  <script>
+    var rows = [];
+    var sortKey = 'applied_date';
+    var sortDir = -1;
+    var STATUSES = ['Applied','Interview','Offer','Rejected'];
+
+    function toast(msg){ var t=document.getElementById('jpToast'); t.textContent=msg; t.style.opacity='1'; setTimeout(function(){t.style.opacity='0';},2000); }
+    function esc(s){ return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+    function toneClass(pct){ return pct>=70?'ws-badge-good':pct>=40?'ws-badge-warn':'ws-badge-bad'; }
+    function fmtDate(iso){ if(!iso) return '—'; var d=new Date(iso); return isNaN(d)?'—':d.toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}); }
+
+    async function load() {
+      try {
+        var res = await fetch('/api/tracker');
+        rows = await res.json();
+        if (!Array.isArray(rows)) rows = [];
+      } catch(e) { rows = []; }
+      render();
+    }
+
+    function sortBy(key) {
+      if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+      render();
+    }
+
+    function render() {
+      var body = document.getElementById('trkBody');
+      var empty = document.getElementById('trkEmpty');
+      var table = document.getElementById('trkTable');
+      if (!rows.length) { table.style.display='none'; empty.style.display='block'; return; }
+      table.style.display=''; empty.style.display='none';
+      var sorted = rows.slice().sort(function(a,b){
+        var x=a[sortKey], y=b[sortKey];
+        if (sortKey==='match_percent') { x=x==null?-1:x; y=y==null?-1:y; }
+        if (x<y) return -1*sortDir; if (x>y) return 1*sortDir; return 0;
+      });
+      body.innerHTML = '';
+      sorted.forEach(function(r){
+        var tr = document.createElement('tr');
+        var matchCell = (r.match_percent!=null)
+          ? '<span class="ws-badge ' + toneClass(r.match_percent) + '">' + r.match_percent + '%</span>'
+          : '<span style="color:var(--ws-text-tertiary);font-size:12px;">—</span>';
+        var opts = STATUSES.map(function(s){ return '<option value="'+s+'"'+(s===r.status?' selected':'')+'>'+s+'</option>'; }).join('');
+        var titleHtml = r.listing_url
+          ? '<a href="'+esc(r.listing_url)+'" target="_blank" rel="noopener noreferrer" style="color:var(--ws-text);font-weight:600;text-decoration:none;">'+esc(r.job_title)+'</a>'
+          : '<span style="font-weight:600;">'+esc(r.job_title)+'</span>';
+        tr.innerHTML =
+          '<td>'+titleHtml+'<div style="font-size:12px;color:var(--ws-text-tertiary);">'+esc(r.company||'')+(r.location?' · '+esc(r.location):'')+'</div></td>'+
+          '<td>'+matchCell+'</td>'+
+          '<td><select class="ws-select ws-select-sm" style="width:130px;">'+opts+'</select></td>'+
+          '<td style="color:var(--ws-text-tertiary);font-size:12px;">'+fmtDate(r.applied_date)+'</td>'+
+          '<td><button class="ws-btn ws-btn-ghost ws-btn-sm" title="Remove">&times;</button></td>';
+        var sel = tr.querySelector('select');
+        sel.addEventListener('change', function(){ updateStatus(r.id, sel.value); });
+        var del = tr.querySelector('button');
+        del.addEventListener('click', function(){ removeRow(r.id); });
+        body.appendChild(tr);
+      });
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        var res = await fetch('/api/tracker/'+id, { method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({status:status}) });
+        if (res.ok) { var row = rows.find(function(r){return r.id===id;}); if (row) row.status = status; toast('Status updated'); }
+        else toast('Could not update status');
+      } catch(e){ toast('Could not update status'); }
+    }
+
+    async function removeRow(id) {
+      try {
+        var res = await fetch('/api/tracker/'+id, { method:'DELETE' });
+        if (res.ok) { rows = rows.filter(function(r){return r.id!==id;}); render(); toast('Removed'); }
+      } catch(e){ toast('Could not remove'); }
+    }
+
+    (function(){ try { var t = localStorage.getItem('ws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){} })();
+    load();
+  </script>
+</body>
+</html>
