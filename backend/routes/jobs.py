@@ -5,8 +5,10 @@ from flask import Blueprint, request, jsonify, session, render_template
 from backend.database import get_db
 from backend.decorators import login_required
 from backend.services.adzuna_service import (
-    search_jobs, list_categories, AdzunaError, AdzunaValidationError,
-    adzuna_configured,
+    list_categories, AdzunaError, AdzunaValidationError, adzuna_configured,
+)
+from backend.services.jobsources import (
+    unified_search, get_countries, any_source_configured,
 )
 from backend.services.ai import call_groq, GroqError
 from backend.services.helpers import clean_json
@@ -36,13 +38,16 @@ def tracker_page():
 @login_required
 @rate_limit(limit=30, window_seconds=300)
 def api_jobs_search():
-    if not adzuna_configured():
+    if not any_source_configured():
         return jsonify({"error": "Job search isn't configured yet.", "configured": False}), 503
 
     args = request.args
     job_type = (args.get("job_type") or "").strip().lower() or None
     try:
-        data = search_jobs(
+        # unified_search routes by country: Adzuna (full filters) where it
+        # serves that country, else the global aggregators. Adzuna-specific
+        # filters below are applied on the Adzuna path and ignored elsewhere.
+        data = unified_search(
             what=(args.get("what") or "").strip(),
             where=(args.get("where") or "").strip(),
             country=(args.get("country") or "in"),
@@ -63,6 +68,15 @@ def api_jobs_search():
         return jsonify({"error": str(e)}), 400
     except AdzunaError as e:
         return jsonify({"error": str(e)}), 502
+
+
+@jobs_bp.route("/api/jobs/countries", methods=["GET"])
+@login_required
+def api_jobs_countries():
+    # Static list (no upstream call) — the UI populates its country dropdown and
+    # learns which countries are Adzuna markets (so it only shows category
+    # filters where they apply).
+    return jsonify({"countries": get_countries()})
 
 
 @jobs_bp.route("/api/jobs/categories", methods=["GET"])

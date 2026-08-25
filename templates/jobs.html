@@ -60,23 +60,6 @@
           <label for="jpCountry">Country</label>
           <select class="ws-select" id="jpCountry" onchange="onCountryChange()">
             <option value="in">India</option>
-            <option value="us">United States</option>
-            <option value="gb">United Kingdom</option>
-            <option value="au">Australia</option>
-            <option value="ca">Canada</option>
-            <option value="de">Germany</option>
-            <option value="fr">France</option>
-            <option value="nl">Netherlands</option>
-            <option value="it">Italy</option>
-            <option value="es">Spain</option>
-            <option value="at">Austria</option>
-            <option value="pl">Poland</option>
-            <option value="sg">Singapore</option>
-            <option value="nz">New Zealand</option>
-            <option value="za">South Africa</option>
-            <option value="br">Brazil</option>
-            <option value="mx">Mexico</option>
-            <option value="ch">Switzerland</option>
           </select>
         </div>
         <div class="jp-filter">
@@ -134,10 +117,11 @@
           </select>
         </div>
       </div>
+      <div id="jpFilterHint" style="display:none;font-size:11.5px;color:var(--ws-text-tertiary);margin:-4px 0 14px;"></div>
     </form>
 
     <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
-    <div class="jp-attribution">Results powered by <a href="https://www.adzuna.in/" target="_blank" rel="noopener noreferrer">Adzuna</a></div>
+    <div class="jp-attribution">Results powered by Adzuna, Careerjet &amp; Jooble — each listing is labelled with its source.</div>
     <div id="jpResults"></div>
   </div>
 
@@ -197,11 +181,59 @@
       } catch (e) { /* leave default option */ }
     }
 
+    var ADZUNA_SET = {};      // country code -> true for Adzuna markets
+    var COUNTRY_NAME = {};
+
+    async function loadCountries() {
+      try {
+        var res = await fetch('/api/jobs/countries');
+        if (res.ok) {
+          var data = await res.json();
+          var sel = document.getElementById('jpCountry');
+          sel.innerHTML = '';
+          (data.countries || []).forEach(function(c){
+            COUNTRY_NAME[c.code] = c.name;
+            if (c.adzuna) ADZUNA_SET[c.code] = true;
+            var opt = document.createElement('option');
+            opt.value = c.code; opt.textContent = c.name;
+            sel.appendChild(opt);
+          });
+          sel.value = 'in';
+        }
+      } catch (e) { /* keep the default India option */ }
+      onCountryChange();
+    }
+
+    // Category, salary, radius, recency and sort are Adzuna-market features.
+    // For countries served by the global aggregators we disable them (and say
+    // so) rather than let a filter silently do nothing.
+    var ADZUNA_ONLY = ['jpDistance','jpCategory','jpSalaryMin','jpSalaryMax','jpMaxDays','jpSortBy'];
+    function setAdzunaFilters(enabled) {
+      ADZUNA_ONLY.forEach(function(id){
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = !enabled;
+        var wrap = el.closest('.jp-filter');
+        if (wrap) wrap.style.opacity = enabled ? '' : '0.45';
+      });
+    }
+
     function onCountryChange() {
       var country = document.getElementById('jpCountry').value || 'in';
-      var sym = (CURRENCY[country] || CURRENCY.in).s.trim();
-      document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
-      loadCategories(country);           // categories are per-country
+      var isAdzuna = !!ADZUNA_SET[country];
+      setAdzunaFilters(isAdzuna);
+      var hint = document.getElementById('jpFilterHint');
+      if (isAdzuna) {
+        var sym = (CURRENCY[country] || CURRENCY.in).s.trim();
+        document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
+        hint.style.display = 'none';
+        loadCategories(country);         // categories are per-country
+      } else {
+        hint.textContent = 'Advanced filters (category, salary, radius, sort) apply to Adzuna markets. '
+          + (COUNTRY_NAME[country] || 'This country') + ' searches by keyword + location.';
+        hint.style.display = 'block';
+        document.getElementById('jpCategory').innerHTML = '<option value="">All categories</option>';
+      }
     }
 
     async function doSearch(e) {
@@ -266,7 +298,8 @@
       list.forEach(function(job) {
         var card = document.createElement('div');
         card.className = 'ws-card jp-card';
-        var salary = fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
+        // Global aggregators return salary as free text; Adzuna returns numbers.
+        var salary = job.salary_text ? job.salary_text : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
         var sub = [];
         if (salary) sub.push('<span>' + esc(salary) + '</span>');
         if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
@@ -401,7 +434,7 @@
     }
 
     (function(){ try { var t = localStorage.getItem('ws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){} })();
-    loadCategories('in');
+    loadCountries();
 </script>
 </body>
 </html>
