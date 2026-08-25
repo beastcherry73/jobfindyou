@@ -1102,21 +1102,24 @@
 
 
   <!-- ── AUTH INTERCEPT MODAL ── -->
-  <div class="auth-modal" id="authGateModal" style="position: fixed; inset: 0; background: rgba(8, 17, 31, 0.7); backdrop-filter: blur(10px); z-index: 10000; display: none; place-items: center; animation: fadeIn 0.25s ease-out;">
-    <div class="auth-modal-card" style="width: min(90%, 420px); background: #08111F; border: 1px solid rgba(124, 200, 255, 0.15); border-radius: 24px; padding: 40px; text-align: center; box-shadow: 0 25px 60px rgba(0,0,0,0.4);">
-      <div style="display:flex; justify-content:flex-end;">
-        <button onclick="closeAuthModal()" style="background:none; border:none; color:#F8F5EF; cursor:pointer; opacity:0.7;display:flex;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <div class="auth-modal" id="authGateModal" style="position: fixed; inset: 0; background: rgba(28, 24, 16, 0.42); backdrop-filter: blur(5px); z-index: 10000; display: none; place-items: center; padding: 20px; animation: fadeIn 0.25s ease-out;">
+    <div class="auth-modal-card" style="width: min(94%, 400px); background: #FFFFFF; border: 1px solid #E8E4DE; border-radius: 20px; padding: 30px 30px 26px; text-align: left; box-shadow: 0 1px 2px rgba(22,23,27,0.06), 0 24px 50px -18px rgba(22,23,27,0.28);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:22px;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; background:#16171B;"><span style="width:7px; height:7px; border-radius:2px; background:#B8942A;"></span></span>
+        <button onclick="closeAuthModal()" aria-label="Close" style="background:none; border:none; color:#8A8D93; cursor:pointer; display:flex; padding:4px; border-radius:6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
-      <h3 style="font-family:'Manrope',sans-serif; font-size:1.6rem; font-weight:800; margin-bottom:12px; color:#F8F5EF;">Sign in to view your report</h3>
-      <p style="font-size:0.88rem; opacity:0.8; line-height:1.5; margin-bottom:30px; color:#F8F5EF;">Verify your identity to complete the analysis and open your dashboard workspace.</p>
-      
-      <a class="landing-cta" href="/auth/google" style="background:#ffffff; color:#08111F; width:100%; justify-content:center; margin-bottom:16px; border:1px solid rgba(255,255,255,0.2); text-decoration:none; display:flex; align-items:center; padding:12px; border-radius:999px; font-weight:600;">
-        <svg width="18" height="18" viewBox="0 0 24 24" style="margin-right:8px;"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/></svg>
+      <h3 style="font-size:1.7rem; font-weight:600; line-height:1.15; letter-spacing:-0.01em; margin:0 0 10px; color:#16171B;">Your report is ready.<br><span class="font-serif italic" style="font-weight:400; color:#16171B;">Sign in to open it.</span></h3>
+      <p style="font-size:0.9rem; line-height:1.5; margin:0 0 24px; color:#6B6F76;">We'll save this analysis to your workspace so you can improve, tailor, and export it anytime.</p>
+
+      <a href="/auth/google" style="display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:12px; border-radius:12px; background:#FFFFFF; color:#16171B; border:1px solid #D3CFC5; text-decoration:none; font-weight:600; font-size:0.9rem; margin-bottom:10px; box-sizing:border-box;">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.6 14.8c-.3-.8-.4-1.7-.4-2.8s.1-2 .4-2.8L1.9 6.3C.7 8.7 0 10.3 0 12s.7 3.3 1.9 5.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 23 12 23z"/></svg>
         Continue with Google
       </a>
-      <a class="landing-cta" href="/login" style="width:100%; justify-content:center; background:#2563EB; color:#fff; text-decoration:none; display:block; padding:12px; border-radius:999px; font-weight:600;">
+      <a href="/login" style="display:flex; align-items:center; justify-content:center; width:100%; padding:12px; border-radius:12px; background:#2457E6; color:#fff; text-decoration:none; font-weight:600; font-size:0.9rem; box-sizing:border-box;">
         Continue with Email
       </a>
+
+      <p style="font-size:0.72rem; color:#8A8D93; margin:18px 0 0; text-align:center;">No credit card. Your resume stays private to your account.</p>
     </div>
   </div>
 
