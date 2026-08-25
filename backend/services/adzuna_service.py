@@ -23,6 +23,26 @@ logger = logging.getLogger(__name__)
 
 ADZUNA_BASE = "https://api.adzuna.com/v1/api/jobs"
 
+# The country indexes Adzuna actually serves (verified empirically against the
+# live API — Adzuna returns 404 for anything else, e.g. Bangladesh, which is why
+# a second global source is needed for full worldwide coverage). Value is the
+# local currency Adzuna reports salaries in for that index, so the UI can format
+# salary correctly without a separate currency picker.
+ADZUNA_COUNTRIES = {
+    "us": "USD", "gb": "GBP", "in": "INR", "au": "AUD", "ca": "CAD",
+    "de": "EUR", "fr": "EUR", "nl": "EUR", "it": "EUR", "es": "EUR",
+    "at": "EUR", "pl": "PLN", "sg": "SGD", "nz": "NZD", "za": "ZAR",
+    "br": "BRL", "mx": "MXN", "ch": "CHF",
+}
+DEFAULT_COUNTRY = "in"
+
+
+def normalize_country(country):
+    """Clamp to a supported Adzuna index; unknown/empty falls back to default."""
+    c = (country or "").strip().lower()
+    return c if c in ADZUNA_COUNTRIES else DEFAULT_COUNTRY
+
+
 # Adzuna's four employment-type filter flags. Each is an independent boolean the
 # API ANDs into the query; we expose them as one "job type" choice in the UI.
 JOB_TYPE_PARAMS = {"full_time", "part_time", "contract", "permanent"}
@@ -78,6 +98,9 @@ def search_jobs(what="", where="", page=1, country="in", results_per_page=15,
         raise AdzunaError(
             "Job search is not configured. Set ADZUNA_APP_ID and ADZUNA_APP_KEY."
         )
+
+    country = normalize_country(country)
+    currency = ADZUNA_COUNTRIES[country]
 
     try:
         page = max(1, int(page))
@@ -175,6 +198,8 @@ def search_jobs(what="", where="", page=1, country="in", results_per_page=15,
             "created": r.get("created", ""),
             "description": (r.get("description") or "").strip(),
             "redirect_url": r.get("redirect_url", ""),
+            "source": "Adzuna",       # honest per-listing provenance
+            "currency": currency,     # so the UI formats salary in-country
         })
 
     count = data.get("count", len(results))
@@ -183,7 +208,7 @@ def search_jobs(what="", where="", page=1, country="in", results_per_page=15,
     except (ValueError, TypeError):
         count = len(results)
 
-    return {"count": count, "results": results}
+    return {"count": count, "results": results, "country": country, "currency": currency}
 
 
 # ── Categories (real options from Adzuna, never a hardcoded guess) ─────────
@@ -207,6 +232,7 @@ def list_categories(country="in"):
             "Job search is not configured. Set ADZUNA_APP_ID and ADZUNA_APP_KEY."
         )
 
+    country = normalize_country(country)
     cached = _CATEGORIES_CACHE.get(country)
     if cached and (time.time() - cached["ts"]) < _CATEGORIES_TTL:
         return cached["items"]

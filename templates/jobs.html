@@ -57,6 +57,29 @@
 
       <div class="jp-filters">
         <div class="jp-filter">
+          <label for="jpCountry">Country</label>
+          <select class="ws-select" id="jpCountry" onchange="onCountryChange()">
+            <option value="in">India</option>
+            <option value="us">United States</option>
+            <option value="gb">United Kingdom</option>
+            <option value="au">Australia</option>
+            <option value="ca">Canada</option>
+            <option value="de">Germany</option>
+            <option value="fr">France</option>
+            <option value="nl">Netherlands</option>
+            <option value="it">Italy</option>
+            <option value="es">Spain</option>
+            <option value="at">Austria</option>
+            <option value="pl">Poland</option>
+            <option value="sg">Singapore</option>
+            <option value="nz">New Zealand</option>
+            <option value="za">South Africa</option>
+            <option value="br">Brazil</option>
+            <option value="mx">Mexico</option>
+            <option value="ch">Switzerland</option>
+          </select>
+        </div>
+        <div class="jp-filter">
           <label for="jpDistance">Radius</label>
           <select class="ws-select" id="jpDistance">
             <option value="">Any distance</option>
@@ -84,11 +107,11 @@
           </select>
         </div>
         <div class="jp-filter">
-          <label for="jpSalaryMin">Salary min (₹)</label>
+          <label for="jpSalaryMin">Salary min (<span class="jp-cur">₹</span>)</label>
           <input class="ws-input" id="jpSalaryMin" type="number" min="0" step="10000" placeholder="e.g. 600000">
         </div>
         <div class="jp-filter">
-          <label for="jpSalaryMax">Salary max (₹)</label>
+          <label for="jpSalaryMax">Salary max (<span class="jp-cur">₹</span>)</label>
           <input class="ws-input" id="jpSalaryMax" type="number" min="0" step="10000" placeholder="e.g. 2000000">
         </div>
         <div class="jp-filter">
@@ -127,9 +150,24 @@
       setTimeout(function(){ t.style.opacity = '0'; }, 2200);
     }
     function esc(s){ return (s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+    // Adzuna reports salary in each country index's local currency, so format
+    // per country rather than assuming INR.
+    var CURRENCY = {
+      in:{s:'₹',l:'en-IN'}, us:{s:'$',l:'en-US'}, gb:{s:'£',l:'en-GB'},
+      au:{s:'A$',l:'en-AU'}, ca:{s:'C$',l:'en-CA'}, de:{s:'€',l:'de-DE'},
+      fr:{s:'€',l:'fr-FR'}, nl:{s:'€',l:'nl-NL'}, it:{s:'€',l:'it-IT'},
+      es:{s:'€',l:'es-ES'}, at:{s:'€',l:'de-AT'}, pl:{s:'zł',l:'pl-PL'},
+      sg:{s:'S$',l:'en-SG'}, nz:{s:'NZ$',l:'en-NZ'}, za:{s:'R',l:'en-ZA'},
+      br:{s:'R$',l:'pt-BR'}, mx:{s:'MX$',l:'es-MX'}, ch:{s:'CHF ',l:'de-CH'}
+    };
+    var activeCountry = 'in';        // country the currently shown results are from
+
+    function cur(){ return CURRENCY[activeCountry] || CURRENCY.in; }
+
     function fmtSalary(min, max, predicted) {
       if (!min && !max) return '';
-      var f = function(n){ return '₹' + Math.round(n).toLocaleString('en-IN'); };
+      var c = cur();
+      var f = function(n){ return c.s + Math.round(n).toLocaleString(c.l); };
       var s = min && max ? f(min) + '–' + f(max) : f(min || max);
       return s + (predicted ? ' (est.)' : '');
     }
@@ -143,12 +181,13 @@
 
     function val(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
-    async function loadCategories() {
+    async function loadCategories(country) {
+      var sel = document.getElementById('jpCategory');
+      sel.innerHTML = '<option value="">All categories</option>';   // reset per country
       try {
-        var res = await fetch('/api/jobs/categories');
+        var res = await fetch('/api/jobs/categories?country=' + encodeURIComponent(country || 'in'));
         if (!res.ok) return;              // not configured / upstream issue: leave "All categories"
         var data = await res.json();
-        var sel = document.getElementById('jpCategory');
         (data.categories || []).forEach(function(c){
           if (!c || !c.tag) return;
           var opt = document.createElement('option');
@@ -156,6 +195,13 @@
           sel.appendChild(opt);
         });
       } catch (e) { /* leave default option */ }
+    }
+
+    function onCountryChange() {
+      var country = document.getElementById('jpCountry').value || 'in';
+      var sym = (CURRENCY[country] || CURRENCY.in).s.trim();
+      document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
+      loadCategories(country);           // categories are per-country
     }
 
     async function doSearch(e) {
@@ -177,6 +223,8 @@
       results.innerHTML = '';
       try {
         var params = new URLSearchParams();
+        var country = val('jpCountry') || 'in';
+        params.set('country', country);
         var what = val('jpWhat'), where = val('jpWhere');
         if (what) params.set('what', what);
         if (where) params.set('where', where);
@@ -197,6 +245,7 @@
         var data = await res.json();
         // 400 (bad/conflicting filters) and other errors both surface honestly.
         if (data.error) { status.textContent = data.error; return false; }
+        activeCountry = data.country || country;   // drives salary currency formatting
         renderResults(data.results || [], data.count || 0);
       } catch (err) {
         status.textContent = 'Search failed. Please try again.';
@@ -221,6 +270,7 @@
         var sub = [];
         if (salary) sub.push('<span>' + esc(salary) + '</span>');
         if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
+        if (job.source) sub.push('<span>via ' + esc(job.source) + '</span>');
         card.innerHTML =
           '<div class="jp-card-head">' +
             '<div>' +
@@ -351,7 +401,7 @@
     }
 
     (function(){ try { var t = localStorage.getItem('ws-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch(e){} })();
-    loadCategories();
+    loadCategories('in');
 </script>
 </body>
 </html>

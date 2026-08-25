@@ -45,6 +45,7 @@ def api_jobs_search():
         data = search_jobs(
             what=(args.get("what") or "").strip(),
             where=(args.get("where") or "").strip(),
+            country=(args.get("country") or "in"),
             page=args.get("page", 1),
             distance=args.get("distance"),
             salary_min=args.get("salary_min"),
@@ -71,7 +72,7 @@ def api_jobs_categories():
     if not adzuna_configured():
         return jsonify({"error": "Job search isn't configured yet.", "configured": False}), 503
     try:
-        return jsonify({"categories": list_categories()})
+        return jsonify({"categories": list_categories(request.args.get("country", "in"))})
     except AdzunaError as e:
         return jsonify({"error": str(e)}), 502
 
