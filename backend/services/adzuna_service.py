@@ -189,11 +189,19 @@ def search_jobs(what="", where="", page=1, country="in", results_per_page=15,
         location = ""
         if isinstance(r.get("location"), dict):
             location = (r["location"].get("display_name") or "").strip()
+        # Adzuna splits employment info across contract_time (full_time /
+        # part_time) and contract_type (permanent / contract); present them as
+        # one human-readable employment_type for the unified schema.
+        et = " ".join(
+            str(r.get(k) or "").replace("_", " ").strip()
+            for k in ("contract_time", "contract_type")
+        ).strip()
         results.append({
             "id": str(r.get("id", "")),
             "title": (r.get("title") or "").strip(),
             "company": company,
             "location": location,
+            "employment_type": et.title(),
             "salary_min": r.get("salary_min"),
             "salary_max": r.get("salary_max"),
             "salary_is_predicted": str(r.get("salary_is_predicted", "0")) == "1",

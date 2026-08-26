@@ -111,8 +111,24 @@ def any_source_configured():
 
 
 def _norm(source, title=None, company=None, location=None, url=None, desc=None,
-          created=None, salary_min=None, salary_max=None, salary_text=None):
-    """Map any provider's record onto the listing shape the UI already renders."""
+          created=None, salary_min=None, salary_max=None, salary_text=None,
+          publisher=None, employment_type=None, apply_is_direct=False):
+    """Map any provider's record onto ONE normalized schema.
+
+    Schema: title, company, location, salary(min/max/text), employment_type,
+    posted_at, publisher, apply_url, source.
+
+    `apply_url` is whatever the provider gives us. `apply_is_direct` records
+    whether that URL actually reaches the original posting (employer/ATS/board)
+    or merely the aggregator's own page — verified empirically: Adzuna,
+    Careerjet and Jooble all land on their own sites, so they are False. The UI
+    uses this to label the CTA honestly ("View on Adzuna") instead of implying
+    a direct application.
+
+    `redirect_url`/`created` are kept as aliases so existing callers (results
+    rendering, the Apply->tracker flow) keep working unchanged.
+    """
+    url = url or ""
     return {
         "id": "",
         "title": _clean(title),
@@ -122,9 +138,14 @@ def _norm(source, title=None, company=None, location=None, url=None, desc=None,
         "salary_max": salary_max,
         "salary_is_predicted": False,
         "salary_text": _clean(salary_text) if salary_text else "",
-        "created": created or "",
+        "employment_type": _clean(employment_type),
+        "posted_at": created or "",
+        "created": created or "",          # alias (existing UI/date formatting)
+        "publisher": _clean(publisher) or source,
+        "apply_url": url,
+        "redirect_url": url,               # alias (existing Apply/tracker flow)
+        "apply_is_direct": bool(apply_is_direct),
         "description": _clean(desc)[:400],
-        "redirect_url": url or "",
         "source": source,
         "currency": "",
     }
@@ -166,11 +187,16 @@ def _careerjet(what, where, locale, page):
         return None
     if d.get("type") != "JOBS":
         return {"count": 0, "results": []}
+    # Careerjet's `url` is a jobviewtrack.com redirect that lands on
+    # careerjet.co.uk (verified), and its `site` field comes back empty — so no
+    # real publisher and not a direct apply link.
     out = [
         _norm("Careerjet", title=j.get("title"), company=j.get("company"),
               location=j.get("locations"), url=j.get("url"),
               desc=j.get("description"), created=j.get("date"),
-              salary_text=j.get("salary"))
+              salary_text=j.get("salary"),
+              publisher=(j.get("site") or "").strip() or "Careerjet",
+              apply_is_direct=False)
         for j in (d.get("jobs") or [])
     ]
     try:
@@ -205,11 +231,17 @@ def _jooble(what, where, country_name, page):
         d = r.json()
     except ValueError:
         return None
+    # Jooble's `link` goes to its own jooble.org listing (verified), but its
+    # `source` field DOES name the true original board (e.g. smartrecruiters.com)
+    # — surface that as the publisher while being clear it isn't a direct link.
     out = [
         _norm("Jooble", title=j.get("title"), company=j.get("company"),
               location=j.get("location"), url=j.get("link"),
               desc=j.get("snippet"), created=j.get("updated"),
-              salary_text=j.get("salary"))
+              salary_text=j.get("salary"),
+              publisher=(j.get("source") or "").strip() or "Jooble",
+              employment_type=j.get("type"),
+              apply_is_direct=False)
         for j in (d.get("jobs") or [])
     ]
     try:
@@ -249,24 +281,173 @@ def _jsearch(what, where, country_code, page):
     for j in (d.get("data") or []):
         loc = ", ".join(x for x in [j.get("job_city"), j.get("job_state"),
                                     j.get("job_country")] if x)
+        # Prefer an apply_options entry flagged as the direct employer route;
+        # fall back to job_apply_link. This is the one source that exposes the
+        # ORIGINAL posting URL (LinkedIn/Glassdoor/company site) rather than its
+        # own page.
+        apply_url = j.get("job_apply_link") or ""
+        publisher = j.get("job_publisher") or ""
+        opts = j.get("apply_options")
+        if isinstance(opts, list) and opts:
+            direct = next((o for o in opts
+                           if isinstance(o, dict) and o.get("is_direct")), None)
+            chosen = direct or (opts[0] if isinstance(opts[0], dict) else None)
+            if chosen:
+                apply_url = chosen.get("apply_link") or apply_url
+                publisher = chosen.get("publisher") or publisher
         out.append(_norm(
             "JSearch", title=j.get("job_title"), company=j.get("employer_name"),
-            location=loc, url=j.get("job_apply_link"), desc=j.get("job_description"),
+            location=loc, url=apply_url, desc=j.get("job_description"),
             created=j.get("job_posted_at_datetime_utc"),
-            salary_min=j.get("job_min_salary"), salary_max=j.get("job_max_salary")))
+            salary_min=j.get("job_min_salary"), salary_max=j.get("job_max_salary"),
+            publisher=publisher or "JSearch",
+            employment_type=j.get("job_employment_type"),
+            apply_is_direct=True))
     return {"count": len(out), "results": out}
 
 
-def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
-    """Return {count, results, country, currency, source_used} for any country.
+def _fantastic(what, where, page):
+    """Fantastic Jobs 'Active Jobs DB' (RapidAPI) — ATS/career-site listings only.
 
-    Adzuna-covered countries use Adzuna (full filters + structured salary).
-    Everywhere else — and when Adzuna comes back empty — we fall back through the
-    global aggregators. AdzunaValidationError / AdzunaError from the Adzuna path
-    propagate so the route can answer 400/502 honestly.
+    Cleanest provenance of the sources we use: postings come straight from
+    200k+ company career sites across 54 ATS platforms (Workday, Greenhouse,
+    Lever, ...), so `url` is the employer's own ATS page — a genuinely direct
+    apply link, not an aggregator redirect.
+
+    Uses the same RAPIDAPI_KEY as JSearch (one RapidAPI key covers every API you
+    subscribe to). Returns None when unsubscribed (403) so the caller falls
+    through without cost or error.
+
+    NOTE: response field names are handled defensively — this source could not
+    be verified live because the key is not yet subscribed to it.
+    """
+    key = os.environ.get("RAPIDAPI_KEY")
+    if not key:
+        return None
+    host = "active-jobs-db.p.rapidapi.com"
+    params = {"limit": 20, "offset": max(0, (max(1, page) - 1) * 20)}
+    if what:
+        params["title_filter"] = what
+    if where:
+        params["location_filter"] = where
+    try:
+        r = http_requests.get(
+            f"https://{host}/active-ats-7d", params=params,
+            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": host}, timeout=20,
+        )
+    except http_requests.RequestException as e:
+        logger.warning(f"Fantastic Jobs request failed: {e}")
+        return None
+    if r.status_code != 200:
+        logger.warning(f"Fantastic Jobs non-200: {r.status_code} {r.text[:120]}")
+        return None
+    try:
+        data = r.json()
+    except ValueError:
+        return None
+    rows = data if isinstance(data, list) else (data.get("data") or data.get("jobs") or [])
+    out = []
+    for j in rows:
+        if not isinstance(j, dict):
+            continue
+        loc = j.get("locations_derived") or j.get("location") or j.get("locations")
+        if isinstance(loc, list):
+            loc = ", ".join(str(x) for x in loc if x)
+        org = j.get("organization") or j.get("company") or j.get("employer")
+        out.append(_norm(
+            "Fantastic Jobs",
+            title=j.get("title"), company=org, location=loc,
+            url=j.get("url") or j.get("job_url") or j.get("apply_url"),
+            desc=j.get("description") or j.get("description_text"),
+            created=j.get("date_posted") or j.get("posted_at"),
+            salary_text=j.get("salary_raw") or j.get("salary"),
+            publisher=j.get("source") or j.get("ats") or "Employer ATS",
+            employment_type=j.get("employment_type"),
+            apply_is_direct=True))
+    return {"count": len(out), "results": out}
+
+
+def _dedupe_key(job):
+    """Identity for de-duplication: title + company + location, normalized.
+
+    Aggregators frequently carry the same posting (JSearch in particular repeats
+    a job across publishers), so collapse on the human identity of the role
+    rather than on URL or provider id.
+    """
+    def squash(s):
+        return re.sub(r"[^a-z0-9]+", "", (s or "").lower())
+    # Location wording varies a lot between sources for the same job
+    # ("London" vs "London, UK" vs "London, England, UK"), so key on the primary
+    # locality only — the first comma-separated segment. Keeping some location
+    # avoids collapsing genuinely different postings of the same role in
+    # different cities.
+    loc = squash((job.get("location") or "").split(",")[0])
+    return (squash(job.get("title")), squash(job.get("company")), loc)
+
+
+def _merge_rank_dedupe(groups):
+    """Flatten source result groups, drop duplicates, rank direct-apply first.
+
+    `groups` is an ordered list of result lists. Within the merged set, listings
+    whose apply_url actually reaches the original posting (JSearch, Fantastic
+    Jobs) are ranked above aggregator listings that only reach the aggregator's
+    own page (Adzuna/Careerjet/Jooble) — the ranking the user approved. On a
+    duplicate, the direct-apply copy wins so the better link survives.
+    """
+    best = {}
+    order = []
+    for jobs in groups:
+        for job in jobs or []:
+            if not job.get("title"):
+                continue
+            k = _dedupe_key(job)
+            prev = best.get(k)
+            if prev is None:
+                best[k] = job
+                order.append(k)
+            elif job.get("apply_is_direct") and not prev.get("apply_is_direct"):
+                best[k] = job          # upgrade to the direct-apply duplicate
+    merged = [best[k] for k in order]
+    merged.sort(key=lambda j: 0 if j.get("apply_is_direct") else 1)
+    return merged
+
+
+def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
+    """Return {count, results, country, currency, source_used, sources_used}.
+
+    Queries the direct-apply sources (JSearch, Fantastic Jobs) alongside the best
+    aggregator for the country, then merges + de-duplicates and ranks real apply
+    links first. Sources that are unconfigured or unsubscribed simply return
+    nothing and are skipped at no cost.
+
+    Adzuna serves its 18 countries with full filters and structured salary;
+    Careerjet/Jooble provide the wider country coverage Adzuna lacks.
+    AdzunaValidationError / AdzunaError propagate so the route answers 400/502
+    honestly rather than silently returning an empty list.
     """
     country = (country or "in").strip().lower()
+    info = _COUNTRY_INFO.get(country)
+    name = info["name"] if info else country.upper()
+    locale = info["cj"] if info else "en_" + country.upper()
 
+    direct, aggregated = [], []
+    total = 0
+
+    def run(fn):
+        try:
+            return fn()
+        except Exception as e:
+            logger.warning(f"Job source error: {e}")
+            return None
+
+    # 1) Direct-apply sources — these carry the real publisher + original URL.
+    for fn in (lambda: _jsearch(what, where, country, page),
+               lambda: _fantastic(what, where, page)):
+        r = run(fn)
+        if r and r.get("results"):
+            direct.extend(r["results"])
+
+    # 2) Aggregator for country coverage / structured filters.
     if country in ADZUNA_COUNTRIES:
         try:
             res = adzuna_search(what=what, where=where, country=country,
@@ -275,34 +456,45 @@ def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
             raise  # bad user input (e.g. salary_min>max) -> route answers 400
         except AdzunaError as e:
             # Adzuna unconfigured/unreachable: don't fail the whole search when
-            # global sources can still serve this country — fall through.
-            logger.warning(f"Adzuna unavailable, falling back to global sources: {e}")
+            # other sources can still serve this country.
+            logger.warning(f"Adzuna unavailable, falling back: {e}")
             res = None
         if res and res.get("results"):
-            res["source_used"] = "Adzuna"
-            return res
-        # Adzuna returned nothing (or was unavailable) — widen with the global
-        # aggregators below.
+            for j in res["results"]:
+                j.setdefault("publisher", "Adzuna")
+                j["apply_is_direct"] = False     # verified: lands on adzuna.*
+                j.setdefault("apply_url", j.get("redirect_url", ""))
+                j.setdefault("posted_at", j.get("created", ""))
+            aggregated = res["results"]
+            total = res.get("count", 0)
 
-    info = _COUNTRY_INFO.get(country)
-    name = info["name"] if info else country.upper()
-    locale = info["cj"] if info else "en_" + country.upper()
+    if not aggregated:
+        for fn in (lambda: _careerjet(what, where, locale, page),
+                   lambda: _jooble(what, where, name, page)):
+            r = run(fn)
+            if r and r.get("results"):
+                aggregated = r["results"]
+                total = r.get("count", 0)
+                break
 
-    for fn in (
-        lambda: _careerjet(what, where, locale, page),
-        lambda: _jooble(what, where, name, page),
-        lambda: _jsearch(what, where, country, page),
-    ):
-        try:
-            r = fn()
-        except Exception as e:
-            logger.warning(f"Job source error: {e}")
-            r = None
-        if r and r.get("results"):
-            r["country"] = country
-            r["currency"] = ADZUNA_COUNTRIES.get(country, "")
-            r["source_used"] = r["results"][0].get("source", "")
-            return r
+    merged = _merge_rank_dedupe([direct, aggregated])
+    if not merged:
+        return {"count": 0, "results": [], "country": country, "currency": "",
+                "source_used": "", "sources_used": []}
 
-    return {"count": 0, "results": [], "country": country, "currency": "",
-            "source_used": ""}
+    # Report the upstream total where we have one (aggregators report a real
+    # corpus count); otherwise fall back to what we actually merged.
+    count = max(total, len(merged)) if total else len(merged)
+    used = []
+    for j in merged:
+        if j.get("source") and j["source"] not in used:
+            used.append(j["source"])
+
+    return {
+        "count": count,
+        "results": merged,
+        "country": country,
+        "currency": ADZUNA_COUNTRIES.get(country, ""),
+        "source_used": merged[0].get("source", ""),
+        "sources_used": used,
+    }

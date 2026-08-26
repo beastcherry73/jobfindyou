@@ -273,8 +273,20 @@
       var salary = job.salary_text ? job.salary_text : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
       var sub = [];
       if (salary) sub.push('<span>' + esc(salary) + '</span>');
+      if (job.employment_type) sub.push('<span>' + esc(job.employment_type) + '</span>');
       if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
-      if (job.source) sub.push('<span>via ' + esc(job.source) + '</span>');
+      // Be honest about provenance: name the true publisher when the source
+      // gives us one, and say plainly when the link only reaches the aggregator.
+      if (job.apply_is_direct) {
+        sub.push('<span>' + esc(job.publisher || job.source) + '</span>');
+      } else {
+        sub.push('<span>listing on ' + esc(job.source) + '</span>');
+        if (job.publisher && job.publisher !== job.source) {
+          sub.push('<span>originally ' + esc(job.publisher) + '</span>');
+        }
+      }
+      // CTA text must not imply a direct application when it isn't one.
+      var ctaLabel = job.apply_is_direct ? 'Apply' : ('View on ' + (job.source || 'source'));
       card.innerHTML =
         '<div class="jp-card-head">' +
           '<div>' +
@@ -284,7 +296,7 @@
           '</div>' +
           '<div class="jp-actions">' +
             '<button class="ws-btn ws-btn-ghost ws-btn-sm jp-match-btn">Check match</button>' +
-            '<button class="ws-btn ws-btn-primary ws-btn-sm jp-apply-btn">Apply</button>' +
+            '<button class="ws-btn ws-btn-primary ws-btn-sm jp-apply-btn">' + esc(ctaLabel) + '</button>' +
           '</div>' +
         '</div>';
       card.querySelector('.jp-match-btn').addEventListener('click', function(){ checkMatch(job, card.querySelector('.jp-match-btn')); });
