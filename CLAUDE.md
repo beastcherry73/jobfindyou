@@ -70,7 +70,9 @@ anything.
   OSError / ssl.SSLError / "cannot read from timed out object" / timeouts /
   resets / EOF / `25P02` as connection failures.
 - `_create_tables_and_migrations(db)` - runtime DDL, runs once per database,
-  gated by the `app_meta.schema_version` marker.
+  gated by the `app_meta.schema_version` marker. BUMP `_SCHEMA_MARKER_VALUE`
+  whenever you add a table/column, or live databases never run the new DDL.
+  (Currently "4"; "4" added `ats_jobs`.)
 
 Critical design: because the connection is SHARED and the lock serializes
 requests, each `with get_db():` block must be short and self-contained.
@@ -88,6 +90,13 @@ requests, each `with get_db():` block must be short and self-contained.
   try/except, so DB errors bubble up as raw 500 (deliberate, aids diagnosis).
 - `backend/routes/meta.py` - `GET /api/health`, `GET /api/health/db`
   (safe diagnostics; reports served commit SHA, never secrets).
+- `backend/services/ats.py` - KEYLESS ATS JOB LAYER. Pulls jobs from employers'
+  own public job boards (no API key at all) and searches our own copy. See
+  section 12.
+- `backend/data/ats_companies.json` - the verified company -> ATS registry
+  (generated; do not hand-edit).
+- `backend/services/jobsources.py` - multi-source dispatcher. Order: keyless ATS
+  layer, then JSearch/Fantastic, then Adzuna/Careerjet/Jooble.
 - `backend/services/ai.py` - Groq calls, model fallback on 429.
 - `backend/services/ratelimit.py` - rate limiter, DB-backed, fails open.
 - `backend/services/supabase_service.py` - private bucket upload, signed URLs.
@@ -109,7 +118,12 @@ Tables created at runtime by `_create_tables_and_migrations`:
   updated_at
 - `oauth_states` - state UNIQUE
 - `rate_limits` - PK (key, window_start) - NO id column
-- `app_meta` - PK meta_key - NO id column, stores schema_version marker
+- `ats_jobs` - id, fingerprint UNIQUE, platform, company_token, source_id,
+  title, company, location, country_code, work_mode, employment_type,
+  experience_level, salary_*, posted_at, apply_url, description, search_text,
+  first_seen_at, last_seen_at. Synced from public employer job boards.
+- `app_meta` - PK meta_key - NO id column, stores schema_version marker and the
+  `ats_sync_cursor` (how far the last ATS sync pass got)
 
 Adapter behavior to remember:
 
@@ -174,12 +188,66 @@ Suites to run before and after changes:
 - `python scratch/test_production_safe.py` - 79/79
 - `python scratch/test_sprint1_1_matrix.py` - 12/12
 - `python scratch/test_export_fidelity.py` - 4 PASS
+- `python scratch/test_ats_layer.py` - 67/67 (keyless ATS layer)
 
 Then a real production E2E against jobspike.in with 2+ accounts (login,
 analyses, analyze, refresh, detail, sequential AND concurrent).
 
 E2E probe scripts live OUTSIDE the repo in the OS temp dir
 (C:\Users\venut\AppData\Local\Temp\opencode\).
+
+## 12. KEYLESS ATS JOB LAYER
+
+Jobs pulled straight from employers' own public job boards. No API key, no
+signup, no paid tier - and the stored `apply_url` is the employer's real
+application page, not an aggregator redirect.
+
+Seven platforms, each verified empirically against a live company board before
+being built on:
+
+    greenhouse  lever  ashby  smartrecruiters  workable  recruitee  breezy
+
+Teamtailor was TESTED AND REJECTED: no public subdomain board (every
+`{token}.teamtailor.com` returns 404) and its API needs a key plus a version
+header. Do not re-add it to this tier.
+
+Pipeline:
+
+1. REGISTRY - `scratch/build_ats_registry.py` sweeps candidate company slugs
+   (`scratch/ats_candidates.py`) against every platform's public endpoint and
+   keeps only boards that actually answer with live jobs. It tests ALL
+   platforms per candidate (no early exit) and verifies the board owner's name
+   where the platform reports one. Output: `backend/data/ats_companies.json`.
+2. SYNC - `ats.run_sync()` walks the registry from a cursor persisted in
+   `app_meta.ats_sync_cursor`, fetching boards 8 at a time and upserting on the
+   UNIQUE `fingerprint` (platform:token:source_id). Re-running NEVER duplicates.
+   Triggered daily by the Vercel cron in vercel.json -> `/api/jobs/ats/sync`,
+   which requires `Authorization: Bearer $CRON_SECRET` and refuses outright if
+   CRON_SECRET is unset. Manual/local: `python scratch/sync_ats_jobs.py`.
+3. SEARCH - `ats.search()` queries our own table, so every filter (work mode,
+   experience level, employment type, salary, recency, keyword, exclude) is
+   exact AND combinable. The aggregators each support only a subset, which is
+   why the UI used to grey those filters out.
+4. RANKING - ATS listings carry `apply_is_direct=True` and are merged ahead of
+   Adzuna/Careerjet/Jooble, in the same tier as JSearch.
+
+Cursor/pruning rules worth knowing:
+
+- The cursor is written in the SAME transaction as each company's rows, so a
+  sync killed by a serverless timeout resumes instead of restarting.
+- A company's old rows are pruned only when its board returned a NON-EMPTY set;
+  an empty board is indistinguishable from a failed fetch and must never
+  trigger a delete.
+- On a completed cycle: `prune_unregistered()` drops companies removed from the
+  registry, then `prune_stale()` drops anything unseen for 21 days.
+- `MAX_JOBS_PER_COMPANY = 300` stops one enterprise board (Bosch had ~4.8k)
+  swamping the corpus.
+
+Link health: `python scratch/verify_ats_registry.py --n 14` samples apply URLs
+per platform; `--audit --prune` follows one URL per company and DROPS companies
+whose destination is dead. It deliberately separates BLOCKED (403 bot
+protection) and JS-SHELL (client-rendered page) from BROKEN, because those
+links are intact - conflating them would wrongly delete working employers.
 
 ## 10. KNOWN RISKS
 
@@ -191,6 +259,19 @@ E2E probe scripts live OUTSIDE the repo in the OS temp dir
 - Vercel Runtime Logs unavailable without CLI auth.
 - 180s connection TTL is empirical (Supabase pooler idle timeout not verified).
 - Google OAuth configured but full OAuth E2E not verified in this session.
+- ATS layer: ~5% of jobs have no resolvable country (strings like "Distributed"
+  or "Home based - Worldwide"); they are stored with country_code='' and so
+  never match a country-filtered search. Deliberate under-reporting.
+- ATS layer: a full sync pass is ~60s for 251 companies. If the Vercel plan
+  caps function duration below that, the cron simply covers part of the
+  registry and resumes next run - the corpus refreshes over a couple of days
+  rather than daily. Raising maxDuration or cron frequency makes it truly
+  daily.
+- ATS layer: regional weighting is limited by reality, not effort. Indian, SEA
+  and Middle East employers largely use Workday/Darwinbox/Keka/Naukri rather
+  than these seven platforms, so 575 regional candidates yielded far fewer
+  boards than the remote-friendly pool. Workday is the highest-value next
+  platform (also keyless) if wider regional coverage is wanted.
 
 ## 11. WORKFLOW FOR THE NEXT AGENT
 

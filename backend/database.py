@@ -20,7 +20,7 @@ _db_initialized = False
 # cheaply and skip the whole DDL suite when already applied. (The DDL suite is
 # ~17 CREATE/ALTER statements; running it on every request costs 1-3s each.)
 _SCHEMA_MARKER_KEY = "schema_version"
-_SCHEMA_MARKER_VALUE = "3"
+_SCHEMA_MARKER_VALUE = "4"
 
 
 def is_vercel():
@@ -497,6 +497,50 @@ def _create_tables_and_migrations(db):
     # existing NOT NULL DEFAULT for backward compatibility; callers gate on
     # status rather than treating its insert-time placeholder as an apply time.)
     add_col_safe("jobs_tracker", "viewed_date TIMESTAMPTZ")
+
+    # Keyless ATS job layer: jobs synced from employers' own public job boards
+    # (Greenhouse/Lever/Ashby/SmartRecruiters/Workable/Recruitee/Breezy). This is
+    # OUR copy of the data, which is why the Job Search filters can be exact and
+    # freely combinable here in a way the aggregator APIs never allow.
+    #
+    # `fingerprint` is platform:token:source_id and is UNIQUE: the daily sync
+    # upserts on it, so re-running a sync refreshes rows in place instead of
+    # duplicating them.
+    db.execute("""CREATE TABLE IF NOT EXISTS ats_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fingerprint TEXT NOT NULL UNIQUE,
+        platform TEXT NOT NULL,
+        company_token TEXT NOT NULL,
+        source_id TEXT,
+        title TEXT NOT NULL,
+        company TEXT,
+        location TEXT,
+        country_code TEXT,
+        work_mode TEXT,
+        employment_type TEXT,
+        experience_level TEXT,
+        salary_min INTEGER,
+        salary_max INTEGER,
+        salary_currency TEXT,
+        salary_text TEXT,
+        posted_at TIMESTAMPTZ,
+        apply_url TEXT NOT NULL,
+        description TEXT,
+        search_text TEXT,
+        first_seen_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_seen_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )""")
+    for _idx in (
+        "CREATE INDEX IF NOT EXISTS idx_ats_country ON ats_jobs (country_code)",
+        "CREATE INDEX IF NOT EXISTS idx_ats_posted ON ats_jobs (posted_at)",
+        "CREATE INDEX IF NOT EXISTS idx_ats_seen ON ats_jobs (last_seen_at)",
+        "CREATE INDEX IF NOT EXISTS idx_ats_company ON ats_jobs (company_token)",
+    ):
+        try:
+            db.execute(_idx)
+        except Exception as e:
+            if current_app:
+                current_app.logger.warning(f"Migration error (ats_jobs index): {e}")
 
     if is_pg:
         db.execute(

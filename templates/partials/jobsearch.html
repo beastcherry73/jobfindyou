@@ -56,6 +56,27 @@
         </select>
       </div>
       <div class="jp-filter">
+        <label for="jpWorkMode">Work mode</label>
+        <select class="ws-select" id="jpWorkMode">
+          <option value="">Any mode</option>
+          <option value="remote">Remote</option>
+          <option value="hybrid">Hybrid</option>
+          <option value="onsite">On-site</option>
+        </select>
+      </div>
+      <div class="jp-filter">
+        <label for="jpExperience">Experience level</label>
+        <select class="ws-select" id="jpExperience">
+          <option value="">Any level</option>
+          <option value="internship">Internship</option>
+          <option value="entry">Entry</option>
+          <option value="mid">Mid</option>
+          <option value="senior">Senior</option>
+          <option value="lead">Lead / Principal</option>
+          <option value="executive">Executive</option>
+        </select>
+      </div>
+      <div class="jp-filter">
         <label for="jpJobType">Job type</label>
         <select class="ws-select" id="jpJobType">
           <option value="">Any type</option>
@@ -97,7 +118,7 @@
   </form>
 
   <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
-  <div class="jp-attribution">Results powered by Adzuna, Careerjet &amp; Jooble — each listing is labelled with its source.</div>
+  <div class="jp-attribution">Listings come straight from employers&#39; own job boards (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), plus Adzuna, Careerjet &amp; Jooble — each listing is labelled with its source.</div>
   <div id="jpResults"></div>
 </div>
 
@@ -185,7 +206,10 @@
     document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
   }
 
-  var ADZUNA_ONLY = ['jpExclude','jpCategory','jpSalaryMin','jpSalaryMax','jpMaxDays','jpSortBy'];
+  // Adzuna's category taxonomy is the only filter we cannot honour elsewhere.
+  // Everything else runs against our own synced employer-board corpus, which
+  // covers every country, so those filters stay live regardless of market.
+  var ADZUNA_ONLY = ['jpCategory'];
   function setAdzunaFilters(enabled) {
     ADZUNA_ONLY.forEach(function(id){
       var el = document.getElementById(id);
@@ -206,8 +230,9 @@
       hint.style.display = 'none';
       loadCategories(country);
     } else {
-      hint.textContent = 'Advanced filters (category, salary, exclude keywords, sort) apply to Adzuna markets. '
-        + (COUNTRY_NAME[country] || 'This country') + ' searches by keyword + location.';
+      hint.textContent = 'Job categories are an Adzuna-market filter. Every other filter still '
+        + 'applies exactly to listings taken from employer job boards, which cover '
+        + (COUNTRY_NAME[country] || 'this country') + '.';
       hint.style.display = 'block';
       document.getElementById('jpCategory').innerHTML = '<option value="">All categories</option>';
     }
@@ -239,6 +264,8 @@
       if (salaryMin) params.set('salary_min', salaryMin);
       if (salaryMax) params.set('salary_max', salaryMax);
       var maxDays = val('jpMaxDays'); if (maxDays) params.set('max_days_old', maxDays);
+      var workMode = val('jpWorkMode'); if (workMode) params.set('work_mode', workMode);
+      var experience = val('jpExperience'); if (experience) params.set('experience_level', experience);
       var sortBy = val('jpSortBy'); if (sortBy) params.set('sort_by', sortBy);
 
       var res = await fetch('/api/jobs/search?' + params.toString());
@@ -274,6 +301,10 @@
       var sub = [];
       if (salary) sub.push('<span>' + esc(salary) + '</span>');
       if (job.employment_type) sub.push('<span>' + esc(job.employment_type) + '</span>');
+      // Only the employer-board layer resolves this; aggregators don't report it.
+      if (job.work_mode && job.work_mode !== 'onsite') {
+        sub.push('<span>' + esc(job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)) + '</span>');
+      }
       if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
       // Be honest about provenance: name the true publisher when the source
       // gives us one, and say plainly when the link only reaches the aggregator.

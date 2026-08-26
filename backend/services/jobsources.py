@@ -1,5 +1,12 @@
 """Multi-source job search dispatcher.
 
+The KEYLESS ATS LAYER comes first. Those listings are synced from employers'
+own public job boards (Greenhouse/Lever/Ashby/SmartRecruiters/Workable/
+Recruitee/Breezy) into our own Postgres, so they need no API key, their
+`apply_url` reaches the employer's real application page, and — because we own
+the data — every filter applies exactly and in combination. See
+backend/services/ats.py.
+
 Adzuna covers 18 countries with rich structured data (salary, categories) and
 powers the full filter set there. For every other country we fall back to
 global aggregators — Careerjet (~90 countries), Jooble (~70), and JSearch
@@ -23,6 +30,7 @@ import html
 import logging
 import requests as http_requests
 
+from backend.services import ats
 from backend.services.adzuna_service import (
     search_jobs as adzuna_search,
     ADZUNA_COUNTRIES,
@@ -102,12 +110,44 @@ def get_countries():
 
 
 def any_source_configured():
+    """True when ANY source can serve a search.
+
+    The keyless ATS layer needs no credentials at all, so a deployment with no
+    third-party keys still has a working job search — which is why the registry
+    counts as a configured source here.
+    """
     return bool(
-        (os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
+        ats.load_registry()
+        or (os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
         or os.environ.get("CAREERJET_API_KEY")
         or os.environ.get("JOOBLE_API_KEY")
         or os.environ.get("RAPIDAPI_KEY")
     )
+
+
+# Adzuna models employment as four independent flags; our own corpus stores one
+# normalized employment_type. Map the UI's single choice onto it.
+_JOB_TYPE_TO_EMPLOYMENT = {
+    "full_time": "Full-time",
+    "part_time": "Part-time",
+    "contract": "Contract",
+    "permanent": "Full-time",
+}
+
+
+def _page_int(page):
+    """Coerce a page value to a positive int.
+
+    request.args gives us STRINGS, and every aggregator client below did
+    `max(1, page)` on the raw value — which raises TypeError comparing str to
+    int and, because unified_search swallows source errors, silently dropped
+    that source from the results whenever the UI sent a page parameter. Coerce
+    once, here.
+    """
+    try:
+        return max(1, int(page))
+    except (TypeError, ValueError):
+        return 1
 
 
 def _norm(source, title=None, company=None, location=None, url=None, desc=None,
@@ -161,7 +201,7 @@ def _careerjet(what, where, locale, page):
         "keywords": what or "",
         "location": where or "",
         "locale_code": locale,
-        "page": max(1, page),
+        "page": _page_int(page),
         "pagesize": 20,
         "sort": "relevance",
         "user_ip": "0.0.0.0",
@@ -218,7 +258,7 @@ def _jooble(what, where, country_name, page):
     try:
         r = http_requests.post(
             f"https://jooble.org/api/{key}",
-            json={"keywords": what or "", "location": loc, "page": str(max(1, page))},
+            json={"keywords": what or "", "location": loc, "page": str(_page_int(page))},
             timeout=15,
         )
     except http_requests.RequestException as e:
@@ -261,7 +301,7 @@ def _jsearch(what, where, country_code, page):
     try:
         r = http_requests.get(
             "https://jsearch.p.rapidapi.com/search",
-            params={"query": q, "page": str(max(1, page)), "num_pages": "1",
+            params={"query": q, "page": str(_page_int(page)), "num_pages": "1",
                     "country": country_code},
             headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"},
             timeout=20,
@@ -325,7 +365,7 @@ def _fantastic(what, where, page):
     if not key:
         return None
     host = "active-jobs-db.p.rapidapi.com"
-    params = {"limit": 20, "offset": max(0, (max(1, page) - 1) * 20)}
+    params = {"limit": 20, "offset": max(0, (_page_int(page) - 1) * 20)}
     if what:
         params["title_filter"] = what
     if where:
@@ -389,10 +429,12 @@ def _merge_rank_dedupe(groups):
     """Flatten source result groups, drop duplicates, rank direct-apply first.
 
     `groups` is an ordered list of result lists. Within the merged set, listings
-    whose apply_url actually reaches the original posting (JSearch, Fantastic
-    Jobs) are ranked above aggregator listings that only reach the aggregator's
-    own page (Adzuna/Careerjet/Jooble) — the ranking the user approved. On a
-    duplicate, the direct-apply copy wins so the better link survives.
+    whose apply_url actually reaches the original posting (the keyless ATS
+    layer, JSearch, Fantastic Jobs) are ranked above aggregator listings that
+    only reach the aggregator's own page (Adzuna/Careerjet/Jooble). The sort is
+    stable, so within that direct-apply tier the group order is preserved and
+    employer-board listings lead. On a duplicate, the direct-apply copy wins so
+    the better link survives.
     """
     best = {}
     order = []
@@ -430,7 +472,13 @@ def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
     name = info["name"] if info else country.upper()
     locale = info["cj"] if info else "en_" + country.upper()
 
-    direct, aggregated = [], []
+    # These two filters exist only for our own corpus; Adzuna's client takes a
+    # fixed kwarg set and would raise on them, so remove them from the
+    # passthrough before any aggregator call.
+    work_mode = (adzuna_filters.pop("work_mode", "") or "").strip().lower()
+    experience_level = (adzuna_filters.pop("experience_level", "") or "").strip().lower()
+
+    ats_rows, direct, aggregated = [], [], []
     total = 0
 
     def run(fn):
@@ -439,6 +487,25 @@ def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
         except Exception as e:
             logger.warning(f"Job source error: {e}")
             return None
+
+    # 0) Keyless ATS layer — our own synced copy of employers' public boards.
+    # Every filter is honoured exactly here, because we are querying our own
+    # table rather than negotiating with a provider's partial filter support.
+    ats_res = run(lambda: ats.search(
+        what=what, where=where, country=country, page=page,
+        what_exclude=adzuna_filters.get("what_exclude") or "",
+        work_mode=work_mode,
+        experience_level=experience_level,
+        employment_type=_JOB_TYPE_TO_EMPLOYMENT.get(adzuna_filters.get("job_type") or ""),
+        salary_min=adzuna_filters.get("salary_min"),
+        salary_max=adzuna_filters.get("salary_max"),
+        salary_include_unknown=True,
+        max_days_old=adzuna_filters.get("max_days_old"),
+        sort_by=(adzuna_filters.get("sort_by") or "relevance"),
+    ))
+    if ats_res and ats_res.get("results"):
+        ats_rows = ats_res["results"]
+        total += ats_res.get("count", 0)
 
     # 1) Direct-apply sources — these carry the real publisher + original URL.
     for fn in (lambda: _jsearch(what, where, country, page),
@@ -466,7 +533,7 @@ def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
                 j.setdefault("apply_url", j.get("redirect_url", ""))
                 j.setdefault("posted_at", j.get("created", ""))
             aggregated = res["results"]
-            total = res.get("count", 0)
+            total += res.get("count", 0)
 
     if not aggregated:
         for fn in (lambda: _careerjet(what, where, locale, page),
@@ -474,10 +541,10 @@ def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
             r = run(fn)
             if r and r.get("results"):
                 aggregated = r["results"]
-                total = r.get("count", 0)
+                total += r.get("count", 0)
                 break
 
-    merged = _merge_rank_dedupe([direct, aggregated])
+    merged = _merge_rank_dedupe([ats_rows, direct, aggregated])
     if not merged:
         return {"count": 0, "results": [], "country": country, "currency": "",
                 "source_used": "", "sources_used": []}

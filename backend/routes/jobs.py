@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from flask import Blueprint, request, jsonify, session, render_template
 
 from backend.database import get_db
@@ -10,6 +11,7 @@ from backend.services.adzuna_service import (
 from backend.services.jobsources import (
     unified_search, get_countries, any_source_configured,
 )
+from backend.services import ats
 from backend.services.ai import call_groq, GroqError
 from backend.services.helpers import clean_json
 from backend.prompts import JOB_MATCH_PROMPT
@@ -68,6 +70,10 @@ def api_jobs_search():
             category=(args.get("category") or "").strip() or None,
             sort_by=(args.get("sort_by") or "").strip() or None,
             max_days_old=args.get("max_days_old"),
+            # Exact against the keyless ATS corpus (our own data); ignored by
+            # the aggregators, which have no equivalent filter.
+            work_mode=(args.get("work_mode") or "").strip().lower(),
+            experience_level=(args.get("experience_level") or "").strip().lower(),
         )
         return jsonify(data)
     except AdzunaValidationError as e:
@@ -97,6 +103,40 @@ def api_jobs_categories():
         return jsonify({"categories": list_categories(request.args.get("country", "in"))})
     except AdzunaError as e:
         return jsonify({"error": str(e)}), 502
+
+
+# ── Keyless ATS layer: daily sync + corpus visibility ──────────────────
+# Triggered by the Vercel cron entry in vercel.json. Vercel sends
+# `Authorization: Bearer $CRON_SECRET` when CRON_SECRET is configured; we
+# require it, so this is never an open endpoint. Without CRON_SECRET set the
+# route refuses outright rather than running unauthenticated.
+@jobs_bp.route("/api/jobs/ats/sync", methods=["GET", "POST"])
+def api_ats_sync():
+    secret = os.environ.get("CRON_SECRET")
+    if not secret:
+        return jsonify({"error": "Sync is not configured."}), 503
+    provided = request.headers.get("Authorization", "")
+    if provided != f"Bearer {secret}":
+        return jsonify({"error": "Not authorized."}), 401
+
+    # Bounded so the function returns inside its wall-clock ceiling; the cursor
+    # is persisted per company, so the next run resumes rather than restarting.
+    try:
+        budget = float(request.args.get("budget", 50))
+    except (TypeError, ValueError):
+        budget = 50.0
+    try:
+        return jsonify(ats.run_sync(time_budget=budget))
+    except Exception as e:
+        logger.error(f"ATS sync failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@jobs_bp.route("/api/jobs/ats/status", methods=["GET"])
+@login_required
+def api_ats_status():
+    """What the keyless layer currently holds — registry size and live corpus."""
+    return jsonify({"registry": ats.registry_stats(), "corpus": ats.corpus_stats()})
 
 
 def _latest_resume_text(user_id, analysis_id=None):
