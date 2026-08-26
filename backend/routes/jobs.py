@@ -24,7 +24,14 @@ jobs_bp = Blueprint("jobs", __name__)
 @jobs_bp.route("/app/jobs")
 @login_required
 def jobs_page():
-    return render_template("jobs.html", user_name=session.get("user_name", "there"))
+    # Job Search now lives inside the workspace shell as an SPA section, so it
+    # shares the persistent sidebar with Dashboard/Tracker. This URL deep-links
+    # straight to that section.
+    return render_template(
+        "workspace.html",
+        user_name=session.get("user_name", "there"),
+        initial_section="jobsearch",
+    )
 
 
 @jobs_bp.route("/app/tracker")

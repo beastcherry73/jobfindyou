@@ -161,7 +161,7 @@
 
         <!-- Applications Section (surfaced high: Job Search is a primary action) -->
         <div class="ws-nav-section-label" style="margin-top:8px;">Applications</div>
-        <a class="ws-nav-item" href="/app/jobs">
+        <a class="ws-nav-item" data-section="jobsearch" onclick="switchSection('jobsearch')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
           <span class="ws-nav-label">Job Search</span>
         </a>
@@ -719,7 +719,7 @@
                   <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Target Job Description (Optional but Recommended)</label>
                   <textarea class="ws-textarea" id="analysisJobDesc" rows="6" placeholder="Paste the job description you are targeting here. JobSpike will evaluate your resume against this role for Level 5 Keyword Optimization and Industry Fit..." style="font-size:13px;"></textarea>
                   <p style="margin-top:10px; font-size:12.5px; color:var(--ws-text-secondary); line-height:1.5;">
-                    Or skip pasting one at a time — <a href="/app/jobs" style="color:var(--ws-primary); font-weight:600; text-decoration:none;">search live listings and see your match on all of them&nbsp;&rarr;</a>
+                    Or skip pasting one at a time — <a onclick="switchSection('jobsearch')" style="color:var(--ws-primary); font-weight:600; text-decoration:none; cursor:pointer;">search live listings and see your match on all of them&nbsp;&rarr;</a>
                   </p>
                 </div>
 
@@ -2049,7 +2049,7 @@
 
             <!-- Discoverability: understated contextual next step to live Job Search (no badge/modal/tour) -->
             <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--ws-border-light); text-align:center;">
-              <a href="/app/jobs" style="font-size:12.5px; color:var(--ws-text-secondary); text-decoration:none;">See how this resume matches <span style="color:var(--ws-primary); font-weight:600;">real open roles&nbsp;&rarr;</span></a>
+              <a onclick="switchSection('jobsearch')" style="font-size:12.5px; color:var(--ws-text-secondary); text-decoration:none; cursor:pointer;">See how this resume matches <span style="color:var(--ws-primary); font-weight:600;">real open roles&nbsp;&rarr;</span></a>
             </div>
 
           </div>
@@ -2224,6 +2224,11 @@
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- ── JOB SEARCH (multi-source; shares the workspace shell) ── -->
+        <section id="section-jobsearch" class="ws-section" style="display:none;">
+          {% include 'partials/jobsearch.html' %}
         </section>
 
       </main>
@@ -2570,6 +2575,7 @@
         'workspace-insights': 'Career Insights',
         'workspace-progress': 'Progress Tracker',
         'workspace-goals': 'Weekly Goals',
+        jobsearch: 'Job Search',
         tracker: 'Job Tracker',
         'applications-calendar': 'Applications Calendar',
         history: 'Previous Analyses',
@@ -2594,6 +2600,7 @@
       if (section === 'workspace-insights') loadWorkspaceInsights();
       if (section === 'workspace-progress') loadWorkspaceProgress();
       if (section === 'workspace-goals') loadWeeklyGoals();
+      if (section === 'jobsearch' && typeof initJobSearch === 'function') initJobSearch();
       if (section === 'improve' || section.startsWith('enhance-')) populateEnhanceSavedResumes();
     }
 
@@ -5450,6 +5457,10 @@
       // Create default radar chart
       try { createRadar({}); } catch(e) { console.warn('Radar init error:', e); }
       loadDashboard();
+
+      // Deep-link: open a specific section on load (e.g. /app/jobs -> jobsearch).
+      var initSec = "{{ initial_section|default('') }}";
+      if (initSec) { try { switchSection(initSec); } catch(e) {} }
 
       // Handshake for guest resume preview conversion
       const pendingAnalysisStr = sessionStorage.getItem('pendingAnalysisResult');
