@@ -56,6 +56,7 @@ def api_jobs_search():
         # filters below are applied on the Adzuna path and ignored elsewhere.
         data = unified_search(
             what=(args.get("what") or "").strip(),
+            what_exclude=(args.get("what_exclude") or "").strip() or None,
             where=(args.get("where") or "").strip(),
             country=(args.get("country") or "in"),
             page=args.get("page", 1),

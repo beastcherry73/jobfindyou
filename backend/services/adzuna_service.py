@@ -79,7 +79,7 @@ def _pos_int(value):
 def search_jobs(what="", where="", page=1, country="in", results_per_page=15,
                 distance=None, salary_min=None, salary_max=None,
                 salary_include_unknown=None, job_type=None, category=None,
-                sort_by=None, max_days_old=None):
+                sort_by=None, max_days_old=None, what_exclude=None):
     """Query Adzuna and return normalized listings.
 
     Returns {"count": int, "results": [normalized_listing, ...]}.
@@ -128,6 +128,8 @@ def search_jobs(what="", where="", page=1, country="in", results_per_page=15,
     }
     if what:
         params["what"] = what
+    if what_exclude:
+        params["what_exclude"] = what_exclude
     if where:
         params["where"] = where
     dist = _pos_int(distance)

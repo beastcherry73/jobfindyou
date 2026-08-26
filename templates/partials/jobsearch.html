@@ -46,15 +46,8 @@
         </select>
       </div>
       <div class="jp-filter">
-        <label for="jpDistance">Radius</label>
-        <select class="ws-select" id="jpDistance">
-          <option value="">Any distance</option>
-          <option value="5">Within 5 km</option>
-          <option value="10">Within 10 km</option>
-          <option value="25">Within 25 km</option>
-          <option value="50">Within 50 km</option>
-          <option value="100">Within 100 km</option>
-        </select>
+        <label for="jpExclude">Exclude keywords</label>
+        <input class="ws-input" id="jpExclude" placeholder="e.g. senior, sales">
       </div>
       <div class="jp-filter">
         <label for="jpCategory">Category</label>
@@ -192,7 +185,7 @@
     document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
   }
 
-  var ADZUNA_ONLY = ['jpDistance','jpCategory','jpSalaryMin','jpSalaryMax','jpMaxDays','jpSortBy'];
+  var ADZUNA_ONLY = ['jpExclude','jpCategory','jpSalaryMin','jpSalaryMax','jpMaxDays','jpSortBy'];
   function setAdzunaFilters(enabled) {
     ADZUNA_ONLY.forEach(function(id){
       var el = document.getElementById(id);
@@ -213,7 +206,7 @@
       hint.style.display = 'none';
       loadCategories(country);
     } else {
-      hint.textContent = 'Advanced filters (category, salary, radius, sort) apply to Adzuna markets. '
+      hint.textContent = 'Advanced filters (category, salary, exclude keywords, sort) apply to Adzuna markets. '
         + (COUNTRY_NAME[country] || 'This country') + ' searches by keyword + location.';
       hint.style.display = 'block';
       document.getElementById('jpCategory').innerHTML = '<option value="">All categories</option>';
@@ -240,7 +233,7 @@
       var what = val('jpWhat'), where = val('jpWhere');
       if (what) params.set('what', what);
       if (where) params.set('where', where);
-      var distance = val('jpDistance'); if (distance) params.set('distance', distance);
+      var exclude = val('jpExclude'); if (exclude) params.set('what_exclude', exclude);
       var category = val('jpCategory'); if (category) params.set('category', category);
       var jobType = val('jpJobType'); if (jobType) params.set('job_type', jobType);
       if (salaryMin) params.set('salary_min', salaryMin);
