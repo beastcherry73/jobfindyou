@@ -162,6 +162,7 @@
 
   var ADZUNA_SET = {};
   var COUNTRY_NAME = {};
+  var COUNTRY_CUR = {};      // country code -> local currency symbol
 
   async function loadCountries() {
     try {
@@ -172,6 +173,7 @@
         sel.innerHTML = '';
         (data.countries || []).forEach(function(c){
           COUNTRY_NAME[c.code] = c.name;
+          COUNTRY_CUR[c.code] = c.currency || '';
           if (c.adzuna) ADZUNA_SET[c.code] = true;
           var opt = document.createElement('option');
           opt.value = c.code; opt.textContent = c.name;
@@ -181,6 +183,13 @@
       }
     } catch (e) {}
     onCountryChange();
+  }
+
+  // Salary label currency always follows the selected country (never defaults
+  // to INR for non-India countries).
+  function updateCurrencySymbol(country) {
+    var sym = COUNTRY_CUR[country] || (CURRENCY[country] ? CURRENCY[country].s.trim() : '');
+    document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
   }
 
   var ADZUNA_ONLY = ['jpDistance','jpCategory','jpSalaryMin','jpSalaryMax','jpMaxDays','jpSortBy'];
@@ -198,10 +207,9 @@
     var country = document.getElementById('jpCountry').value || 'in';
     var isAdzuna = !!ADZUNA_SET[country];
     setAdzunaFilters(isAdzuna);
+    updateCurrencySymbol(country);       // always follow the country
     var hint = document.getElementById('jpFilterHint');
     if (isAdzuna) {
-      var sym = (CURRENCY[country] || CURRENCY.in).s.trim();
-      document.querySelectorAll('.jp-cur').forEach(function(el){ el.textContent = sym; });
       hint.style.display = 'none';
       loadCategories(country);
     } else {

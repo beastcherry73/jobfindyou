@@ -73,11 +73,30 @@ _COUNTRY_ROWS = [
 ]
 _COUNTRY_INFO = {code: {"name": name, "cj": cj} for code, name, cj in _COUNTRY_ROWS}
 
+# Local currency symbol per country, so the UI's salary labels follow the
+# selected country instead of defaulting to INR. (Adzuna's 18 markets also carry
+# a numeric-format locale on the front end; these symbols cover all countries.)
+CURRENCY_SYMBOLS = {
+    "in": "₹", "us": "$", "gb": "£", "bd": "৳", "pk": "₨", "lk": "Rs",
+    "ae": "AED", "sa": "SAR", "qa": "QAR", "ph": "₱", "id": "Rp", "my": "RM",
+    "sg": "S$", "jp": "¥", "hk": "HK$", "kr": "₩", "th": "฿", "vn": "₫",
+    "au": "A$", "nz": "NZ$", "ca": "C$", "de": "€", "fr": "€", "nl": "€",
+    "it": "€", "es": "€", "at": "€", "ch": "CHF", "pl": "zł", "ie": "€",
+    "se": "kr", "no": "kr", "dk": "kr", "fi": "€", "be": "€", "pt": "€",
+    "tr": "₺", "za": "R", "ng": "₦", "ke": "KSh", "eg": "E£", "br": "R$",
+    "mx": "MX$", "ar": "AR$", "cl": "CL$", "co": "CO$",
+}
+
 
 def get_countries():
-    """List for the UI dropdown: [{code, name, adzuna}] in display order."""
+    """List for the UI dropdown: [{code, name, adzuna, currency}] in display order."""
     return [
-        {"code": code, "name": name, "adzuna": code in ADZUNA_COUNTRIES}
+        {
+            "code": code,
+            "name": name,
+            "adzuna": code in ADZUNA_COUNTRIES,
+            "currency": CURRENCY_SYMBOLS.get(code, ""),
+        }
         for code, name, _ in _COUNTRY_ROWS
     ]
 
