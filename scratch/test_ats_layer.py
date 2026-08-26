@@ -73,7 +73,38 @@ def test_resolvers():
     check("timestamp offset normalizes to UTC",
           ts("2026-08-25T17:40:40-04:00") == "2026-08-25T21:40:40+00:00", ts("2026-08-25T17:40:40-04:00"))
     check("timestamp bare date normalizes", ts("2026-06-27").startswith("2026-06-27T00:00:00"))
-    check("timestamp garbage rejected", ts("garbage") == "")
+    # None, never "": posted_at is a real TIMESTAMPTZ in production and
+    # Postgres rejects an empty string for that type. SQLite would accept it,
+    # which is exactly how this class of bug stays hidden until deploy.
+    check("timestamp garbage -> None (never empty string)", ts("garbage") is None)
+    check("timestamp empty -> None", ts("") is None)
+
+    nul = chr(0)
+    check("control chars scrubbed (Postgres text rejects NUL)",
+          nul not in ats._text("a" + nul + "b") and ats._text("a" + nul + "b") == "a b")
+
+    # Guard the whole "works on SQLite, dies on Postgres" class: pg8000 sends
+    # str as OID 25 (TEXT), which Postgres refuses for a TIMESTAMPTZ column.
+    import backend.database as _dbmod
+    from datetime import datetime as _dt, timezone as _tz
+    sample = _dt(2026, 1, 2, 3, 4, 5, tzinfo=_tz.utc)
+    pg_like = _dbmod.PgConnection.__new__(_dbmod.PgConnection)
+    check("timestamp param for SQLite is an ISO string",
+          isinstance(ats._timestamp_param(object(), sample), str))
+    check("timestamp param for Postgres is a real datetime",
+          isinstance(ats._timestamp_param(pg_like, sample), _dt))
+    check("empty timestamp param becomes NULL",
+          ats._timestamp_param(object(), "") is None)
+
+    # Nothing normalized off a live board may carry an empty-string timestamp.
+    check("normalizer never emits an empty-string posted_at",
+          all(j.get("posted_at") != "" for j in _sample_jobs()))
+
+
+def _sample_jobs():
+    entry = ats.load_registry()[0]
+    _, jobs = ats._fetch_and_normalize(entry)
+    return jobs
 
 
 def test_registry():
@@ -169,6 +200,23 @@ def test_schema():
           all(r["redirect_url"] == r["apply_url"] for r in rows))
     check("source names the real platform",
           all(r["source"] in [p["label"] for p in ats.PLATFORMS.values()] for r in rows))
+
+    # Apply-friction labelling: SmartRecruiters wants an account, the other six
+    # allow a guest apply. This must come from the platform spec, not a string
+    # match on the source name.
+    sr = ats.search(per_page=5)
+    sr_rows = [r for r in ats.search(per_page=200)["results"]
+               if r["source"] == "SmartRecruiters"]
+    other_rows = [r for r in ats.search(per_page=200)["results"]
+                  if r["source"] != "SmartRecruiters"]
+    check("requires_account present on every ATS row",
+          all("requires_account" in r for r in rows))
+    check("SmartRecruiters rows are flagged account-required",
+          bool(sr_rows) and all(r["requires_account"] for r in sr_rows),
+          "%d rows" % len(sr_rows))
+    check("guest-apply platforms are NOT flagged",
+          all(not r["requires_account"] for r in other_rows),
+          "%d rows" % len(other_rows))
 
     # Ranking: ATS above aggregators, per the approved ordering.
     ats_row = dict(rows[0])

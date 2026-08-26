@@ -54,6 +54,7 @@ MAX_JOBS_PER_COMPANY = 300
 
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
+_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
 
 def _text(value, limit=6000):
@@ -66,11 +67,15 @@ def _text(value, limit=6000):
         s = html.unescape(s)
     s = _TAG_RE.sub(" ", s)
     s = html.unescape(s)
+    # Postgres text columns reject NUL bytes outright; scrub control characters
+    # before they ever reach a parameter.
+    s = s.replace("\x00", " ")
+    s = _CTRL_RE.sub(" ", s)
     return _WS_RE.sub(" ", s).strip()[:limit]
 
 
 def _iso(value):
-    """Normalize any provider timestamp to a UTC ISO-8601 string ('' if unusable).
+    """Normalize any provider timestamp to a UTC ISO-8601 string (None if unusable).
 
     Everything is converted to a single UTC representation on the way in. The
     providers disagree wildly (Lever sends epoch ms, Greenhouse sends
@@ -78,23 +83,28 @@ def _iso(value):
     directly comparable for the "posted within N days" filter and for date
     sorting — under Postgres TIMESTAMPTZ and under dev SQLite's plain text
     columns alike.
+
+    Returns None rather than "" when there is no usable timestamp: posted_at is
+    a real TIMESTAMPTZ in production, and Postgres rejects an empty string for
+    that type outright. Dev SQLite would have accepted "" and hidden the fault
+    until deploy.
     """
     if value in (None, ""):
-        return ""
+        return None
     if isinstance(value, (int, float)):
         # Lever reports epoch milliseconds.
         try:
             seconds = value / 1000.0 if value > 1e11 else float(value)
             return datetime.fromtimestamp(seconds, tz=timezone.utc).isoformat()
         except (ValueError, OSError, OverflowError):
-            return ""
+            return None
     raw = str(value).strip()
     if not raw:
-        return ""
+        return None
     try:
         parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except ValueError:
-        return ""
+        return None
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc).isoformat()
@@ -803,6 +813,39 @@ def normalize_board(platform, token, company, rows):
 # request on that instance. Fetching happens outside the lock; only the writes
 # take it, in batches.
 
+def _timestamp_param(db, value):
+    """Return a timestamp parameter in the form THIS driver actually accepts.
+
+    pg8000 sends a Python str as OID 25 (TEXT), and Postgres refuses text where
+    it wants TIMESTAMPTZ -- both on INSERT into posted_at and in a `posted_at >=
+    ?` comparison. So the Postgres path gets real datetime objects. Dev SQLite
+    keeps ISO strings: its columns are plain text, string comparison on
+    normalized UTC values is correct there, and its default datetime adapter is
+    deprecated from Python 3.12.
+
+    This is exactly the class of bug SQLite hides: every one of these worked in
+    dev and would have failed on the first production sync.
+    """
+    if value in (None, ""):
+        return None
+    if isinstance(value, datetime):
+        dt = value
+    else:
+        try:
+            dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    try:
+        from backend.database import PgConnection
+        if isinstance(db, PgConnection):
+            return dt
+    except Exception:
+        pass
+    return dt.isoformat()
+
+
 _CURSOR_KEY = "ats_sync_cursor"
 # The pass is network-bound (a board fetch dwarfs its write), so fetches run in
 # parallel. Writes remain serial — one shared Postgres connection per instance.
@@ -862,7 +905,10 @@ def _upsert_batch(db, jobs):
     params = []
     for j in jobs:
         for c in _COLUMNS:
-            params.append(j.get(c))
+            value = j.get(c)
+            if c == "posted_at":
+                value = _timestamp_param(db, value)
+            params.append(value)
     db.execute(sql, params)
     return len(jobs)
 
@@ -953,10 +999,11 @@ def prune_stale(days=STALE_AFTER_DAYS):
     """Remove jobs no sync has seen for `days` — boards that vanished entirely."""
     from backend.database import get_db
 
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
     try:
         with get_db() as db:
-            cur = db.execute("DELETE FROM ats_jobs WHERE last_seen_at < ?", (cutoff,))
+            cur = db.execute("DELETE FROM ats_jobs WHERE last_seen_at < ?",
+                             (_timestamp_param(db, cutoff),))
             return getattr(cur, "rowcount", 0) or 0
     except Exception as e:
         logger.warning(f"ATS stale prune failed: {e}")
@@ -1127,22 +1174,31 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
         days = int(max_days_old) if max_days_old else 0
     except (ValueError, TypeError):
         days = 0
+    recency_cutoff = None
     if days > 0:
         where_sql.append("posted_at >= ?")
-        params.append((datetime.now(timezone.utc) - timedelta(days=days)).isoformat())
+        recency_cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        params.append(recency_cutoff)          # converted per driver below
 
     clause = (" WHERE " + " AND ".join(where_sql)) if where_sql else ""
 
+    # NULLs must be ordered explicitly. Postgres sorts NULLs FIRST under DESC
+    # while SQLite sorts them last, so without this the production "newest
+    # first" list would open with every undated job.
     if sort_by == "salary":
-        order = "ORDER BY (salary_max IS NULL), salary_max DESC, posted_at DESC"
+        order = ("ORDER BY (salary_max IS NULL), salary_max DESC, "
+                 "(posted_at IS NULL), posted_at DESC")
     else:
         # We hold no relevance score of our own, so "relevance" and "date" both
         # resolve to newest-first rather than pretending to rank.
-        order = "ORDER BY posted_at DESC"
+        order = "ORDER BY (posted_at IS NULL), posted_at DESC"
 
     offset = (page - 1) * per_page
     try:
         with get_db() as db:
+            if recency_cutoff is not None:
+                params = [_timestamp_param(db, v) if v is recency_cutoff else v
+                          for v in params]
             total = db.execute(
                 f"SELECT COUNT(*) AS n FROM ats_jobs{clause}", params).fetchone()
             count = int(total["n"]) if total else 0
@@ -1183,6 +1239,13 @@ def to_unified(row):
         "apply_is_direct": True,
         "description": (row.get("description") or "")[:1500],
         "source": label,
+        # Six of the seven platforms let a candidate apply as a guest.
+        # SmartRecruiters makes them create an account (or use Google/LinkedIn
+        # SSO) first, so the card says so up front rather than letting the user
+        # discover it after the click. Driven off the platform spec, never a
+        # string match on the source name.
+        "requires_account": bool(
+            PLATFORMS.get(row.get("platform"), {}).get("requires_account")),
         "work_mode": row.get("work_mode") or "",
         "experience_level": row.get("experience_level") or "",
         "currency": row.get("salary_currency") or "",

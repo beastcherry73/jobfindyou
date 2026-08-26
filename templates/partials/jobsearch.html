@@ -305,6 +305,11 @@
       if (job.work_mode && job.work_mode !== 'onsite') {
         sub.push('<span>' + esc(job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)) + '</span>');
       }
+      // Set expectations before the click: SmartRecruiters is the one source
+      // whose apply flow needs an account, where the rest allow a guest apply.
+      if (job.requires_account) {
+        sub.push('<span class="ws-badge ws-badge-warn" title="This employer&#39;s ATS asks you to create an account or sign in with Google/LinkedIn before applying.">Account required</span>');
+      }
       if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
       // Be honest about provenance: name the true publisher when the source
       // gives us one, and say plainly when the link only reaches the aggregator.

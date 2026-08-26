@@ -243,6 +243,22 @@ Cursor/pruning rules worth knowing:
 - `MAX_JOBS_PER_COMPANY = 300` stops one enterprise board (Bosch had ~4.8k)
   swamping the corpus.
 
+POSTGRES DIALECT TRAPS (found the hard way; dev SQLite hides all of these):
+
+- pg8000 sends a Python `str` as OID 25 (TEXT), and Postgres refuses text where
+  it wants TIMESTAMPTZ - on INSERT into posted_at AND on `posted_at >= ?`.
+  `ats._timestamp_param(db, value)` returns a real datetime on the Postgres
+  path and an ISO string on the SQLite path. Use it for every timestamp param.
+- `""` in a TIMESTAMPTZ column is fine in SQLite, fatal in Postgres. `_iso()`
+  returns None, never "".
+- `ORDER BY col DESC` puts NULLs FIRST in Postgres, last in SQLite. Always
+  write `ORDER BY (col IS NULL), col DESC`.
+- Postgres text rejects NUL bytes; `_text()` scrubs control characters.
+
+Verify a DB change against real Postgres with
+`python scratch/verify_ats_postgres.py` (needs SUPABASE_DB_URL set locally;
+`--full` runs a whole cycle). Local SQLite green is NOT verification.
+
 Link health: `python scratch/verify_ats_registry.py --n 14` samples apply URLs
 per platform; `--audit --prune` follows one URL per company and DROPS companies
 whose destination is dead. It deliberately separates BLOCKED (403 bot
