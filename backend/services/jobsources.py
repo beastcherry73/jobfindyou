@@ -26,6 +26,8 @@ import requests as http_requests
 from backend.services.adzuna_service import (
     search_jobs as adzuna_search,
     ADZUNA_COUNTRIES,
+    AdzunaError,
+    AdzunaValidationError,
 )
 
 logger = logging.getLogger(__name__)
@@ -247,12 +249,21 @@ def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
     country = (country or "in").strip().lower()
 
     if country in ADZUNA_COUNTRIES:
-        res = adzuna_search(what=what, where=where, country=country,
-                            page=page, **adzuna_filters)
-        if res.get("results"):
+        try:
+            res = adzuna_search(what=what, where=where, country=country,
+                                page=page, **adzuna_filters)
+        except AdzunaValidationError:
+            raise  # bad user input (e.g. salary_min>max) -> route answers 400
+        except AdzunaError as e:
+            # Adzuna unconfigured/unreachable: don't fail the whole search when
+            # global sources can still serve this country — fall through.
+            logger.warning(f"Adzuna unavailable, falling back to global sources: {e}")
+            res = None
+        if res and res.get("results"):
             res["source_used"] = "Adzuna"
             return res
-        # Adzuna returned nothing — widen with the global aggregators below.
+        # Adzuna returned nothing (or was unavailable) — widen with the global
+        # aggregators below.
 
     info = _COUNTRY_INFO.get(country)
     name = info["name"] if info else country.upper()
