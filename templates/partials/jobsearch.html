@@ -4,12 +4,62 @@
    workspace.html; toast() delegates to the shell's showToast. #}
 <style>
   .jp-wrap { max-width: 980px; }
-  .jp-search { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
-  .jp-search input { flex:1; min-width:160px; }
-  .jp-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 12px; margin-bottom:14px; padding:14px 16px; background:var(--ws-surface); border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); }
-  .jp-filter { display:flex; flex-direction:column; gap:5px; }
-  .jp-filter label { font-size:10.5px; font-weight:700; color:var(--ws-text-tertiary); text-transform:uppercase; letter-spacing:0.05em; }
-  .jp-filter .ws-input, .jp-filter .ws-select { font-size:13px; width:100%; }
+  /* Primary search bar — one elevated row, the single focal element. */
+  .jp-searchbar { display:flex; align-items:stretch; background:var(--ws-elevated); border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); box-shadow:var(--ws-shadow-sm); overflow:hidden; }
+  .jp-sb-field { position:relative; display:flex; align-items:center; flex:1; min-width:0; }
+  .jp-sb-field + .jp-sb-field { border-left:1px solid var(--ws-border-light); }
+  .jp-sb-field > svg { position:absolute; left:14px; color:var(--ws-text-tertiary); pointer-events:none; }
+  .jp-sb-field .ws-input, .jp-sb-field .ws-select { border:none; background:transparent; border-radius:0; padding:14px 12px 14px 40px; font-size:14px; width:100%; box-shadow:none !important; }
+  .jp-sb-where { flex:0 0 34%; }
+  .jp-sb-country { flex:0 0 168px; }
+  .jp-searchbar .ws-btn-primary { border-radius:0; padding:0 24px; flex-shrink:0; }
+  .jp-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  /* Toolbar — disclosure + active chips + sort (sort is a view control, always visible). */
+  .jp-toolbar { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }
+  .jp-disclosure { display:inline-flex; align-items:center; gap:8px; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--ws-text); background:var(--ws-elevated); border:1px solid var(--ws-border); border-radius:var(--ws-radius-md); padding:8px 14px; cursor:pointer; transition:background var(--ws-duration) var(--ws-ease), border-color var(--ws-duration) var(--ws-ease); }
+  .jp-disclosure:hover { background:var(--ws-surface-hover); }
+  .jp-disclosure[aria-expanded="true"] { border-color:var(--ws-primary); color:var(--ws-primary); background:var(--ws-primary-subtle); }
+  .jp-chev { transition:transform var(--ws-duration) var(--ws-ease); }
+  .jp-disclosure[aria-expanded="true"] .jp-chev { transform:rotate(180deg); }
+  .jp-count { font-family:var(--ws-font-mono); font-size:11px; font-weight:500; background:var(--ws-primary); color:#fff; border-radius:var(--ws-radius-full); min-width:18px; height:18px; display:inline-grid; place-items:center; padding:0 5px; }
+  /* An explicit display value beats the [hidden] UA rule, so restore it. */
+  .jp-count[hidden] { display:none; }
+  /* Chips wrap; never clipped into one scrolling row. */
+  .jp-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; flex:1; min-width:0; }
+  .jp-chip { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:500; color:var(--ws-text-secondary); background:var(--ws-surface-hover); border:1px solid var(--ws-border); border-radius:var(--ws-radius-full); padding:4px 6px 4px 11px; }
+  .jp-chip b { font-weight:600; color:var(--ws-text); }
+  .jp-chip button { display:grid; place-items:center; width:18px; height:18px; padding:0; border:none; background:transparent; color:var(--ws-text-tertiary); cursor:pointer; border-radius:var(--ws-radius-full); transition:background var(--ws-duration) var(--ws-ease), color var(--ws-duration) var(--ws-ease); }
+  .jp-chip button:hover { background:var(--ws-surface-active); color:var(--ws-text); }
+  .jp-clear { font-size:12.5px; font-weight:600; color:var(--ws-primary); background:none; border:none; cursor:pointer; padding:4px 6px; font-family:inherit; }
+  .jp-clear:hover { text-decoration:underline; }
+  .jp-sort { display:flex; align-items:center; gap:8px; margin-left:auto; flex-shrink:0; }
+  .jp-sort label { font-size:12.5px; color:var(--ws-text-secondary); white-space:nowrap; }
+  .jp-sort .ws-select { width:auto; min-width:148px; font-size:13px; padding-top:7px; padding-bottom:7px; }
+
+  /* Collapsible panel — three logical groups, not a flat 9-box grid. */
+  .jp-panel { margin-top:12px; background:var(--ws-surface); border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); padding:8px 24px 24px; }
+  .jp-panel[hidden] { display:none; }
+  .jp-group { padding-top:16px; }
+  .jp-group + .jp-group { border-top:1px solid var(--ws-border-light); margin-top:16px; }
+  .jp-group-head { font-size:12px; font-weight:600; color:var(--ws-text); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .jp-group-head svg { color:var(--ws-text-tertiary); }
+  .jp-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(184px,1fr)); gap:16px; }
+  .jp-filter { display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .jp-filter label { font-size:12.5px; font-weight:500; color:var(--ws-text-secondary); }
+  .jp-filter .ws-input, .jp-filter .ws-select { font-size:13.5px; width:100%; }
+  .jp-help { font-size:11.5px; color:var(--ws-text-tertiary); }
+  .jp-pair { display:flex; align-items:center; gap:8px; }
+  .jp-pair span { color:var(--ws-text-tertiary); font-size:12.5px; }
+  .jp-span2 { grid-column:span 2; }
+  @media (max-width:720px) {
+    .jp-searchbar { flex-wrap:wrap; }
+    .jp-sb-field, .jp-sb-where, .jp-sb-country { flex:1 1 100%; }
+    .jp-sb-field + .jp-sb-field { border-left:none; border-top:1px solid var(--ws-border-light); }
+    .jp-searchbar .ws-btn-primary { flex:1 1 100%; padding:12px; }
+    .jp-sort { margin-left:0; width:100%; }
+    .jp-span2 { grid-column:auto; }
+  }
   .jp-attribution { font-size:11px; color:var(--ws-text-tertiary); margin-bottom:14px; }
   .jp-card { padding:18px 20px; margin-bottom:12px; }
   .jp-card-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; }
@@ -32,81 +82,39 @@
   <div id="jpConfigNotice" class="jp-notice" style="display:none;">Job search isn't configured yet — the job-search API keys need to be added to the server environment.</div>
 
   <form id="jpForm">
-    <div class="jp-search">
-      <input class="ws-input" id="jpWhat" placeholder="Job title, keywords (e.g. product manager)">
-      <input class="ws-input" id="jpWhere" placeholder="Location (e.g. Bengaluru)" style="max-width:220px;">
-      <button class="ws-btn ws-btn-primary" type="submit">Search</button>
-    </div>
-
-    <div class="jp-filters">
-      <div class="jp-filter">
-        <label for="jpCountry">Country</label>
+    <div class="jp-searchbar">
+      <div class="jp-sb-field">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <label class="jp-sr" for="jpWhat">Job title or keywords</label>
+        <input class="ws-input" id="jpWhat" placeholder="Job title, keywords (e.g. product manager)">
+      </div>
+      <div class="jp-sb-field jp-sb-where">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <label class="jp-sr" for="jpWhere">Location</label>
+        <input class="ws-input" id="jpWhere" placeholder="Location (e.g. Bengaluru)">
+      </div>
+      <div class="jp-sb-field jp-sb-country">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20a15.3 15.3 0 0 1 0-20"/></svg>
+        <label class="jp-sr" for="jpCountry">Country</label>
         <select class="ws-select" id="jpCountry">
           <option value="in">India</option>
         </select>
       </div>
-      <div class="jp-filter">
-        <label for="jpExclude">Exclude keywords</label>
-        <input class="ws-input" id="jpExclude" placeholder="e.g. senior, sales">
-      </div>
-      <div class="jp-filter">
-        <label for="jpCategory">Category</label>
-        <select class="ws-select" id="jpCategory">
-          <option value="">All categories</option>
-        </select>
-      </div>
-      <div class="jp-filter">
-        <label for="jpWorkMode">Work mode</label>
-        <select class="ws-select" id="jpWorkMode">
-          <option value="">Any mode</option>
-          <option value="remote">Remote</option>
-          <option value="hybrid">Hybrid</option>
-          <option value="onsite">On-site</option>
-        </select>
-      </div>
-      <div class="jp-filter">
-        <label for="jpExperience">Experience level</label>
-        <select class="ws-select" id="jpExperience">
-          <option value="">Any level</option>
-          <option value="internship">Internship</option>
-          <option value="entry">Entry</option>
-          <option value="mid">Mid</option>
-          <option value="senior">Senior</option>
-          <option value="lead">Lead / Principal</option>
-          <option value="executive">Executive</option>
-        </select>
-      </div>
-      <div class="jp-filter">
-        <label for="jpJobType">Job type</label>
-        <select class="ws-select" id="jpJobType">
-          <option value="">Any type</option>
-          <option value="full_time">Full time</option>
-          <option value="part_time">Part time</option>
-          <option value="contract">Contract</option>
-          <option value="permanent">Permanent</option>
-        </select>
-      </div>
-      <div class="jp-filter">
-        <label for="jpSalaryMin">Salary min (<span class="jp-cur">₹</span>)</label>
-        <input class="ws-input" id="jpSalaryMin" type="number" min="0" step="10000" placeholder="e.g. 600000">
-      </div>
-      <div class="jp-filter">
-        <label for="jpSalaryMax">Salary max (<span class="jp-cur">₹</span>)</label>
-        <input class="ws-input" id="jpSalaryMax" type="number" min="0" step="10000" placeholder="e.g. 2000000">
-      </div>
-      <div class="jp-filter">
-        <label for="jpMaxDays">Posted within</label>
-        <select class="ws-select" id="jpMaxDays">
-          <option value="">Any time</option>
-          <option value="1">Last 24 hours</option>
-          <option value="3">Last 3 days</option>
-          <option value="7">Last week</option>
-          <option value="14">Last 2 weeks</option>
-          <option value="30">Last 30 days</option>
-        </select>
-      </div>
-      <div class="jp-filter">
-        <label for="jpSortBy">Sort by</label>
+      <button class="ws-btn ws-btn-primary" type="submit">Search</button>
+    </div>
+
+    <div class="jp-toolbar">
+      <button type="button" class="jp-disclosure" id="jpToggle" aria-expanded="false" aria-controls="jpPanel">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+        Filters
+        <span class="jp-count" id="jpCount" hidden>0</span>
+        <svg class="jp-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+
+      <div class="jp-chips" id="jpChips"></div>
+
+      <div class="jp-sort">
+        <label for="jpSortBy">Sort</label>
         <select class="ws-select" id="jpSortBy">
           <option value="relevance">Most relevant</option>
           <option value="date">Newest first</option>
@@ -114,7 +122,100 @@
         </select>
       </div>
     </div>
-    <div id="jpFilterHint" style="display:none;font-size:11.5px;color:var(--ws-text-tertiary);margin:-4px 0 14px;"></div>
+
+    <div class="jp-panel" id="jpPanel" hidden>
+      <div class="jp-group">
+        <div class="jp-group-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          Role
+        </div>
+        <div class="jp-grid">
+          <div class="jp-filter">
+            <label for="jpCategory">Category</label>
+            <select class="ws-select" id="jpCategory">
+              <option value="">All categories</option>
+            </select>
+          </div>
+          <div class="jp-filter">
+            <label for="jpExperience">Experience level</label>
+            <select class="ws-select" id="jpExperience">
+              <option value="">Any level</option>
+              <option value="internship">Internship</option>
+              <option value="entry">Entry</option>
+              <option value="mid">Mid</option>
+              <option value="senior">Senior</option>
+              <option value="lead">Lead / Principal</option>
+              <option value="executive">Executive</option>
+            </select>
+          </div>
+          <div class="jp-filter">
+            <label for="jpJobType">Job type</label>
+            <select class="ws-select" id="jpJobType">
+              <option value="">Any type</option>
+              <option value="full_time">Full time</option>
+              <option value="part_time">Part time</option>
+              <option value="contract">Contract</option>
+              <option value="permanent">Permanent</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-group">
+        <div class="jp-group-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Work &amp; pay
+        </div>
+        <div class="jp-grid">
+          <div class="jp-filter">
+            <label for="jpWorkMode">Work mode</label>
+            <select class="ws-select" id="jpWorkMode">
+              <option value="">Any mode</option>
+              <option value="remote">Remote</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="onsite">On-site</option>
+            </select>
+          </div>
+          <div class="jp-filter jp-span2">
+            <label for="jpSalaryMin">Salary range (<span class="jp-cur">₹</span>)</label>
+            <div class="jp-pair">
+              <input class="ws-input" id="jpSalaryMin" type="number" min="0" step="10000" placeholder="Min">
+              <span>to</span>
+              <label class="jp-sr" for="jpSalaryMax">Salary max (<span class="jp-cur">₹</span>)</label>
+              <input class="ws-input" id="jpSalaryMax" type="number" min="0" step="10000" placeholder="Max">
+            </div>
+            <span class="jp-help">Listings without a stated salary are still included.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="jp-group">
+        <div class="jp-group-head">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Recency &amp; refine
+        </div>
+        <div class="jp-grid">
+          <div class="jp-filter">
+            <label for="jpMaxDays">Posted within</label>
+            <select class="ws-select" id="jpMaxDays">
+              <option value="">Any time</option>
+              <option value="1">Last 24 hours</option>
+              <option value="3">Last 3 days</option>
+              <option value="7">Last week</option>
+              <option value="14">Last 2 weeks</option>
+              <option value="30">Last 30 days</option>
+            </select>
+          </div>
+          <div class="jp-filter jp-span2">
+            <label for="jpExclude">Exclude keywords</label>
+            <input class="ws-input" id="jpExclude" placeholder="e.g. senior, sales">
+            <span class="jp-help">Comma-separated. Listings containing these words are dropped.</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="jpFilterHint" style="display:none;font-size:11.5px;color:var(--ws-text-tertiary);margin-top:16px;"></div>
+    </div>
   </form>
 
   <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
@@ -220,6 +321,88 @@
     });
   }
 
+  // ── Filter panel disclosure + active-filter chips ────────────────────
+  // The eight refining filters live behind a disclosure; Country and Sort stay
+  // in the always-visible bar (Country scopes the whole search, Sort is a view
+  // control). Chips summarise what is active while the panel is collapsed.
+  // Selecting a value never triggers a search on its own — the user still
+  // presses Search, exactly as before.
+  var CHIP_SPECS = [
+    { id:'jpCategory',   label:'Category' },
+    { id:'jpExperience', label:'Experience' },
+    { id:'jpJobType',    label:'Job type' },
+    { id:'jpWorkMode',   label:'Work mode' },
+    { id:'jpMaxDays',    label:'Posted' },
+    { id:'jpExclude',    label:'Excluding' }
+  ];
+
+  function setPanel(open) {
+    var btn = document.getElementById('jpToggle');
+    var panel = document.getElementById('jpPanel');
+    if (!btn || !panel) return;
+    btn.setAttribute('aria-expanded', String(!!open));
+    panel.hidden = !open;
+  }
+
+  function selText(el) {
+    var o = el.options[el.selectedIndex];
+    return o ? o.textContent.trim() : '';
+  }
+
+  function refreshChips() {
+    var box = document.getElementById('jpChips');
+    var badge = document.getElementById('jpCount');
+    if (!box) return;
+    var chips = [];
+
+    CHIP_SPECS.forEach(function(spec){
+      var el = document.getElementById(spec.id);
+      if (!el || el.disabled || !el.value.trim()) return;
+      var shown = el.tagName === 'SELECT' ? selText(el) : el.value.trim();
+      chips.push({ ids:[spec.id], label:spec.label, value:shown });
+    });
+
+    var lo = document.getElementById('jpSalaryMin');
+    var hi = document.getElementById('jpSalaryMax');
+    var loV = lo && lo.value.trim(), hiV = hi && hi.value.trim();
+    if (loV || hiV) {
+      // Read the country that is selected right now — `activeCountry` only
+      // updates once a search has come back, so it lags here.
+      var sel = document.getElementById('jpCountry');
+      var code = (sel && sel.value) || activeCountry;
+      var c = CURRENCY[code] || CURRENCY.in;
+      var sym = COUNTRY_CUR[code] || c.s;
+      var f = function(n){ return sym + Number(n).toLocaleString(c.l); };
+      chips.push({
+        ids:['jpSalaryMin','jpSalaryMax'], label:'Salary',
+        value: (loV && hiV) ? f(loV) + '–' + f(hiV) : (loV ? f(loV) + '+' : 'up to ' + f(hiV))
+      });
+    }
+
+    box.innerHTML = chips.map(function(ch){
+      return '<span class="jp-chip">' + esc(ch.label) + ' <b>' + esc(ch.value) + '</b>'
+        + '<button type="button" data-clear="' + ch.ids.join(',') + '"'
+        + ' aria-label="Remove ' + esc(ch.label.toLowerCase()) + ' filter">'
+        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+        + '</button></span>';
+    }).join('') + (chips.length > 1
+      ? '<button type="button" class="jp-clear" data-clear-all="1">Clear all</button>' : '');
+
+    if (badge) {
+      badge.textContent = String(chips.length);
+      badge.hidden = chips.length === 0;
+    }
+  }
+
+  function clearIds(ids) {
+    ids.forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    refreshChips();
+  }
+
   function onCountryChange() {
     var country = document.getElementById('jpCountry').value || 'in';
     var isAdzuna = !!ADZUNA_SET[country];
@@ -236,6 +419,7 @@
       hint.style.display = 'block';
       document.getElementById('jpCategory').innerHTML = '<option value="">All categories</option>';
     }
+    refreshChips();   // currency symbol and category availability both changed
   }
 
   async function doSearch(e) {
@@ -446,6 +630,30 @@
     if (form) form.addEventListener('submit', doSearch);
     var cs = document.getElementById('jpCountry');
     if (cs) cs.addEventListener('change', onCountryChange);
+
+    var toggle = document.getElementById('jpToggle');
+    if (toggle) toggle.addEventListener('click', function(){
+      setPanel(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    // Keep the chip summary in sync with whatever is set in the panel.
+    var panel = document.getElementById('jpPanel');
+    if (panel) {
+      panel.addEventListener('change', refreshChips);
+      panel.addEventListener('input', refreshChips);
+    }
+
+    var chips = document.getElementById('jpChips');
+    if (chips) chips.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-clear], [data-clear-all]');
+      if (!btn) return;
+      if (btn.hasAttribute('data-clear-all')) {
+        clearIds(CHIP_SPECS.map(function(s){ return s.id; })
+          .concat(['jpSalaryMin','jpSalaryMax']));
+      } else {
+        clearIds(btn.getAttribute('data-clear').split(','));
+      }
+    });
     document.addEventListener('visibilitychange', maybeShowConfirm);
     window.addEventListener('focus', maybeShowConfirm);
   }
