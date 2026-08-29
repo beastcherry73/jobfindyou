@@ -7,6 +7,7 @@ env/
 # Environment variables & secrets
 .env
 *.env
+.env.*
 client info.txt
 wallet key.txt
 
