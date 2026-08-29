@@ -1097,6 +1097,104 @@ def run_sync(limit=None, time_budget=None, reset=False):
     return stats
 
 
+# -- On-demand full description -------------------------------------------
+# Two platforms publish NO description in their LIST response, which is the
+# only call the sync makes: SmartRecruiters (2,692 rows, 100% of its jobs) and
+# Breezy (17). That is ~15% of the corpus arriving with an empty body, and it
+# is what made the detail panel read "No description was published for this
+# listing" on perfectly good roles.
+#
+# Both expose a keyless per-posting endpoint that DOES carry the text, so it is
+# fetched when the user actually opens the role rather than for all 2,709 rows
+# during sync -- one request the user is waiting on, instead of thousands they
+# are not.
+#
+# Deliberately not written back to ats_jobs: the sync upserts from the list
+# response and would blank the column again on its next pass, so a stored copy
+# would silently rot. Fetch-on-open always reflects the live posting.
+
+_DESC_TIMEOUT = 12
+
+
+def _sr_full_description(token, source_id):
+    """SmartRecruiters posting detail -> readable text, or ''."""
+    url = f"https://api.smartrecruiters.com/v1/companies/{token}/postings/{source_id}"
+    try:
+        r = http_requests.get(url, timeout=_DESC_TIMEOUT,
+                              headers={"User-Agent": "JobSpike/1.0"})
+        if r.status_code != 200:
+            return ""
+        sections = ((r.json() or {}).get("jobAd") or {}).get("sections") or {}
+    except Exception:
+        return ""
+
+    # Ordered so the role itself leads; the boilerplate company blurb goes last
+    # because the reader came for the job, not the corporate summary.
+    order = [
+        ("jobDescription", ""),
+        ("qualifications", "Qualifications"),
+        ("additionalInformation", "Additional information"),
+        ("companyDescription", "About the company"),
+    ]
+    parts = []
+    for key, heading in order:
+        text = _text(((sections.get(key) or {}).get("text")) or "")
+        if not text:
+            continue
+        parts.append(f"{heading}\n{text}" if heading else text)
+    return "\n\n".join(parts).strip()
+
+
+def _breezy_full_description(token, source_id):
+    """Breezy posting detail -> readable text, or ''."""
+    url = f"https://{token}.breezy.hr/json/{source_id}"
+    try:
+        r = http_requests.get(url, timeout=_DESC_TIMEOUT,
+                              headers={"User-Agent": "JobSpike/1.0"})
+        if r.status_code != 200:
+            return ""
+        d = r.json() or {}
+    except Exception:
+        return ""
+    return _text(d.get("description") or "")
+
+
+_DESC_FETCHERS = {
+    "smartrecruiters": _sr_full_description,
+    "breezy": _breezy_full_description,
+}
+
+
+def fetch_full_description(job_id):
+    """Live description for one stored job. '' when unavailable.
+
+    Returns '' rather than raising for every failure mode -- a missing
+    description is a cosmetic gap, never a reason to fail the request.
+    """
+    from backend.database import get_db
+
+    try:
+        job_id = int(job_id)
+    except (TypeError, ValueError):
+        return ""
+
+    with get_db() as db:
+        row = db.execute(
+            "SELECT platform, company_token, source_id, description "
+            "FROM ats_jobs WHERE id = ?", (job_id,)).fetchone()
+    if not row:
+        return ""
+    # Already stored (Greenhouse, Ashby, Workable, Recruitee): use it.
+    stored = (row["description"] or "").strip()
+    if stored:
+        return stored
+
+    fetcher = _DESC_FETCHERS.get(row["platform"])
+    if not fetcher:
+        return ""
+    return fetcher(row["company_token"], row["source_id"])
+
+
 # ── Search (against our own data) ──────────────────────────────────────────
 # Because this is our copy, every filter below is exact and freely combinable —
 # the aggregator APIs each honour a different subset, which is why the UI has to

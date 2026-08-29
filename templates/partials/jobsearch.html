@@ -67,8 +67,34 @@
   .jp-split { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr);
               gap:16px; align-items:start; }
   .jp-list { max-height:calc(100vh - 260px); overflow-y:auto; padding-right:2px; }
-  .jp-detail { position:sticky; top:12px; max-height:calc(100vh - 260px);
-               overflow-y:auto; }
+  /* The panel MATCHES the list column instead of shrink-wrapping its content.
+     Without a min-height a short role rendered as a stub card floating beside
+     a full-height list, which is what made the pane look broken rather than
+     merely sparse. Flex column so the body takes the leftover height. */
+  .jp-detail { position:sticky; top:12px;
+               height:calc(100vh - 260px); overflow-y:auto;
+               display:flex; flex-direction:column; }
+  .jp-detail-body { flex:1 1 auto; }
+
+  /* Description arriving over the wire. Three bars sized like real prose, so
+     the panel keeps its shape while loading and nothing jumps when the text
+     lands. */
+  .jp-skel { height:11px; border-radius:6px; margin-bottom:10px;
+             background:linear-gradient(90deg,
+               var(--ws-surface-hover) 25%,
+               var(--ws-border) 37%,
+               var(--ws-surface-hover) 63%);
+             background-size:400% 100%;
+             animation:jp-shimmer 1.4s ease-in-out infinite; }
+  .jp-skel.w90 { width:90%; } .jp-skel.w75 { width:75%; } .jp-skel.w60 { width:60%; }
+  @keyframes jp-shimmer { 0% { background-position:100% 0; } 100% { background-position:0 0; } }
+  @media (prefers-reduced-motion: reduce) { .jp-skel { animation:none; } }
+
+  /* Genuinely no description: say so once, quietly, and point at the thing
+     that does have the detail. Not an error -- the listing is fine. */
+  .jp-nodesc { display:flex; flex-direction:column; align-items:flex-start;
+               gap:10px; padding:22px 0 4px; color:var(--ws-text-tertiary);
+               font-size:13px; line-height:1.6; }
   @media (max-width: 980px) {
     .jp-split { grid-template-columns:1fr; }
     .jp-list, .jp-detail { max-height:none; position:static; }
@@ -620,9 +646,10 @@
         '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpMatch">Check match</button>' +
       '</div>' + acctWarn +
       '<div class="jp-detail-label">About this role</div>' +
-      '<div class="jp-detail-body">' + esc(job.description || 'No description was published for this listing.') + '</div>';
+      '<div class="jp-detail-body" id="jpBody">' + describeBody(job) + '</div>';
 
     lettermarkOnError(host, initial);
+    ensureDescription(job);
     var back = document.getElementById('jpBack');
     if (back) back.addEventListener('click', function () {
       document.getElementById('jpSplit').classList.remove('jp-showing-detail');
@@ -631,6 +658,52 @@
     document.getElementById('jpSave').addEventListener('click', function (e) { saveJob(job, e.currentTarget); });
     document.getElementById('jpView').addEventListener('click', function (e) { applyJob(job, null, e.currentTarget); });
     document.getElementById('jpMatch').addEventListener('click', function (e) { checkMatch(job, e.currentTarget); });
+  }
+
+  // -- Description ---------------------------------------------------------
+  // SmartRecruiters and Breezy publish no description in the list response the
+  // sync reads, so ~15% of the corpus arrives with an empty body and the panel
+  // used to render a single flat line of apology. Both expose a keyless
+  // per-posting endpoint, so the text is fetched when the role is opened.
+
+  function describeBody(job) {
+    if (job.description) return esc(job.description);
+    if (job._descFetched) {
+      // Asked, and the employer genuinely published nothing.
+      return '<div class="jp-nodesc">'
+        + '<span>This employer did not publish a description on their job board.</span>'
+        + '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="jpOpenPosting">'
+        + 'Read it on the employer\u2019s site <span aria-hidden="true" style="opacity:.7;">&#8599;</span>'
+        + '</button></div>';
+    }
+    return '<div class="jp-skel w90"></div><div class="jp-skel w75"></div>'
+      + '<div class="jp-skel w90"></div><div class="jp-skel w60"></div>'
+      + '<span class="ws-sr-only">Loading the job description</span>';
+  }
+
+  async function ensureDescription(job) {
+    if (job.description || job._descFetched || !job.id) {
+      wireNoDescCta(job);
+      return;
+    }
+    try {
+      var res = await fetch('/api/jobs/description?id=' + encodeURIComponent(job.id));
+      var data = res.ok ? await res.json() : {};
+      job.description = (data && data.description) || '';
+    } catch (e) {
+      job.description = '';
+    }
+    job._descFetched = true;              // never ask twice for the same row
+    // The user may have moved on while this was in flight; only paint if this
+    // role is still the one on screen.
+    if (currentList[selectedIdx] !== job) return;
+    var body = document.getElementById('jpBody');
+    if (body) { body.innerHTML = describeBody(job); wireNoDescCta(job); }
+  }
+
+  function wireNoDescCta(job) {
+    var btn = document.getElementById('jpOpenPosting');
+    if (btn) btn.addEventListener('click', function (e) { applyJob(job, null, e.currentTarget); });
   }
 
   // "Tailor for this" hands the job description to the existing analysis flow,

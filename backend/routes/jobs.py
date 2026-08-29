@@ -222,6 +222,28 @@ def api_jobs_match():
 # application. We record it as 'Viewed' and let the user self-report the
 # actual application later (return-to-tab prompt, or "Mark as Applied" in the
 # tracker). JobSpike never inspects the opened tab or the third-party site.
+
+@jobs_bp.route("/api/jobs/description", methods=["GET"])
+@login_required
+@rate_limit(limit=90, window_seconds=300)
+def api_job_description():
+    """Full description for one stored job, fetched live when we lack it.
+
+    SmartRecruiters and Breezy publish no description in the list response the
+    sync reads, so ~15% of the corpus is stored with an empty body. The detail
+    panel calls this when it opens such a role.
+
+    Always 200 with a `description` string -- an empty one simply means the
+    employer published none. A missing description must never surface as an
+    error state on an otherwise valid listing.
+    """
+    try:
+        text = ats.fetch_full_description(request.args.get("id"))
+    except Exception as e:
+        logger.warning(f"Description fetch failed: {e}")
+        text = ""
+    return jsonify({"description": text})
+
 @jobs_bp.route("/api/jobs/track", methods=["POST"])
 @login_required
 def api_jobs_track():
