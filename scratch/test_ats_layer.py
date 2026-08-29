@@ -21,6 +21,7 @@ from backend.services.jobsources import _merge_rank_dedupe  # noqa: E402
 
 PASS = FAIL = 0
 FAILURES = []
+SKIPPED = []
 
 
 def check(name, condition, detail=""):
@@ -32,6 +33,18 @@ def check(name, condition, detail=""):
         FAIL += 1
         FAILURES.append(name)
         print("  FAIL  %s  %s" % (name, detail))
+
+
+def skip(name, why):
+    """Record a check that could NOT be run.
+
+    Deliberately not a pass. This suite previously reported an unreachable
+    board as `check(..., True)`, which counted an untested claim toward the
+    pass total -- the same rubber-stamp shape as the `or True` that let the
+    country-filter bug ship. A skip has to be visible in the summary.
+    """
+    SKIPPED.append(name)
+    print("  SKIP  %s  (%s)" % (name, why))
 
 
 def test_resolvers():
@@ -272,7 +285,7 @@ def test_idempotency():
     entry = ats.load_registry()[0]
     _, jobs = ats._fetch_and_normalize(entry)
     if not jobs:
-        check("re-sync of one company is idempotent", True, "(board unreachable, skipped)")
+        skip("re-sync of one company is idempotent", "board unreachable")
         return
     stats = {"companies": 0, "fetched": 0, "stored": 0, "pruned": 0, "failed": 0}
     ats._store_company(entry, jobs, stats)
@@ -290,9 +303,11 @@ def main():
     test_search()
     test_schema()
     test_idempotency()
-    print("\n%d passed, %d failed" % (PASS, FAIL))
+    print("\n%d passed, %d failed, %d skipped" % (PASS, FAIL, len(SKIPPED)))
     if FAILURES:
         print("Failures: %s" % ", ".join(FAILURES))
+    if SKIPPED:
+        print("Skipped (NOT verified): %s" % ", ".join(SKIPPED))
     return 1 if FAIL else 0
 
 

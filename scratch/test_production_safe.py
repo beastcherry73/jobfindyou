@@ -103,11 +103,21 @@ try:
     with patch.object(_db_module, "get_required_db_url", return_value=None):
         try:
             _connect_sqlite_entry()
-            check("SQLite banned inside Vercel", False)
-        except AssertionError:
-            check("SQLite banned inside Vercel", True)
+            check("SQLite banned inside Vercel", False, "no exception raised")
+        except AssertionError as e:
+            # The ban is `assert not is_vercel()` in _connect_sqlite(), so a
+            # pass has to be THAT assertion. Matching its message keeps an
+            # unrelated AssertionError from counting as proof.
+            check("SQLite banned inside Vercel",
+                  "forbidden in Vercel" in str(e),
+                  f"AssertionError, but not the ban: {e}")
         except Exception as e:
-            check("SQLite banned inside Vercel", True, f"blocked via {type(e).__name__}")
+            # Previously this counted as a PASS for any exception at all -- so
+            # an import error or a missing app context would have "proved" a
+            # ban that was never exercised.
+            check("SQLite banned inside Vercel", False,
+                  f"blocked by an unrelated {type(e).__name__}, "
+                  f"so the ban itself is unproven: {e}")
 except Exception as e:
     check("SQLite banned inside Vercel suite ran", False, str(e))
 del os.environ["VERCEL"]
