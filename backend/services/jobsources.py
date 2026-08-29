@@ -28,15 +28,12 @@ import os
 import re
 import html
 import logging
-import requests as http_requests
 
 from backend.services import ats
-from backend.services.adzuna_service import (
-    search_jobs as adzuna_search,
-    ADZUNA_COUNTRIES,
-    AdzunaError,
-    AdzunaValidationError,
-)
+# ATS-only since 2026-08-29. The Adzuna client is no longer called; only its
+# validation error type is still referenced, so the route's 400 handling for
+# salary_min>max keeps working unchanged.
+from backend.services.adzuna_service import AdzunaValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +99,10 @@ def get_countries():
         {
             "code": code,
             "name": name,
-            "adzuna": code in ADZUNA_COUNTRIES,
+            # Retained for payload compatibility, now always True: with the
+            # aggregators gone every country is served by the same corpus and
+            # honours the same filters exactly.
+            "adzuna": True,
             "currency": CURRENCY_SYMBOLS.get(code, ""),
         }
         for code, name, _ in _COUNTRY_ROWS
@@ -192,221 +192,6 @@ def _norm(source, title=None, company=None, location=None, url=None, desc=None,
 
 
 # ── Global aggregator clients (each returns {count, results} or None) ───────
-def _careerjet(what, where, locale, page):
-    key = os.environ.get("CAREERJET_API_KEY")
-    if not key:
-        return None
-    params = {
-        "affid": key,
-        "keywords": what or "",
-        "location": where or "",
-        "locale_code": locale,
-        "page": _page_int(page),
-        "pagesize": 20,
-        "sort": "relevance",
-        "user_ip": "0.0.0.0",
-        "user_agent": "JobSpike/1.0",
-    }
-    try:
-        r = http_requests.get(
-            "http://public.api.careerjet.net/search",
-            params=params,
-            headers={"Referer": "https://www.jobspike.in/app/jobs",
-                     "User-Agent": "JobSpike/1.0"},
-            timeout=15,
-        )
-    except http_requests.RequestException as e:
-        logger.warning(f"Careerjet request failed: {e}")
-        return None
-    if r.status_code != 200:
-        logger.warning(f"Careerjet non-200: {r.status_code} {r.text[:120]}")
-        return None
-    try:
-        d = r.json()
-    except ValueError:
-        return None
-    if d.get("type") != "JOBS":
-        return {"count": 0, "results": []}
-    # Careerjet's `url` is a jobviewtrack.com redirect that lands on
-    # careerjet.co.uk (verified), and its `site` field comes back empty — so no
-    # real publisher and not a direct apply link.
-    out = [
-        _norm("Careerjet", title=j.get("title"), company=j.get("company"),
-              location=j.get("locations"), url=j.get("url"),
-              desc=j.get("description"), created=j.get("date"),
-              salary_text=j.get("salary"),
-              publisher=(j.get("site") or "").strip() or "Careerjet",
-              apply_is_direct=False)
-        for j in (d.get("jobs") or [])
-    ]
-    try:
-        count = int(d.get("hits", len(out)))
-    except (ValueError, TypeError):
-        count = len(out)
-    return {"count": count, "results": out}
-
-
-def _jooble(what, where, country_name, page):
-    key = os.environ.get("JOOBLE_API_KEY")
-    if not key:
-        return None
-    loc = where or ""
-    # Jooble infers country from the location string, so anchor it with the
-    # country name (avoids "London" matching London, Kentucky).
-    if country_name and country_name.lower() not in loc.lower():
-        loc = (loc + ", " + country_name).strip(", ")
-    try:
-        r = http_requests.post(
-            f"https://jooble.org/api/{key}",
-            json={"keywords": what or "", "location": loc, "page": str(_page_int(page))},
-            timeout=15,
-        )
-    except http_requests.RequestException as e:
-        logger.warning(f"Jooble request failed: {e}")
-        return None
-    if r.status_code != 200:
-        logger.warning(f"Jooble non-200: {r.status_code} {r.text[:120]}")
-        return None
-    try:
-        d = r.json()
-    except ValueError:
-        return None
-    # Jooble's `link` goes to its own jooble.org listing (verified), but its
-    # `source` field DOES name the true original board (e.g. smartrecruiters.com)
-    # — surface that as the publisher while being clear it isn't a direct link.
-    out = [
-        _norm("Jooble", title=j.get("title"), company=j.get("company"),
-              location=j.get("location"), url=j.get("link"),
-              desc=j.get("snippet"), created=j.get("updated"),
-              salary_text=j.get("salary"),
-              publisher=(j.get("source") or "").strip() or "Jooble",
-              employment_type=j.get("type"),
-              apply_is_direct=False)
-        for j in (d.get("jobs") or [])
-    ]
-    try:
-        count = int(d.get("totalCount", len(out)))
-    except (ValueError, TypeError):
-        count = len(out)
-    return {"count": count, "results": out}
-
-
-def _jsearch(what, where, country_code, page):
-    key = os.environ.get("RAPIDAPI_KEY")
-    if not key:
-        return None
-    q = (what or "jobs").strip()
-    if where:
-        q = f"{q} in {where}"
-    try:
-        r = http_requests.get(
-            "https://jsearch.p.rapidapi.com/search",
-            params={"query": q, "page": str(_page_int(page)), "num_pages": "1",
-                    "country": country_code},
-            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"},
-            timeout=20,
-        )
-    except http_requests.RequestException as e:
-        logger.warning(f"JSearch request failed: {e}")
-        return None
-    if r.status_code != 200:
-        # 403 here usually means the RapidAPI key isn't subscribed to JSearch yet.
-        logger.warning(f"JSearch non-200: {r.status_code} {r.text[:120]}")
-        return None
-    try:
-        d = r.json()
-    except ValueError:
-        return None
-    out = []
-    for j in (d.get("data") or []):
-        loc = ", ".join(x for x in [j.get("job_city"), j.get("job_state"),
-                                    j.get("job_country")] if x)
-        # Prefer an apply_options entry flagged as the direct employer route;
-        # fall back to job_apply_link. This is the one source that exposes the
-        # ORIGINAL posting URL (LinkedIn/Glassdoor/company site) rather than its
-        # own page.
-        apply_url = j.get("job_apply_link") or ""
-        publisher = j.get("job_publisher") or ""
-        opts = j.get("apply_options")
-        if isinstance(opts, list) and opts:
-            direct = next((o for o in opts
-                           if isinstance(o, dict) and o.get("is_direct")), None)
-            chosen = direct or (opts[0] if isinstance(opts[0], dict) else None)
-            if chosen:
-                apply_url = chosen.get("apply_link") or apply_url
-                publisher = chosen.get("publisher") or publisher
-        out.append(_norm(
-            "JSearch", title=j.get("job_title"), company=j.get("employer_name"),
-            location=loc, url=apply_url, desc=j.get("job_description"),
-            created=j.get("job_posted_at_datetime_utc"),
-            salary_min=j.get("job_min_salary"), salary_max=j.get("job_max_salary"),
-            publisher=publisher or "JSearch",
-            employment_type=j.get("job_employment_type"),
-            apply_is_direct=True))
-    return {"count": len(out), "results": out}
-
-
-def _fantastic(what, where, page):
-    """Fantastic Jobs 'Active Jobs DB' (RapidAPI) — ATS/career-site listings only.
-
-    Cleanest provenance of the sources we use: postings come straight from
-    200k+ company career sites across 54 ATS platforms (Workday, Greenhouse,
-    Lever, ...), so `url` is the employer's own ATS page — a genuinely direct
-    apply link, not an aggregator redirect.
-
-    Uses the same RAPIDAPI_KEY as JSearch (one RapidAPI key covers every API you
-    subscribe to). Returns None when unsubscribed (403) so the caller falls
-    through without cost or error.
-
-    NOTE: response field names are handled defensively — this source could not
-    be verified live because the key is not yet subscribed to it.
-    """
-    key = os.environ.get("RAPIDAPI_KEY")
-    if not key:
-        return None
-    host = "active-jobs-db.p.rapidapi.com"
-    params = {"limit": 20, "offset": max(0, (_page_int(page) - 1) * 20)}
-    if what:
-        params["title_filter"] = what
-    if where:
-        params["location_filter"] = where
-    try:
-        r = http_requests.get(
-            f"https://{host}/active-ats-7d", params=params,
-            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": host}, timeout=20,
-        )
-    except http_requests.RequestException as e:
-        logger.warning(f"Fantastic Jobs request failed: {e}")
-        return None
-    if r.status_code != 200:
-        logger.warning(f"Fantastic Jobs non-200: {r.status_code} {r.text[:120]}")
-        return None
-    try:
-        data = r.json()
-    except ValueError:
-        return None
-    rows = data if isinstance(data, list) else (data.get("data") or data.get("jobs") or [])
-    out = []
-    for j in rows:
-        if not isinstance(j, dict):
-            continue
-        loc = j.get("locations_derived") or j.get("location") or j.get("locations")
-        if isinstance(loc, list):
-            loc = ", ".join(str(x) for x in loc if x)
-        org = j.get("organization") or j.get("company") or j.get("employer")
-        out.append(_norm(
-            "Fantastic Jobs",
-            title=j.get("title"), company=org, location=loc,
-            url=j.get("url") or j.get("job_url") or j.get("apply_url"),
-            desc=j.get("description") or j.get("description_text"),
-            created=j.get("date_posted") or j.get("posted_at"),
-            salary_text=j.get("salary_raw") or j.get("salary"),
-            publisher=j.get("source") or j.get("ats") or "Employer ATS",
-            employment_type=j.get("employment_type"),
-            apply_is_direct=True))
-    return {"count": len(out), "results": out}
-
-
 def _dedupe_key(job):
     """Identity for de-duplication: title + company + location, normalized.
 
@@ -454,114 +239,82 @@ def _merge_rank_dedupe(groups):
     return merged
 
 
-def unified_search(what="", where="", country="in", page=1, **adzuna_filters):
+def unified_search(what="", where="", country="in", page=1, per_page=20,
+                   **adzuna_filters):
     """Return {count, results, country, currency, source_used, sources_used}.
 
-    Queries the direct-apply sources (JSearch, Fantastic Jobs) alongside the best
-    aggregator for the country, then merges + de-duplicates and ranks real apply
-    links first. Sources that are unconfigured or unsubscribed simply return
-    nothing and are skipped at no cost.
+    ATS-ONLY as of 2026-08-29. Every result now comes from our synced copy of
+    employers' own public job boards, so every `apply_url` reaches the real
+    employer application page.
 
-    Adzuna serves its 18 countries with full filters and structured salary;
-    Careerjet/Jooble provide the wider country coverage Adzuna lacks.
-    AdzunaValidationError / AdzunaError propagate so the route answers 400/502
-    honestly rather than silently returning an empty list.
+    The five third-party sources were removed deliberately:
+
+      Adzuna, Careerjet, Jooble  aggregators whose links land on their OWN
+          site, not the employer's -- `apply_is_direct` was False for all
+          three. Adzuna was additionally PREEMPTING the other two: they only
+          ran inside `if not aggregated`, so wherever Adzuna answered (its 18
+          markets, India included) Careerjet's and Jooble's results were
+          fetched and silently discarded.
+      JSearch     returned HTTP 403 not-subscribed on this plan; it had been
+          contributing nothing for some time.
+      Fantastic Jobs  same aggregator problem, no direct apply.
+
+    Consequence, stated plainly: coverage is now exactly our registry's
+    coverage. Countries where few employers use these seven platforms return
+    far fewer results than before, and the fix is to grow the registry rather
+    than to re-add an aggregator.
+
+    AdzunaValidationError still propagates for salary_min>max so the route
+    answers 400; the name is legacy and kept only to avoid churning the route.
     """
     country = (country or "in").strip().lower()
-    info = _COUNTRY_INFO.get(country)
-    name = info["name"] if info else country.upper()
-    locale = info["cj"] if info else "en_" + country.upper()
 
-    # These two filters exist only for our own corpus; Adzuna's client takes a
-    # fixed kwarg set and would raise on them, so remove them from the
-    # passthrough before any aggregator call.
+    # Corpus-only filters: not part of the historical Adzuna kwarg set, so they
+    # are popped before the rest is forwarded.
     work_mode = (adzuna_filters.pop("work_mode", "") or "").strip().lower()
     experience_level = (adzuna_filters.pop("experience_level", "") or "").strip().lower()
 
-    ats_rows, direct, aggregated = [], [], []
-    total = 0
+    # Salary sanity check. Previously this was enforced inside the Adzuna
+    # client; with Adzuna gone the API would silently return an empty list for
+    # min>max, so it is enforced here. The exception type is unchanged because
+    # the route already maps it to a 400.
+    smin, smax = adzuna_filters.get("salary_min"), adzuna_filters.get("salary_max")
+    try:
+        if smin is not None and smax is not None and smin != "" and smax != "":
+            if float(smin) > float(smax):
+                raise AdzunaValidationError(
+                    "Minimum salary cannot be higher than maximum salary.")
+    except (TypeError, ValueError):
+        pass    # unparseable numbers are ignored, as before
 
-    def run(fn):
-        try:
-            return fn()
-        except Exception as e:
-            logger.warning(f"Job source error: {e}")
-            return None
-
-    # 0) Keyless ATS layer — our own synced copy of employers' public boards.
-    # Every filter is honoured exactly here, because we are querying our own
-    # table rather than negotiating with a provider's partial filter support.
-    ats_res = run(lambda: ats.search(
-        what=what, where=where, country=country, page=page,
+    res = ats.search(
+        what=what, where=where, country=country, page=page, per_page=per_page,
         what_exclude=adzuna_filters.get("what_exclude") or "",
         work_mode=work_mode,
         experience_level=experience_level,
         employment_type=_JOB_TYPE_TO_EMPLOYMENT.get(adzuna_filters.get("job_type") or ""),
-        salary_min=adzuna_filters.get("salary_min"),
-        salary_max=adzuna_filters.get("salary_max"),
+        salary_min=smin,
+        salary_max=smax,
         salary_include_unknown=True,
         max_days_old=adzuna_filters.get("max_days_old"),
         sort_by=(adzuna_filters.get("sort_by") or "relevance"),
-    ))
-    if ats_res and ats_res.get("results"):
-        ats_rows = ats_res["results"]
-        total += ats_res.get("count", 0)
+    )
+    results = (res or {}).get("results") or []
 
-    # 1) Direct-apply sources — these carry the real publisher + original URL.
-    for fn in (lambda: _jsearch(what, where, country, page),
-               lambda: _fantastic(what, where, page)):
-        r = run(fn)
-        if r and r.get("results"):
-            direct.extend(r["results"])
-
-    # 2) Aggregator for country coverage / structured filters.
-    if country in ADZUNA_COUNTRIES:
-        try:
-            res = adzuna_search(what=what, where=where, country=country,
-                                page=page, **adzuna_filters)
-        except AdzunaValidationError:
-            raise  # bad user input (e.g. salary_min>max) -> route answers 400
-        except AdzunaError as e:
-            # Adzuna unconfigured/unreachable: don't fail the whole search when
-            # other sources can still serve this country.
-            logger.warning(f"Adzuna unavailable, falling back: {e}")
-            res = None
-        if res and res.get("results"):
-            for j in res["results"]:
-                j.setdefault("publisher", "Adzuna")
-                j["apply_is_direct"] = False     # verified: lands on adzuna.*
-                j.setdefault("apply_url", j.get("redirect_url", ""))
-                j.setdefault("posted_at", j.get("created", ""))
-            aggregated = res["results"]
-            total += res.get("count", 0)
-
-    if not aggregated:
-        for fn in (lambda: _careerjet(what, where, locale, page),
-                   lambda: _jooble(what, where, name, page)):
-            r = run(fn)
-            if r and r.get("results"):
-                aggregated = r["results"]
-                total += r.get("count", 0)
-                break
-
-    merged = _merge_rank_dedupe([ats_rows, direct, aggregated])
-    if not merged:
-        return {"count": 0, "results": [], "country": country, "currency": "",
-                "source_used": "", "sources_used": []}
-
-    # Report the upstream total where we have one (aggregators report a real
-    # corpus count); otherwise fall back to what we actually merged.
-    count = max(total, len(merged)) if total else len(merged)
     used = []
-    for j in merged:
+    for j in results:
         if j.get("source") and j["source"] not in used:
             used.append(j["source"])
 
+    # `count` is now the number of rows that ACTUALLY match in our corpus, so
+    # it is reachable by paging. The old value summed the aggregators' upstream
+    # totals and reported figures like "263,758 results found" above 34 visible
+    # cards with no way to reach the rest.
     return {
-        "count": count,
-        "results": merged,
+        "count": (res or {}).get("count", len(results)),
+        "results": results,
         "country": country,
-        "currency": ADZUNA_COUNTRIES.get(country, ""),
-        "source_used": merged[0].get("source", ""),
+        "currency": CURRENCY_SYMBOLS.get(country, ""),
+        "source_used": results[0].get("source", "") if results else "",
         "sources_used": used,
     }

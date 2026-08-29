@@ -131,12 +131,6 @@
         </div>
         <div class="jp-grid">
           <div class="jp-filter">
-            <label for="jpCategory">Category</label>
-            <select class="ws-select" id="jpCategory">
-              <option value="">All categories</option>
-            </select>
-          </div>
-          <div class="jp-filter">
             <label for="jpExperience">Experience level</label>
             <select class="ws-select" id="jpExperience">
               <option value="">Any level</option>
@@ -214,7 +208,6 @@
         </div>
       </div>
 
-      <div id="jpFilterHint" style="display:none;font-size:11.5px;color:var(--ws-text-tertiary);margin-top:16px;"></div>
     </div>
   </form>
 
@@ -259,23 +252,6 @@
   function toneClass(pct) { return pct >= 70 ? 'ws-badge-good' : pct >= 40 ? 'ws-badge-warn' : 'ws-badge-bad'; }
   function val(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
-  async function loadCategories(country) {
-    var sel = document.getElementById('jpCategory');
-    sel.innerHTML = '<option value="">All categories</option>';
-    try {
-      var res = await fetch('/api/jobs/categories?country=' + encodeURIComponent(country || 'in'));
-      if (!res.ok) return;
-      var data = await res.json();
-      (data.categories || []).forEach(function(c){
-        if (!c || !c.tag) return;
-        var opt = document.createElement('option');
-        opt.value = c.tag; opt.textContent = c.label || c.tag;
-        sel.appendChild(opt);
-      });
-    } catch (e) {}
-  }
-
-  var ADZUNA_SET = {};
   var COUNTRY_NAME = {};
   var COUNTRY_CUR = {};      // country code -> local currency symbol
 
@@ -289,7 +265,6 @@
         (data.countries || []).forEach(function(c){
           COUNTRY_NAME[c.code] = c.name;
           COUNTRY_CUR[c.code] = c.currency || '';
-          if (c.adzuna) ADZUNA_SET[c.code] = true;
           var opt = document.createElement('option');
           opt.value = c.code; opt.textContent = c.name;
           sel.appendChild(opt);
@@ -310,17 +285,6 @@
   // Adzuna's category taxonomy is the only filter we cannot honour elsewhere.
   // Everything else runs against our own synced employer-board corpus, which
   // covers every country, so those filters stay live regardless of market.
-  var ADZUNA_ONLY = ['jpCategory'];
-  function setAdzunaFilters(enabled) {
-    ADZUNA_ONLY.forEach(function(id){
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.disabled = !enabled;
-      var wrap = el.closest('.jp-filter');
-      if (wrap) wrap.style.opacity = enabled ? '' : '0.45';
-    });
-  }
-
   // ── Filter panel disclosure + active-filter chips ────────────────────
   // The eight refining filters live behind a disclosure; Country and Sort stay
   // in the always-visible bar (Country scopes the whole search, Sort is a view
@@ -328,7 +292,6 @@
   // Selecting a value never triggers a search on its own — the user still
   // presses Search, exactly as before.
   var CHIP_SPECS = [
-    { id:'jpCategory',   label:'Category' },
     { id:'jpExperience', label:'Experience' },
     { id:'jpJobType',    label:'Job type' },
     { id:'jpWorkMode',   label:'Work mode' },
@@ -404,22 +367,15 @@
   }
 
   function onCountryChange() {
+    // Results now come only from employers' own job boards (our own corpus),
+    // so EVERY filter applies exactly to EVERY country. There is no longer a
+    // privileged set of "full filter" markets to enable or grey out, and the
+    // Category filter is gone entirely -- it was an Adzuna taxonomy with no
+    // equivalent in our data, so keeping it would have been a control that
+    // silently did nothing.
     var country = document.getElementById('jpCountry').value || 'in';
-    var isAdzuna = !!ADZUNA_SET[country];
-    setAdzunaFilters(isAdzuna);
     updateCurrencySymbol(country);       // always follow the country
-    var hint = document.getElementById('jpFilterHint');
-    if (isAdzuna) {
-      hint.style.display = 'none';
-      loadCategories(country);
-    } else {
-      hint.textContent = 'Job categories are an Adzuna-market filter. Every other filter still '
-        + 'applies exactly to listings taken from employer job boards, which cover '
-        + (COUNTRY_NAME[country] || 'this country') + '.';
-      hint.style.display = 'block';
-      document.getElementById('jpCategory').innerHTML = '<option value="">All categories</option>';
-    }
-    refreshChips();   // currency symbol and category availability both changed
+    refreshChips();                      // currency symbol changed
   }
 
   async function doSearch(e) {
@@ -443,7 +399,6 @@
       if (what) params.set('what', what);
       if (where) params.set('where', where);
       var exclude = val('jpExclude'); if (exclude) params.set('what_exclude', exclude);
-      var category = val('jpCategory'); if (category) params.set('category', category);
       var jobType = val('jpJobType'); if (jobType) params.set('job_type', jobType);
       if (salaryMin) params.set('salary_min', salaryMin);
       if (salaryMax) params.set('salary_max', salaryMax);
