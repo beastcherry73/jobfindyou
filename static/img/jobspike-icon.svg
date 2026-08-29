@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"
+     width="160" height="160" role="img" aria-label="JobSpike">
+  <g transform="translate(10, 17)">
+    <polyline points="0,120 35,120 55,40 75,90 95,10 115,70 140,70"
+              fill="none" stroke="#4F46E5" stroke-width="10"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="95" cy="10" r="9" fill="#4F46E5"/>
+  </g>
+</svg>

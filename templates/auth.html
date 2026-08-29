@@ -6,6 +6,9 @@
   <title>{{ 'Create Account' if mode == 'register' else 'Welcome Back' }} — JobSpike</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="icon" type="image/svg+xml" href="/static/img/jobspike-icon.svg">
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
   <style>
     :root {
       --auth-bg: #F7F5F0;
@@ -187,7 +190,7 @@
   <main class="auth-card">
     <div class="ds-card">
       <a class="brand" href="{{ url_for('auth.login') }}">
-        <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6"/><path d="m6 12 6-6 6 6"/></svg></span>JobSpike
+        <img src="/static/img/jobspike-logo.svg" alt="JobSpike" style="height:30px;width:auto;display:block;">
       </a>
 
       <div class="ds-eyebrow" style="margin-top:24px;">{{ 'Get started' if mode == 'register' else 'Welcome back' }}</div>
