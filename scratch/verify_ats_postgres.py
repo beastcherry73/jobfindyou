@@ -169,6 +169,27 @@ def main():
                        experience_level="senior", max_days_old=90, per_page=10)
     check("combined filters run on Postgres", isinstance(combo["count"], int),
           str(combo["count"]))
+
+    # The country clause uses COALESCE(country_code, '') = '' to let ONLY the
+    # genuinely global remote rows cross a country boundary. SQLite and
+    # Postgres disagree about enough (NULL ordering, timestamp params, empty
+    # strings in typed columns) that this has to be seen working on real
+    # Postgres, not just locally -- the previous clause admitted every located
+    # remote row into every country.
+    for cc in ("in", "id", "de"):
+        res = ats.search(country=cc, per_page=50)
+        off = []
+        for row in res["results"]:
+            got = ats.resolve_country(row.get("location") or "")
+            if got and got != cc:
+                off.append((row.get("location"), got))
+        check("country=%s returns no other country's located jobs" % cc,
+              not off, "%d off-country, e.g. %s" % (len(off), off[0] if off else ""))
+    ids = ats.search(country="id", per_page=50)
+    ins = ats.search(country="in", per_page=50)
+    check("different countries return different result sets",
+          {r["id"] for r in ids["results"]} != {r["id"] for r in ins["results"]},
+          "id=%d in=%d" % (ids["count"], ins["count"]))
     if base["results"]:
         r = base["results"][0]
         print("  sample row: %s | %s | %s" % (r["company"][:20], r["title"][:34],
