@@ -61,7 +61,39 @@
     .jp-span2 { grid-column:auto; }
   }
   .jp-attribution { font-size:11px; color:var(--ws-text-tertiary); margin-bottom:14px; }
-  .jp-card { padding:18px 20px; margin-bottom:12px; }
+  /* Split pane: list left, detail right. Collapses to a single column below
+     980px, where the detail panel is shown in place of the list instead of
+     being squeezed beside it. */
+  .jp-split { display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr);
+              gap:16px; align-items:start; }
+  .jp-list { max-height:calc(100vh - 260px); overflow-y:auto; padding-right:2px; }
+  .jp-detail { position:sticky; top:12px; max-height:calc(100vh - 260px);
+               overflow-y:auto; }
+  @media (max-width: 980px) {
+    .jp-split { grid-template-columns:1fr; }
+    .jp-list, .jp-detail { max-height:none; position:static; }
+    .jp-split.jp-showing-detail .jp-list { display:none; }
+  }
+  .jp-detail-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px;
+                     padding:56px 24px; }
+  .jp-detail-head { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+  .jp-detail-title { font-size:19px; font-weight:700; line-height:1.3; }
+  .jp-detail-meta { font-size:13px; color:var(--ws-text-secondary); margin-top:4px; }
+  .jp-detail-actions { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+  .jp-detail-body { font-size:13.5px; line-height:1.7; color:var(--ws-text-secondary);
+                    white-space:pre-wrap; word-break:break-word; }
+  .jp-detail-label { font-size:11px; font-weight:700; letter-spacing:.08em;
+                     text-transform:uppercase; color:var(--ws-text-tertiary);
+                     margin-bottom:8px; }
+  .jp-back { display:none; }
+  @media (max-width: 980px) { .jp-split.jp-showing-detail .jp-back { display:inline-flex; } }
+
+  /* Selected card gets an accent rail, matching the rest of the workspace. */
+  .jp-card { padding:16px 18px; margin-bottom:10px; cursor:pointer;
+             border-left:3px solid transparent; transition:border-color .15s, background .15s; }
+  .jp-card:hover { background:var(--ws-surface-hover); }
+  .jp-card.jp-selected { border-left-color:var(--ws-primary);
+                         background:var(--ws-primary-subtle); }
   .jp-card-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; }
   .jp-title { font-size:15px; font-weight:700; color:var(--ws-text); }
   .jp-meta { font-size:12.5px; color:var(--ws-text-secondary); margin-top:3px; }
@@ -221,7 +253,12 @@
 
   <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
   <div class="jp-attribution">Listings come straight from employers&#39; own job boards (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), plus Adzuna, Careerjet &amp; Jooble — each listing is labelled with its source.</div>
-  <div id="jpResults"></div>
+  <div class="jp-split" id="jpSplit">
+    <div class="jp-list" id="jpResults"></div>
+    <aside class="jp-detail ws-card" id="jpDetail">
+      <div class="jp-detail-empty">Select a role to see the full description.</div>
+    </aside>
+  </div>
 </div>
 
 <script>
@@ -242,6 +279,9 @@
     br:{s:'R$',l:'pt-BR'}, mx:{s:'MX$',l:'es-MX'}, ch:{s:'CHF ',l:'de-CH'}
   };
   var activeCountry = 'in';
+  // Backs the split pane: the rendered result set and which row is open.
+  var currentList = [];
+  var selectedIdx = -1;
 
   function cur(){ return CURRENCY[activeCountry] || CURRENCY.in; }
   function fmtSalary(min, max, predicted) {
@@ -434,14 +474,24 @@
   function renderResults(list, count) {
     var status = document.getElementById('jpStatus');
     var wrap = document.getElementById('jpResults');
+    var detail = document.getElementById('jpDetail');
+    var split = document.getElementById('jpSplit');
+
+    // A new search invalidates whatever was open in the panel.
+    currentList = list || [];
+    selectedIdx = -1;
+    if (split) split.classList.remove('jp-showing-detail');
+
     if (!list.length) {
       status.textContent = '';
       wrap.innerHTML = '<div class="jp-empty">No listings found. Try broader keywords or a different location.</div>';
+      if (detail) detail.innerHTML = '<div class="jp-detail-empty">Select a role to see the full description.</div>';
       return;
     }
     status.textContent = count.toLocaleString() + ' result' + (count !== 1 ? 's' : '') + ' found';
     wrap.innerHTML = '';
-    list.forEach(function(job) {
+    if (detail) detail.innerHTML = '<div class="jp-detail-empty">Select a role to see the full description.</div>';
+    list.forEach(function(job, idx) {
       var card = document.createElement('div');
       card.className = 'ws-card jp-card';
       var salary = job.salary_text ? job.salary_text : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
@@ -468,8 +518,6 @@
           sub.push('<span>originally ' + esc(job.publisher) + '</span>');
         }
       }
-      // CTA text must not imply a direct application when it isn't one.
-      var ctaLabel = job.apply_is_direct ? 'Apply' : ('View on ' + (job.source || 'source'));
       // A resolved company domain gives a real logo; everything else falls back
       // to a lettermark. onerror covers the case where the icon service has no
       // record of the domain, so a card never shows a broken image.
@@ -478,6 +526,8 @@
         ? '<span class="jp-logo"><img src="' + esc(job.company_logo) + '" alt="" loading="lazy" '
           + 'onerror="this.parentNode.innerHTML=&quot;<span class='jp-letter'>' + initial + '</span>&quot;"></span>'
         : '<span class="jp-logo"><span class="jp-letter">' + initial + '</span></span>';
+      // The card is a SELECTOR now, not an action surface -- every action moved
+      // to the detail panel, so one click on a card does exactly one thing.
       card.innerHTML =
         '<div class="jp-card-head">' +
           '<div>' + logoHtml + '<div>' +
@@ -485,15 +535,114 @@
             '<div class="jp-meta">' + esc(job.company || 'Company undisclosed') + (job.location ? ' · ' + esc(job.location) : '') + '</div>' +
             (sub.length ? '<div class="jp-sub">' + sub.join('') + '</div>' : '') +
           '</div></div>' +
-          '<div class="jp-actions">' +
-            '<button class="ws-btn ws-btn-ghost ws-btn-sm jp-match-btn">Check match</button>' +
-            '<button class="ws-btn ws-btn-primary ws-btn-sm jp-apply-btn">' + esc(ctaLabel) + '</button>' +
-          '</div>' +
         '</div>';
-      card.querySelector('.jp-match-btn').addEventListener('click', function(){ checkMatch(job, card.querySelector('.jp-match-btn')); });
-      card.querySelector('.jp-apply-btn').addEventListener('click', function(){ applyJob(job, card, card.querySelector('.jp-apply-btn')); });
+      card.addEventListener('click', function(){ selectJob(idx); });
       wrap.appendChild(card);
     });
+
+    // Open the first result so a successful search never shows an empty
+    // column. Narrow screens keep the list in front instead.
+    if (list.length && window.innerWidth > 980) selectJob(0);
+  }
+
+  // -- Detail panel --------------------------------------------------------
+  function selectJob(idx) {
+    var job = currentList[idx];
+    if (!job) return;
+    selectedIdx = idx;
+    Array.prototype.forEach.call(
+      document.querySelectorAll('#jpResults .jp-card'),
+      function (c, i) { c.classList.toggle('jp-selected', i === idx); });
+    document.getElementById('jpSplit').classList.add('jp-showing-detail');
+    renderDetail(job);
+  }
+
+  function renderDetail(job) {
+    var host = document.getElementById('jpDetail');
+    if (!host) return;
+
+    var initial = esc((job.company || '?').trim().charAt(0).toUpperCase());
+    var fallback = '<span class=\'jp-letter\'>' + initial + '</span>';
+    var logoBox = 'style="width:44px;height:44px;flex:0 0 44px;"';
+    var logoHtml = job.company_logo
+      ? '<span class="jp-logo" ' + logoBox + '><img src="' + esc(job.company_logo) + '" alt="" '
+        + 'onerror="this.parentNode.innerHTML=&quot;' + fallback + '&quot;"></span>'
+      : '<span class="jp-logo" ' + logoBox + '>' + fallback + '</span>';
+
+    var bits = [];
+    if (job.location) bits.push(esc(job.location));
+    if (job.created) bits.push('Posted ' + esc(fmtDate(job.created)));
+    var salary = job.salary_text ? job.salary_text
+      : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
+    if (salary) bits.push(esc(salary));
+    if (job.employment_type) bits.push(esc(job.employment_type));
+
+    // Same honesty rule as the card: never imply a direct application when the
+    // link only reaches an aggregator.
+    var viewLabel = job.apply_is_direct ? 'View posting' : ('View on ' + (job.source || 'source'));
+    var acctWarn = job.requires_account
+      ? '<div class="ws-badge ws-badge-warn" style="margin-bottom:14px;">Applying needs an account with this employer&#39;s ATS</div>'
+      : '';
+
+    host.innerHTML =
+      '<button class="ws-btn ws-btn-ghost ws-btn-sm jp-back" id="jpBack" style="margin-bottom:12px;">&larr; Back to results</button>' +
+      '<div class="jp-detail-head">' + logoHtml +
+        '<div style="min-width:0;">' +
+          '<div class="jp-detail-title">' + esc(job.title || 'Untitled role') + '</div>' +
+          '<div class="jp-detail-meta">' + esc(job.company || 'Company undisclosed') + '</div>' +
+          (bits.length ? '<div class="jp-sub" style="margin-top:8px;"><span>' + bits.join('</span><span>') + '</span></div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="jp-detail-actions">' +
+        '<button class="ws-btn ws-btn-primary ws-btn-sm" id="jpTailor">Tailor for this</button>' +
+        '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="jpSave">Save</button>' +
+        '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpView">' + esc(viewLabel) +
+          ' <span aria-hidden="true" style="opacity:.7;">&#8599;</span></button>' +
+        '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpMatch">Check match</button>' +
+      '</div>' + acctWarn +
+      '<div class="jp-detail-label">About this role</div>' +
+      '<div class="jp-detail-body">' + esc(job.description || 'No description was published for this listing.') + '</div>';
+
+    var back = document.getElementById('jpBack');
+    if (back) back.addEventListener('click', function () {
+      document.getElementById('jpSplit').classList.remove('jp-showing-detail');
+    });
+    document.getElementById('jpTailor').addEventListener('click', function () { tailorFor(job); });
+    document.getElementById('jpSave').addEventListener('click', function (e) { saveJob(job, e.currentTarget); });
+    document.getElementById('jpView').addEventListener('click', function (e) { applyJob(job, null, e.currentTarget); });
+    document.getElementById('jpMatch').addEventListener('click', function (e) { checkMatch(job, e.currentTarget); });
+  }
+
+  // "Tailor for this" hands the job description to the existing analysis flow,
+  // which is what actually tailors a resume against a role today. It does not
+  // pretend to be a separate feature that does not exist yet.
+  function tailorFor(job) {
+    var jd = (job.description || '').trim();
+    if (!jd) jd = (job.title || '') + ' at ' + (job.company || '');
+    try {
+      if (typeof switchSection === 'function') switchSection('analysis-upload');
+      var box = document.getElementById('analysisJobDesc');
+      if (box) { box.value = jd; box.dispatchEvent(new Event('input', { bubbles: true })); }
+      toast('Job description loaded \u2014 pick your resume to tailor it.');
+    } catch (e) { toast('Could not open the tailoring step.'); }
+  }
+
+  // Save = track it WITHOUT opening the posting, so the Pipeline can hold
+  // roles the user has not applied to yet.
+  async function saveJob(job, btn) {
+    btn.disabled = true;
+    try {
+      var res = await fetch('/api/jobs/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: job.title, company: job.company, location: job.location,
+          listing_url: job.redirect_url,
+          match_percent: (job._match != null ? job._match : null)
+        })
+      });
+      if (res.ok) { btn.textContent = 'Saved'; toast('Saved to your pipeline.'); }
+      else { btn.disabled = false; toast('Could not save this role.'); }
+    } catch (e) { btn.disabled = false; toast('Could not save this role.'); }
   }
 
   async function checkMatch(job, btn) {
