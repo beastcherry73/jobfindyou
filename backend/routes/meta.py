@@ -32,4 +32,15 @@ def health():
             "jooble": bool(os.environ.get("JOOBLE_API_KEY")),
             "jsearch_rapidapi": bool(os.environ.get("RAPIDAPI_KEY")),
         },
+        # Same presence-only contract, for the AI provider pool. Without this
+        # there is no way to tell from outside whether the multi-provider
+        # failover is actually ARMED in a given environment: the routing code
+        # ships in the bundle, but a provider with no key is skipped silently,
+        # so an environment holding only GROQ_API_KEY behaves exactly like the
+        # old Groq-only chain and fails the same way when Groq is saturated.
+        "ai_providers_configured": {
+            "groq": bool(os.environ.get("GROQ_API_KEY")),
+            "gemini": bool(os.environ.get("GEMINI_API_KEY")),
+            "nvidia": bool(os.environ.get("NVIDIA_API_KEY")),
+        },
     })
