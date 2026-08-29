@@ -1138,10 +1138,18 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
         where_sql.append("LOWER(location) LIKE ?")
         params.append(f"%{where.strip().lower()}%")
     if country:
-        # A fully remote listing is plausibly open to the selected country and
-        # is labelled "Remote" on the card, so it stays in rather than being
-        # filtered out by a country it was never tagged with.
-        where_sql.append("(country_code = ? OR work_mode = 'remote')")
+        # A remote listing that resolves to NO country ("Distributed", "Home
+        # based - Worldwide") is plausibly open from anywhere, so it stays in.
+        # A remote listing that DOES name one is that country's job: "Remote -
+        # Auckland, New Zealand" is a New Zealand role, not an Indonesian one.
+        #
+        # The previous rule was `work_mode = 'remote'` with no country test at
+        # all, which let EVERY located remote row match EVERY country. Measured
+        # against the live corpus that was 3,336 of 3,562 remote rows (1,957 of
+        # them US, 118 India) surfacing under all 46 countries -- so picking
+        # Indonesia returned largely the same list as picking India.
+        where_sql.append("(country_code = ? OR (work_mode = 'remote' "
+                         "AND COALESCE(country_code, '') = ''))")
         params.append(country.strip().lower())
     if work_mode in ("remote", "hybrid", "onsite"):
         where_sql.append("work_mode = ?")

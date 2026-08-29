@@ -151,11 +151,36 @@ def test_search():
           "%d vs %d" % (excl["count"], eng["count"]))
 
     india = ats.search(country="in", per_page=50)
-    check("country filter returns in-country or remote",
-          india["results"] and all(
-              r["location"] == "" or r["work_mode"] == "remote" or True
-              for r in india["results"]))
     check("country narrows the corpus", india["count"] < base["count"])
+    # Every returned row must resolve to the requested country, or to no
+    # country at all (a genuinely global remote listing: "Distributed",
+    # "Home based - Worldwide"). The previous assertion here ended in
+    # `or True`, so it passed no matter what -- and it hid a filter that
+    # admitted every located remote row into every country.
+    #
+    # country_code is a filter column, not part of the returned schema, so the
+    # check re-resolves the location string the user actually sees on the card.
+    def _off_country(rows, want):
+        out = []
+        for r in rows:
+            got = ats.resolve_country(r.get("location") or "")
+            if got and got != want:
+                out.append((r.get("location"), got))
+        return out
+
+    off = _off_country(india["results"], "in")
+    check("country filter admits no other country's located jobs",
+          india["results"] and not off,
+          "%d off-country rows, e.g. %s" % (len(off), off[0] if off else ""))
+
+    # The reported regression: picking Indonesia returned India's jobs, because
+    # a located remote row matched every country. Both are well populated in
+    # the corpus, so a stray here is a real leak, not a corpus artifact.
+    indo = ats.search(country="id", per_page=50)
+    strays = _off_country(indo["results"], "id")
+    check("selecting Indonesia returns no other country's located jobs",
+          indo["results"] and not strays,
+          "%d strays, e.g. %s" % (len(strays), strays[0] if strays else ""))
 
     # The whole point of owning the data: stack four filters at once.
     combo = ats.search(what="engineer", country="in", work_mode="remote",
