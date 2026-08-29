@@ -39,7 +39,16 @@ def jobs_page():
 @jobs_bp.route("/app/tracker")
 @login_required
 def tracker_page():
-    return render_template("tracker.html", user_name=session.get("user_name", "there"))
+    # The tracker is a section of the workspace shell now, not a standalone
+    # page. This URL is kept because it is bookmarked and linked from older
+    # emails; it deep-links straight into the Pipeline tab instead of loading a
+    # second, separate app. templates/tracker.html is retained only until those
+    # links are confirmed dead.
+    return render_template(
+        "workspace.html",
+        user_name=session.get("user_name", "there"),
+        initial_section="pipeline",
+    )
 
 
 # ── Job search (Adzuna proxy) ──────────────────────────────────────────

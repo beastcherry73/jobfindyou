@@ -67,6 +67,14 @@
   .jp-meta { font-size:12.5px; color:var(--ws-text-secondary); margin-top:3px; }
   .jp-sub { font-size:12px; color:var(--ws-text-tertiary); margin-top:6px; display:flex; gap:12px; flex-wrap:wrap; }
   .jp-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; }
+  /* Company logo. Fixed box so a missing or slow image never reflows the row.
+     `object-fit:contain` keeps non-square marks from being stretched. */
+  .jp-logo { width:36px; height:36px; border-radius:9px; flex:0 0 36px;
+             background:var(--ws-surface-hover); display:grid; place-items:center;
+             overflow:hidden; margin-right:12px; }
+  .jp-logo img { width:100%; height:100%; object-fit:contain; display:block; }
+  .jp-logo .jp-letter { font-size:15px; font-weight:700; color:var(--ws-text-secondary); }
+  .jp-card-head > div:first-child { display:flex; align-items:flex-start; }
   .jp-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 20px; }
   .jp-notice { padding:14px 16px; border-radius:var(--ws-radius-lg); background:var(--ws-warn-bg); color:var(--ws-warn); font-size:13px; margin-bottom:20px; }
 </style>
@@ -462,13 +470,21 @@
       }
       // CTA text must not imply a direct application when it isn't one.
       var ctaLabel = job.apply_is_direct ? 'Apply' : ('View on ' + (job.source || 'source'));
+      // A resolved company domain gives a real logo; everything else falls back
+      // to a lettermark. onerror covers the case where the icon service has no
+      // record of the domain, so a card never shows a broken image.
+      var initial = esc((job.company || '?').trim().charAt(0).toUpperCase());
+      var logoHtml = job.company_logo
+        ? '<span class="jp-logo"><img src="' + esc(job.company_logo) + '" alt="" loading="lazy" '
+          + 'onerror="this.parentNode.innerHTML=&quot;<span class='jp-letter'>' + initial + '</span>&quot;"></span>'
+        : '<span class="jp-logo"><span class="jp-letter">' + initial + '</span></span>';
       card.innerHTML =
         '<div class="jp-card-head">' +
-          '<div>' +
+          '<div>' + logoHtml + '<div>' +
             '<div class="jp-title">' + esc(job.title || 'Untitled role') + '</div>' +
             '<div class="jp-meta">' + esc(job.company || 'Company undisclosed') + (job.location ? ' · ' + esc(job.location) : '') + '</div>' +
             (sub.length ? '<div class="jp-sub">' + sub.join('') + '</div>' : '') +
-          '</div>' +
+          '</div></div>' +
           '<div class="jp-actions">' +
             '<button class="ws-btn ws-btn-ghost ws-btn-sm jp-match-btn">Check match</button>' +
             '<button class="ws-btn ws-btn-primary ws-btn-sm jp-apply-btn">' + esc(ctaLabel) + '</button>' +

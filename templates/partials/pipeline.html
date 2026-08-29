@@ -1,0 +1,201 @@
+<!--
+  Pipeline (formerly the standalone /app/tracker page).
+
+  Moved INTO the workspace shell so Browse / For You / Pipeline are three tabs
+  of one app rather than one SPA plus a separate full-page document. The old
+  page carried its own <html>, its own topbar and its own theme bootstrap, all
+  of which the shell already provides.
+
+  Self-contained the same way jobsearch.html is: pl-* scoped styles and an IIFE
+  exposing window.initPipeline, called by switchSection('pipeline').
+
+  Status stages are unchanged in this pass -- the Saved/Applied/Interviewing/
+  Offer/Hired/Rejected rebuild is the next stage, and mixing it into the move
+  would make a regression impossible to attribute.
+-->
+<style>
+  .pl-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 20px; }
+  .pl-empty a { color:var(--ws-primary); font-weight:600; text-decoration:none; cursor:pointer; }
+  .pl-table th.sortable { cursor:pointer; user-select:none; }
+  .pl-table th.sortable:hover { color:var(--ws-text); }
+</style>
+
+<div class="ws-page-header">
+  <div>
+    <h1 class="ws-page-title">Pipeline</h1>
+    <p class="ws-page-subtitle">
+      Listings you open from Browse land here automatically. Update the status as
+      you move through each process.
+    </p>
+  </div>
+</div>
+
+<div class="ws-card" style="padding:0;overflow:hidden;">
+  <div class="ws-table-wrap" style="border:none;">
+    <table class="ws-table pl-table" id="plTable">
+      <thead><tr>
+        <th class="sortable" data-key="job_title">Role</th>
+        <th class="sortable" data-key="match_percent">Match</th>
+        <th class="sortable" data-key="status">Status</th>
+        <th class="sortable" data-key="applied_date">Date</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="plBody"></tbody>
+    </table>
+  </div>
+  <div id="plEmpty" class="pl-empty" style="display:none;">
+    Nothing tracked yet. <a onclick="switchSection('jobsearch')">Browse jobs &rarr;</a>
+  </div>
+</div>
+
+<script>
+(function () {
+  var rows = [];
+  var sortKey = 'applied_date';
+  var sortDir = -1;
+  var inited = false;
+
+  var STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected'];
+
+  function esc(s) {
+    return (s || '').replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function toneClass(p) { return p >= 70 ? 'ws-badge-good' : p >= 40 ? 'ws-badge-warn' : 'ws-badge-bad'; }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    var d = new Date(iso);
+    return isNaN(d) ? '—' : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  // The shell owns the toast; fall back to a no-op rather than throwing if it
+  // is ever absent.
+  function toast(msg) {
+    if (typeof window.showToast === 'function') return window.showToast(msg);
+    if (typeof window.toast === 'function') return window.toast(msg);
+  }
+
+  async function load() {
+    try {
+      var res = await fetch('/api/tracker');
+      rows = await res.json();
+      if (!Array.isArray(rows)) rows = [];
+    } catch (e) { rows = []; }
+    render();
+  }
+
+  function sortBy(key) {
+    if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+    render();
+  }
+
+  function render() {
+    var body = document.getElementById('plBody');
+    var empty = document.getElementById('plEmpty');
+    var table = document.getElementById('plTable');
+    if (!body) return;
+    if (!rows.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+    table.style.display = ''; empty.style.display = 'none';
+
+    var sorted = rows.slice().sort(function (a, b) {
+      var x = a[sortKey], y = b[sortKey];
+      if (sortKey === 'match_percent') { x = x == null ? -1 : x; y = y == null ? -1 : y; }
+      if (x < y) return -1 * sortDir;
+      if (x > y) return 1 * sortDir;
+      return 0;
+    });
+
+    body.innerHTML = '';
+    sorted.forEach(function (r) {
+      var tr = document.createElement('tr');
+      var matchCell = (r.match_percent != null)
+        ? '<span class="ws-badge ' + toneClass(r.match_percent) + '">' + r.match_percent + '%</span>'
+        : '<span style="color:var(--ws-text-tertiary);font-size:12px;">—</span>';
+      var titleHtml = r.listing_url
+        ? '<a href="' + esc(r.listing_url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--ws-text);font-weight:600;text-decoration:none;">' + esc(r.job_title) + '</a>'
+        : '<span style="font-weight:600;">' + esc(r.job_title) + '</span>';
+
+      // A Viewed row never auto-progresses: it gets an explicit action rather
+      // than a dropdown, so nothing is ever recorded as applied on the user's
+      // behalf.
+      var isViewed = (r.status === 'Viewed');
+      var statusHtml, dateHtml;
+      if (isViewed) {
+        statusHtml = '<span class="ws-badge" style="background:var(--ws-surface-hover);color:var(--ws-text-secondary);margin-right:8px;">Viewed</span>'
+          + '<button class="ws-btn ws-btn-primary ws-btn-sm pl-mark-applied">Mark as Applied</button>';
+        dateHtml = '<span style="color:var(--ws-text-tertiary);">Viewed ' + fmtDate(r.viewed_date) + '</span>';
+      } else {
+        var opts = STATUSES.map(function (s) {
+          return '<option value="' + s + '"' + (s === r.status ? ' selected' : '') + '>' + s + '</option>';
+        }).join('');
+        statusHtml = '<select class="ws-select ws-select-sm" style="width:130px;">' + opts + '</select>';
+        dateHtml = 'Applied ' + fmtDate(r.applied_date);
+      }
+
+      tr.innerHTML =
+        '<td>' + titleHtml + '<div style="font-size:12px;color:var(--ws-text-tertiary);">'
+        + esc(r.company || '') + (r.location ? ' · ' + esc(r.location) : '') + '</div></td>'
+        + '<td>' + matchCell + '</td>'
+        + '<td>' + statusHtml + '</td>'
+        + '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + dateHtml + '</td>'
+        + '<td><button class="ws-btn ws-btn-ghost ws-btn-sm pl-del" title="Remove">&times;</button></td>';
+
+      if (isViewed) {
+        tr.querySelector('.pl-mark-applied').addEventListener('click', function () { updateStatus(r.id, 'Applied'); });
+      } else {
+        var sel = tr.querySelector('select');
+        sel.addEventListener('change', function () { updateStatus(r.id, sel.value); });
+      }
+      tr.querySelector('.pl-del').addEventListener('click', function () { removeRow(r.id); });
+      body.appendChild(tr);
+    });
+  }
+
+  async function updateStatus(id, status) {
+    try {
+      var res = await fetch('/api/tracker/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status })
+      });
+      if (res.ok) {
+        var row = rows.find(function (r) { return r.id === id; });
+        if (row) {
+          var wasViewed = (row.status === 'Viewed');
+          row.status = status;
+          // The server stamps applied_date; mirror it so the row swaps to the
+          // progression select without a refetch.
+          if (status === 'Applied') row.applied_date = new Date().toISOString();
+          if (wasViewed) render();
+        }
+        toast(status === 'Applied' ? 'Marked as applied' : 'Status updated');
+      } else {
+        toast('Could not update status');
+      }
+    } catch (e) { toast('Could not update status'); }
+  }
+
+  async function removeRow(id) {
+    try {
+      var res = await fetch('/api/tracker/' + id, { method: 'DELETE' });
+      if (res.ok) {
+        rows = rows.filter(function (r) { return r.id !== id; });
+        render();
+        toast('Removed');
+      }
+    } catch (e) { toast('Could not remove'); }
+  }
+
+  // Called by switchSection('pipeline'). Wiring happens once; the list is
+  // refetched on every visit so a status changed elsewhere is reflected.
+  window.initPipeline = function () {
+    if (!inited) {
+      inited = true;
+      document.querySelectorAll('#plTable th.sortable').forEach(function (th) {
+        th.addEventListener('click', function () { sortBy(th.dataset.key); });
+      });
+    }
+    load();
+  };
+})();
+</script>

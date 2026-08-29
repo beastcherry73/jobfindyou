@@ -160,14 +160,20 @@
         </a>
 
         <!-- Applications Section (surfaced high: Job Search is a primary action) -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Applications</div>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Jobs</div>
         <a class="ws-nav-item" data-section="jobsearch" onclick="switchSection('jobsearch')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-          <span class="ws-nav-label">Job Search</span>
+          <span class="ws-nav-label">Browse</span>
         </a>
-        <a class="ws-nav-item" href="/app/tracker">
+        <a class="ws-nav-item" data-section="foryou" onclick="switchSection('foryou')">
+          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5.4 5.6.6-4.2 3.9 1.2 5.6L12 15.8 6.9 18.5l1.2-5.6L4 9l5.6-.6z"/></svg></span>
+          <span class="ws-nav-label">For You</span>
+        </a>
+        <!-- Was a link to the standalone /app/tracker page; it is a section of
+             this shell now, so navigating to it no longer reloads the app. -->
+        <a class="ws-nav-item" data-section="pipeline" onclick="switchSection('pipeline')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.4"/><rect x="10" y="4" width="5" height="11" rx="1.4"/><rect x="17" y="4" width="4" height="7" rx="1.4"/></svg></span>
-          <span class="ws-nav-label">Tracker</span>
+          <span class="ws-nav-label">Pipeline</span>
         </a>
 
         <!-- Resume Analysis Section -->
@@ -2227,6 +2233,14 @@
         </section>
 
         <!-- ── JOB SEARCH (multi-source; shares the workspace shell) ── -->
+        <section id="section-foryou" class="ws-section" style="display:none;">
+          {% include 'partials/foryou.html' %}
+        </section>
+
+        <section id="section-pipeline" class="ws-section" style="display:none;">
+          {% include 'partials/pipeline.html' %}
+        </section>
+
         <section id="section-jobsearch" class="ws-section" style="display:none;">
           {% include 'partials/jobsearch.html' %}
         </section>
@@ -2575,8 +2589,10 @@
         'workspace-insights': 'Career Insights',
         'workspace-progress': 'Progress Tracker',
         'workspace-goals': 'Weekly Goals',
-        jobsearch: 'Job Search',
-        tracker: 'Job Tracker',
+        jobsearch: 'Browse',
+        foryou: 'For You',
+        pipeline: 'Pipeline',
+        tracker: 'Pipeline',
         'applications-calendar': 'Applications Calendar',
         history: 'Previous Analyses',
         profile: 'Profile Settings',
@@ -2601,6 +2617,9 @@
       if (section === 'workspace-progress') loadWorkspaceProgress();
       if (section === 'workspace-goals') loadWeeklyGoals();
       if (section === 'jobsearch' && typeof initJobSearch === 'function') initJobSearch();
+      if (section === 'foryou' && typeof initForYou === 'function') initForYou();
+      // Refetched on every visit, so a status changed in another tab shows up.
+      if (section === 'pipeline' && typeof initPipeline === 'function') initPipeline();
       if (section === 'improve' || section.startsWith('enhance-')) populateEnhanceSavedResumes();
     }
 

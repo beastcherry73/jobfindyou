@@ -1221,6 +1221,47 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
     return {"count": count, "results": [to_unified(dict(r)) for r in rows]}
 
 
+_DOMAIN_BY_TOKEN = None
+
+
+def _domain_index():
+    """(platform, token) -> verified company domain, from the registry.
+
+    Built once per process. The domain is resolved OFFLINE by
+    scratch/resolve_company_domains.py and persisted into the registry, because
+    no ATS API returns a logo or a domain (verified 2026-08-29 against
+    Greenhouse, Ashby, Lever and SmartRecruiters). Doing it here at request
+    time would mean a DNS round trip per card.
+    """
+    global _DOMAIN_BY_TOKEN
+    if _DOMAIN_BY_TOKEN is None:
+        idx = {}
+        try:
+            for c in load_registry():
+                d = (c.get("domain") or "").strip().lower()
+                if d:
+                    idx[(c.get("platform"), c.get("token"))] = d
+        except Exception:          # a missing/!unreadable registry must not
+            idx = {}               # break search; cards fall back to a lettermark
+        _DOMAIN_BY_TOKEN = idx
+    return _DOMAIN_BY_TOKEN
+
+
+def company_logo_url(domain):
+    """Logo URL for a domain, or '' when we have no domain.
+
+    DuckDuckGo's icon service, chosen by measurement on 2026-08-29:
+    Clearbit (the usual suggestion) is DEAD - logo.clearbit.com refuses
+    connections since its free API was sunset. DuckDuckGo returned HTTP 200 at
+    up to ~15KB, Google's favicon service works too but at ~600-1000B, and
+    logo.dev requires an API key (rejected: JobSpike stays card-free).
+
+    The UI falls back to a lettermark on error, so a miss here is cosmetic.
+    """
+    d = (domain or "").strip().lower()
+    return f"https://icons.duckduckgo.com/ip3/{d}.ico" if d else ""
+
+
 def to_unified(row):
     """Map a stored ats_jobs row onto the shared job schema used by every source."""
     label = PLATFORMS.get(row.get("platform"), {}).get("label", "Employer board")
@@ -1257,6 +1298,12 @@ def to_unified(row):
         "work_mode": row.get("work_mode") or "",
         "experience_level": row.get("experience_level") or "",
         "currency": row.get("salary_currency") or "",
+        # Empty string when the company has no resolved domain (3 of 251);
+        # the card renders a lettermark in that case rather than a broken image.
+        "company_domain": _domain_index().get(
+            (row.get("platform"), row.get("company_token")), ""),
+        "company_logo": company_logo_url(_domain_index().get(
+            (row.get("platform"), row.get("company_token")), "")),
     }
 
 
