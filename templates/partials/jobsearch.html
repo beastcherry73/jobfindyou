@@ -523,8 +523,7 @@
       // record of the domain, so a card never shows a broken image.
       var initial = esc((job.company || '?').trim().charAt(0).toUpperCase());
       var logoHtml = job.company_logo
-        ? '<span class="jp-logo"><img src="' + esc(job.company_logo) + '" alt="" loading="lazy" '
-          + 'onerror="this.parentNode.innerHTML=&quot;<span class='jp-letter'>' + initial + '</span>&quot;"></span>'
+        ? '<span class="jp-logo"><img src="' + esc(job.company_logo) + '" alt="" loading="lazy"></span>'
         : '<span class="jp-logo"><span class="jp-letter">' + initial + '</span></span>';
       // The card is a SELECTOR now, not an action surface -- every action moved
       // to the detail panel, so one click on a card does exactly one thing.
@@ -536,6 +535,7 @@
             (sub.length ? '<div class="jp-sub">' + sub.join('') + '</div>' : '') +
           '</div></div>' +
         '</div>';
+      lettermarkOnError(card, initial);
       card.addEventListener('click', function(){ selectJob(idx); });
       wrap.appendChild(card);
     });
@@ -543,6 +543,27 @@
     // Open the first result so a successful search never shows an empty
     // column. Narrow screens keep the list in front instead.
     if (list.length && window.innerWidth > 980) selectJob(0);
+  }
+
+  // Swap a logo that fails to load for a lettermark.
+  //
+  // Bound in JS rather than an inline onerror="" attribute. The inline form
+  // needed quotes nested three deep -- JS string, then HTML attribute, then
+  // the inner markup -- and when one level lost its escaping it closed the JS
+  // string early and took the whole <script> block down with it. There is no
+  // nesting to get wrong here.
+  function lettermarkOnError(root, initial) {
+    var img = root.querySelector('.jp-logo img');
+    if (!img) return;
+    img.addEventListener('error', function () {
+      var box = img.parentNode;
+      if (box) box.innerHTML = '<span class="jp-letter">' + initial + '</span>';
+    });
+    // An image that already failed before this ran fires no further event.
+    if (img.complete && img.naturalWidth === 0) {
+      var box = img.parentNode;
+      if (box) box.innerHTML = '<span class="jp-letter">' + initial + '</span>';
+    }
   }
 
   // -- Detail panel --------------------------------------------------------
@@ -562,12 +583,10 @@
     if (!host) return;
 
     var initial = esc((job.company || '?').trim().charAt(0).toUpperCase());
-    var fallback = '<span class=\'jp-letter\'>' + initial + '</span>';
     var logoBox = 'style="width:44px;height:44px;flex:0 0 44px;"';
     var logoHtml = job.company_logo
-      ? '<span class="jp-logo" ' + logoBox + '><img src="' + esc(job.company_logo) + '" alt="" '
-        + 'onerror="this.parentNode.innerHTML=&quot;' + fallback + '&quot;"></span>'
-      : '<span class="jp-logo" ' + logoBox + '>' + fallback + '</span>';
+      ? '<span class="jp-logo" ' + logoBox + '><img src="' + esc(job.company_logo) + '" alt=""></span>'
+      : '<span class="jp-logo" ' + logoBox + '><span class="jp-letter">' + initial + '</span></span>';
 
     var bits = [];
     if (job.location) bits.push(esc(job.location));
@@ -603,6 +622,7 @@
       '<div class="jp-detail-label">About this role</div>' +
       '<div class="jp-detail-body">' + esc(job.description || 'No description was published for this listing.') + '</div>';
 
+    lettermarkOnError(host, initial);
     var back = document.getElementById('jpBack');
     if (back) back.addEventListener('click', function () {
       document.getElementById('jpSplit').classList.remove('jp-showing-detail');
