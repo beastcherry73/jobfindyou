@@ -15,11 +15,54 @@ def extract_text_from_pdf(file_stream):
 
 
 def clean_json(text):
-    text = text.strip()
+    r"""Return the first complete JSON object in `text`, as text.
+
+    Models wrap the object in a code fence, prefix it with prose, and - the
+    failure that took /api/analyze down in production (2026-08-29, reproduced
+    on the live site: roughly one request in three) - staple a stray extra `}`
+    onto the end, emitting `{...}\n}`. The previous greedy `\{[\s\S]*\}`
+    match ran from the FIRST brace to the LAST one, so it swallowed that
+    trailing garbage, `json.loads` raised "Extra data", and the route answered
+    502 "AI service returned an empty result".
+
+    `raw_decode` reads exactly ONE object and stops where it ends, so anything
+    after it is discarded instead of fatal. Every `{` is tried in turn, which
+    also skips leading prose without needing to guess where the object starts.
+
+    Always returns a string: callers do their own `json.loads` and already
+    handle failure, so a genuinely unrepairable response is passed through
+    rather than swallowed here.
+    """
+    text = (text or "").strip()
     text = re.sub(r"^```(?:json)?", "", text).strip()
     text = re.sub(r"```$", "", text).strip()
-    match = re.search(r"\{[\s\S]*\}", text)
-    return match.group(0) if match else text
+
+    decoder = json.JSONDecoder()
+    for match in re.finditer(r"\{", text):
+        start = match.start()
+        try:
+            _, end = decoder.raw_decode(text, start)
+        except ValueError:
+            continue
+        return text[start:end]
+
+    # Last resort: trailing commas ("...,}") are the other malformation models
+    # emit, and raw_decode rejects them outright. Only accept the repair if it
+    # actually parses - the substitution is blunt enough to touch string
+    # contents, so an unverified result would be worse than the original.
+    repaired = re.sub(r",\s*([}\]])", r"\1", text)
+    for match in re.finditer(r"\{", repaired):
+        start = match.start()
+        try:
+            _, end = decoder.raw_decode(repaired, start)
+        except ValueError:
+            continue
+        return repaired[start:end]
+
+    # Nothing parsed - preserve the old greedy behaviour so no caller that
+    # relied on getting *something* brace-shaped regresses.
+    greedy = re.search(r"\{[\s\S]*\}", text)
+    return greedy.group(0) if greedy else text
 
 
 def estimate_resume_score(resume_text, job_description=""):

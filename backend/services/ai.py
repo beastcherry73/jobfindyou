@@ -152,7 +152,10 @@ _MODELS = [
     _m("groq", "groq/compound-mini", tpm_hint=70000),
     _m("groq", "qwen/qwen3.8-27b", tpm_hint=8000),
     # JSON only: asked for "# Hello" it returned "Hello", dropping the markdown.
-    _m("groq", "allam-2-7b", text_ok=False, tpm_hint=6000),
+    # `max_budget` because its context window caps max_tokens at 4096: asked
+    # for the analysis call's 6000 it answers HTTP 400 every single time
+    # (measured 2026-08-29), so offering it that job only burns a round trip.
+    _m("groq", "allam-2-7b", text_ok=False, tpm_hint=6000, max_budget=4096),
 
     # --- Google AI Studio. NOTE: limits are per Cloud PROJECT, not per key,
     # and the flash models SHARE one ~250k TPM pool - so extra entries here buy
@@ -233,6 +236,14 @@ def _classify(status, body):
     # sibling model will succeed either.
     if status == 402 or "payment_required" in text or "payment required" in text:
         return _ACCOUNT
+    # Groq rejects a request whose prompt + max_tokens exceeds the model's
+    # per-minute token budget with 413 "Request too large for model X ... on
+    # tokens per minute (TPM)". That wording matches none of the quota markers
+    # below, so it used to fall through to _OTHER, which applies no cooldown -
+    # and the same doomed model was retried on every request that followed.
+    # It is a quota refusal like any other; back off.
+    if status == 413 or "request too large" in text:
+        return _RATE_LIMIT
     if status == 429 or any(m in text for m in _QUOTA_MARKERS):
         return _RATE_LIMIT
     if status == 404 or any(m in text for m in _MODEL_MISSING_MARKERS):

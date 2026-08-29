@@ -57,17 +57,35 @@ def analyze():
             job_context=job_context,
             resume_text=resume_text[:12000],
         )
-        try:
-            raw = clean_json(call_groq(prompt, json_mode=True))
-        except GroqError:
-            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
+        # Two attempts, because a model that emits malformed JSON once is not
+        # broken - it just rolled badly, and the router will usually land on a
+        # different model the second time. Before this, a single unparseable
+        # response failed the user's whole analysis with a 502; that was the
+        # live failure reproduced on 2026-08-29. The happy path still costs
+        # exactly one call, so this is free except when it saves the request.
+        parsed = None
+        for attempt in (1, 2):
+            try:
+                raw = clean_json(call_groq(prompt, json_mode=True))
+            except GroqError:
+                return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
 
-        try:
-            parsed = json.loads(raw)
-        except Exception:
-            parsed = {}
+            try:
+                candidate = json.loads(raw)
+            except Exception:
+                candidate = None
 
-        if not isinstance(parsed, dict) or not parsed:
+            if isinstance(candidate, dict) and candidate:
+                parsed = candidate
+                break
+
+            # Log the head of what actually came back: without it the next
+            # person debugging this has nothing but the 502 to go on.
+            logger.warning(
+                "Analysis JSON unparseable on attempt %s/2; response head: %r",
+                attempt, (raw or "")[:200])
+
+        if parsed is None:
             return jsonify({"error": "AI service returned an empty result. Please try again."}), 502
 
         if parsed.get("is_resume") is False:

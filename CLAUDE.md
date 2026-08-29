@@ -170,6 +170,24 @@ Adapter behavior to remember:
    and analyze "could not be saved" 500s. Fixed: module RLock in get_db()
    released in __exit__ serializes the shared socket. (6fb0463)
 
+9. Analysis 502s (THE live bug, 2026-08-29). Reproduced straight against
+   production - POST /api/analyze is NOT login-gated, so an anonymous
+   multipart POST with a mock resume captures it: roughly one request in
+   three returned
+   `502 {"error":"AI service returned an empty result. Please try again."}`.
+   Cause: models sometimes staple a stray extra `}` onto the object, emitting
+   `{...}` followed by `}`. `clean_json`'s greedy `{[\s\S]*}` ran from the
+   FIRST brace to the LAST one, so it kept that trailing garbage and
+   json.loads raised "Extra data" - one bad roll failed the whole analysis.
+   Fixed: `clean_json` now uses `json.JSONDecoder().raw_decode()`, which reads
+   exactly ONE object and stops, and /api/analyze retries once on unparseable
+   output instead of 502ing. Regression cases live in the suite as section
+   13a. Two related measurements taken at the same time: Groq answers an
+   over-budget request with 413 "Request too large ... (TPM)", which matched
+   no quota marker and so got NO cooldown (retried on every request) - now
+   classified as a rate limit; and allam-2-7b 400s on any max_tokens above
+   4096, so it carries max_budget=4096.
+
 ## 8. CURRENT GIT / DEPLOYMENT STATE
 
 - HEAD: `6fb0463` (fix(prod): serialize the shared Supabase connection per request)

@@ -478,6 +478,34 @@ with _patch.object(_analysis_mod, "get_db") as boom_db:
           "simulated Postgres outage" in (rfail.get_json() or {}).get("error", ""),
           (rfail.get_json() or {}).get("error", ""))
 
+print("\n-- 13a. clean_json survives the malformations models actually emit --")
+from backend.services.helpers import clean_json as _cj
+
+# Every shape below was returned by a live model for the analysis prompt.
+# The stray trailing brace is the one that broke production on 2026-08-29:
+# the old greedy match ran from the first brace to the LAST one, so it
+# swallowed the extra "}", json.loads raised "Extra data", and roughly one
+# analysis in three answered 502 "AI service returned an empty result".
+_CJ_CASES = [
+    ("plain object", '{"a": 1}', {"a": 1}),
+    ("fenced", '```json\n{"a": 1}\n```', {"a": 1}),
+    ("stray trailing brace", '{"a": 1, "n": {"x": 2}\n}\n}', {"a": 1, "n": {"x": 2}}),
+    ("second object appended", '{"a": 1}\n{"b": 2}', {"a": 1}),
+    ("prose before", 'Here is the JSON:\n{"a": 1}', {"a": 1}),
+    ("prose after", '{"a": 1}\nHope this helps!', {"a": 1}),
+    ("trailing commas", '{"a": 1, "b": [1, 2,],}', {"a": 1, "b": [1, 2]}),
+    ("brace inside a string", '{"a": "} not the end", "b": 2}', {"a": "} not the end", "b": 2}),
+]
+for _label, _raw, _want in _CJ_CASES:
+    try:
+        _got = json.loads(_cj(_raw))
+    except Exception as _e:
+        _got = "parse error: " + str(_e)
+    check("clean_json: " + _label, _got == _want, repr(_got)[:120])
+
+check("clean_json returns a string for unparseable input",
+      isinstance(_cj("no json here at all"), str))
+
 print("\n-- 13b. Failed DB commit on /api/analyze cannot report success --")
 import io as _io
 from backend.prompts import ANALYSIS_PROMPT
