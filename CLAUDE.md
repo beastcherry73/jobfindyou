@@ -188,6 +188,25 @@ Adapter behavior to remember:
    classified as a rate limit; and allam-2-7b 400s on any max_tokens above
    4096, so it carries max_budget=4096.
 
+10. job_match silently missing in production (found while verifying #9;
+    pre-existing, not a regression). Every live /api/analyze response omitted
+    `job_match`, so the workspace Match % panel and the tracker's Match column
+    had nothing to show. The job-match call is wrapped in a bare `except` that
+    only warns - by design, it must never fail the analysis - so the feature
+    vanished without a trace. Measured against the real JOB_MATCH_PROMPT at
+    its max_tokens=1500 budget: `groq/compound-mini` spends 1725 completion
+    tokens and was truncated mid-object; `gemini-3-flash-preview` returned
+    finish_reason=length having billed 72 completion tokens (the rest went on
+    reasoning), despite its min_budget=400 claiming 1500 was enough; and
+    `nvidia/nemotron-3-super-120b-a12b` answered JSON mode with prose
+    reasoning before the object, so its json_ok=True was simply wrong.
+    Fixed: budget 1500 -> 2500, gemini-3-flash-preview min_budget 400 -> 2000,
+    nemotron-3-super marked json_ok=False. All nine remaining JSON-capable
+    models then returned a valid match_percent at 2500.
+    NOTE: allam-2-7b answered the same prompt at 2500 with HTTP 400 "Failed to
+    generate JSON" having succeeded at 1500 - one observation each way, so it
+    was left in the table; the router just reroutes past it.
+
 ## 8. CURRENT GIT / DEPLOYMENT STATE
 
 - HEAD: `6fb0463` (fix(prod): serialize the shared Supabase connection per request)

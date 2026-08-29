@@ -103,7 +103,12 @@ def analyze():
                     job_description=job_description[:4000],
                     resume_text=resume_text[:12000],
                 )
-                match_raw = clean_json(call_groq(match_prompt, max_tokens=1500,
+                # 2500, not 1500: measured 2026-08-29, groq/compound-mini
+                # spends 1725 completion tokens on this prompt and so was
+                # truncated mid-object at the old budget, which silently
+                # dropped job_match from the response. 2500 still leaves the
+                # whole call inside Groq's 8000 TPM per-model ceiling.
+                match_raw = clean_json(call_groq(match_prompt, max_tokens=2500,
                                                  json_mode=True))
                 match_parsed = json.loads(match_raw)
                 if isinstance(match_parsed, dict) and "match_percent" in match_parsed:

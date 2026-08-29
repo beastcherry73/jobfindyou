@@ -167,7 +167,11 @@ _MODELS = [
     _m("gemini", "gemini-3.1-flash-lite-preview", tpm_hint=250000),
     # Spends a small budget on reasoning tokens and can return
     # finish_reason=length with NO content, so it is only offered a real one.
-    _m("gemini", "gemini-3-flash-preview", tpm_hint=250000, min_budget=400),
+    # 400 was too generous: measured 2026-08-29 on the job-match prompt at
+    # max_tokens=1500 it still came back finish_reason=length mid-string,
+    # having billed only 72 completion tokens - the rest went on reasoning.
+    # It answers the same prompt cleanly at 2500, so that is the real floor.
+    _m("gemini", "gemini-3-flash-preview", tpm_hint=250000, min_budget=2000),
 
     # --- NVIDIA NIM (card-free, email signup). Sends no rate-limit headers,
     # so its headroom is estimated locally like Gemini's. Most models in its
@@ -179,8 +183,13 @@ _MODELS = [
     # model answers the 1500-token job-match prompt in 10.4s. So it stays in
     # the pool for the small calls (job match, digest scoring, builder polish)
     # and is not offered the big one.
-    _m("nvidia", "nvidia/nemotron-3-super-120b-a12b", tpm_hint=8000,
-       max_budget=2000),
+    # json_ok=False: it does NOT honour response_format. Measured 2026-08-29
+    # on the job-match prompt, it answered JSON mode with its reasoning in
+    # prose ("...Let's produce:") and only then began the object, running out
+    # of budget mid-way. That is the silent shape violation this table exists
+    # to prevent, so it is text-only like its nano sibling.
+    _m("nvidia", "nvidia/nemotron-3-super-120b-a12b", json_ok=False,
+       tpm_hint=8000, max_budget=2000),
     # mistralai/mistral-nemotron was REMOVED (2026-08-29): measured HTTP 500 on
     # the small prompt and no response at all on the large one (still hanging
     # at 180s). It could not serve either shape, and left in the table it cost
