@@ -58,7 +58,7 @@ def analyze():
             resume_text=resume_text[:12000],
         )
         try:
-            raw = clean_json(call_groq(prompt))
+            raw = clean_json(call_groq(prompt, json_mode=True))
         except GroqError:
             return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
 
@@ -85,7 +85,8 @@ def analyze():
                     job_description=job_description[:4000],
                     resume_text=resume_text[:12000],
                 )
-                match_raw = clean_json(call_groq(match_prompt, max_tokens=1500))
+                match_raw = clean_json(call_groq(match_prompt, max_tokens=1500,
+                                                 json_mode=True))
                 match_parsed = json.loads(match_raw)
                 if isinstance(match_parsed, dict) and "match_percent" in match_parsed:
                     try:

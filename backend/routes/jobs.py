@@ -184,7 +184,8 @@ def api_jobs_match():
             job_description=description[:4000],
             resume_text=resume_text[:12000],
         )
-        parsed = json.loads(clean_json(call_groq(prompt, max_tokens=1500)))
+        parsed = json.loads(clean_json(
+            call_groq(prompt, max_tokens=1500, json_mode=True)))
     except GroqError:
         return jsonify({"error": "AI is temporarily unavailable. Try again shortly."}), 502
     except Exception as e:
