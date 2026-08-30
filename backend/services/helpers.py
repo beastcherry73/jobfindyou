@@ -65,13 +65,33 @@ def clean_json(text):
     return greedy.group(0) if greedy else text
 
 
+def _strip_markdown_decoration(text):
+    r"""Return `text` with markdown heading and emphasis markers removed.
+
+    The section heuristics in estimate_resume_score anchor on a line holding
+    the bare word, e.g. `^\s*education\s*:?$`. The improve endpoint returns
+    markdown, so those same headings arrive as `## Education` or `**Education**`
+    and match nothing - the scorer then reports the rewrite as worse than the
+    plain-text original purely because of its formatting. Scoring the content
+    rather than the decoration is what makes the two comparable.
+    """
+    out = []
+    for line in (text or "").splitlines():
+        s = line.strip()
+        s = re.sub(r"^#{1,6}\s*", "", s)                 # "## Heading"
+        s = re.sub(r"^([*_]{1,3})(.+?)\1$", r"\2", s)     # "**Heading**"
+        out.append(s)
+    return "\n".join(out)
+
+
 def estimate_resume_score(resume_text, job_description=""):
     """Lightweight content-based resume quality estimate (0-100).
 
     Used to produce an honest, content-derived score for the improve
     feature instead of a hardcoded number. Not a full ATS engine.
     """
-    text = resume_text or ""
+    # Score the content, not the formatting: see _strip_markdown_decoration.
+    text = _strip_markdown_decoration(resume_text or "")
     lower = text.lower()
     score = 30
 

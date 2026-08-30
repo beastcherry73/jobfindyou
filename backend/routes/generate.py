@@ -140,7 +140,10 @@ def generate_improve_with_diff():
         # Content-derived scores (honest estimates, not hardcoded)
         orig_score = estimate_resume_score(resume_text, job_description)
         enh_score = estimate_resume_score(improved_resume, job_description)
-        delta = max(0, enh_score - orig_score)
+        # Report the real difference. Clamping a regression to 0 hid it from
+        # the UI and, because 0 is falsy in JS, made the client fall back to
+        # recomputing the raw negative - which it then printed behind a "+".
+        delta = enh_score - orig_score
 
         improvements = [
             "Transformed passive phrasing into strong action-oriented verbiage",

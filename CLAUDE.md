@@ -243,6 +243,30 @@ Adapter behavior to remember:
     (`brandClick()` in workspace.html), since the toggle button is hidden
     there. Verify brand changes with real screenshots - see section 13.
 
+12. "Original ATS Score: 74% -> Enhanced: 56% (+-18 Points Boost!)"
+    (2026-08-30). Found while re-shooting marketing screenshots; the Improve
+    banner was advertising the product making resumes worse, with a party
+    emoji. Three defects feeding each other:
+    (a) ROOT CAUSE: every section heuristic in `estimate_resume_score` anchors
+    on a line holding the bare word (`^\s*education\s*:?$`). The improve
+    endpoint returns MARKDOWN, so those headings arrive as `## Education` and
+    match nothing. Measured: identical content scores 74 as plain text and 62
+    as markdown - the scorer was docking the rewrite for the very formatting
+    the rewrite adds. `_strip_markdown_decoration()` now removes heading
+    hashes and bold markers before scoring, so format no longer moves the
+    number (74 / 74 / 74 across plain, `##` and `**` headings).
+    (b) `generate.py` clamped the delta with `max(0, ...)`, hiding regressions.
+    Now reports the true difference.
+    (c) `workspace.html` did `result.score_delta || (enh - orig)`. A real 0 is
+    FALSY, so the clamp in (b) fell straight through to the raw negative, which
+    the template printed behind a hardcoded "+". The same line used
+    `result.original_score || 72`, which invents a score rather than defaulting
+    one, and the "Original: 72%" badge beside it was static markup no code ever
+    updated. All three now render only what was measured.
+    After the fix the same flow reports -4 and +2 on successive runs (the
+    rewrite differs each time); the systematic 12-14 point formatting penalty
+    is gone.
+
 ## 8. CURRENT GIT / DEPLOYMENT STATE
 
 - HEAD: `6fb0463` (fix(prod): serialize the shared Supabase connection per request)

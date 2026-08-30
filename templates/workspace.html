@@ -929,7 +929,7 @@
                   <div style="display:flex; align-items:center; gap:16px;">
                     <div style="display:flex;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg></div>
                     <div>
-                      <div style="font-size:15px; font-weight:800; color:var(--ws-text);" id="enhanceScoreDeltaText">Original ATS Score: 72% ➔ Enhanced: 91% (+19 Points Boost!)</div>
+                      <div style="font-size:15px; font-weight:800; color:var(--ws-text);" id="enhanceScoreDeltaText">Rewrite complete.</div>
                       <div style="font-size:12px; color:var(--ws-text-secondary); margin-top:2px;">Keyword Coverage: +18% • Recruiter Match Score: +22% • Quantified Metrics Injected</div>
                     </div>
                   </div>
@@ -971,7 +971,7 @@
                   <div class="ws-card-body" style="padding:20px;">
                     <div class="ws-card-header" style="margin-bottom:12px;">
                       <div class="ws-card-title" style="font-size:14px; font-weight:700;">Original Resume (v1)</div>
-                      <span class="ws-badge ws-badge-warn">Original: 72%</span>
+                      <span class="ws-badge ws-badge-warn" id="enhanceOriginalBadge">Original: --</span>
                     </div>
                     <div id="enhanceOriginalPreview" style="background:var(--ws-surface-hover); border:1px solid var(--ws-border); border-radius:8px; padding:20px; font-family:sans-serif; font-size:13px; line-height:1.6; min-height:420px; max-height:550px; overflow-y:auto; color:var(--ws-text);">
                       <div style="font-weight:700; font-size:16px; margin-bottom:4px;" id="origPrevName">Candidate Resume</div>
@@ -5067,16 +5067,41 @@
         enhanceVersions.v1 = selectedExistingResumeText || 'Original Resume Content';
         enhanceVersions.v2 = outputText;
 
-        // Render Score Delta
-        const origScore = result.original_score || 72;
-        const enhScore = result.enhanced_score || 91;
-        const delta = result.score_delta || (enhScore - origScore);
-        
+        // Render Score Delta.
+        // `|| 72` and `|| 91` were not defaults, they were fabrications: a
+        // missing field printed an invented score as though it were measured.
+        // And `result.score_delta || (...)` treated a genuine delta of 0 as
+        // falsy, so a backend that clamped a regression to 0 fell through to
+        // the raw negative, which this line then printed behind a hardcoded
+        // "+" as "+-18 Points Boost!". Show what was measured, or nothing.
+        const asNum = function (v) {
+          return (typeof v === 'number' && isFinite(v)) ? v : null;
+        };
+        const origScore = asNum(result.original_score);
+        const enhScore = asNum(result.enhanced_score);
+        let delta = asNum(result.score_delta);
+        if (delta === null && origScore !== null && enhScore !== null) {
+          delta = enhScore - origScore;
+        }
+
         const deltaEl = document.getElementById('enhanceScoreDeltaText');
-        if (deltaEl) deltaEl.textContent = 'Original ATS Score: ' + origScore + '% ➔ Enhanced: ' + enhScore + '% (+' + delta + ' Points Boost! 🎉)';
-        
+        if (deltaEl) {
+          if (origScore === null || enhScore === null || delta === null) {
+            deltaEl.textContent = 'Rewrite complete.';
+          } else {
+            let phrase;
+            if (delta > 0) phrase = '+' + delta + ' points \u{1F389}';
+            else if (delta === 0) phrase = 'score unchanged';
+            else phrase = delta + ' points';
+            deltaEl.textContent = 'Original ATS Score: ' + origScore
+              + '% \u2794 Enhanced: ' + enhScore + '% (' + phrase + ')';
+          }
+        }
+
         const scoreBadge = document.getElementById('enhanceScoreBadge');
-        if (scoreBadge) scoreBadge.textContent = 'ATS Score: ' + enhScore + '%';
+        if (scoreBadge && enhScore !== null) scoreBadge.textContent = 'ATS Score: ' + enhScore + '%';
+        const origBadge = document.getElementById('enhanceOriginalBadge');
+        if (origBadge && origScore !== null) origBadge.textContent = 'Original: ' + origScore + '%';
 
         // Render Added & Removed Summary lists
         const addedList = document.getElementById('enhanceAddedList');
