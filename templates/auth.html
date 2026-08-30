@@ -184,13 +184,21 @@
     .ds-btn-primary:hover { filter: brightness(0.92); }
     .ds-btn-block { width: 100%; }
     .ds-btn-lg { padding: 12px 28px; font-size: 0.95rem; border-radius: 14px; }
+    .auth-brand { height: 30px; width: auto; }
+    .auth-brand-light { display: block; }
+    .auth-brand-dark { display: none; }
+    @media (prefers-color-scheme: dark) {
+      .auth-brand-light { display: none; }
+      .auth-brand-dark { display: block; }
+    }
   </style>
 </head>
 <body>
   <main class="auth-card">
     <div class="ds-card">
       <a class="brand" href="{{ url_for('auth.login') }}">
-        <img src="/static/img/jobspike-logo.svg" alt="JobSpike" style="height:30px;width:auto;display:block;">
+        <img class="auth-brand auth-brand-light" src="/static/img/jobspike-logo.svg" alt="JobSpike">
+        <img class="auth-brand auth-brand-dark" src="/static/img/jobspike-logo-on-dark.svg" alt="" aria-hidden="true">
       </a>
 
       <div class="ds-eyebrow" style="margin-top:24px;">{{ 'Get started' if mode == 'register' else 'Welcome back' }}</div>

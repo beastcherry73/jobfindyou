@@ -156,12 +156,13 @@
     <!-- ═══ SIDEBAR ═══ -->
     <aside class="ws-sidebar" id="sidebar">
       <div class="ws-sidebar-header">
-        <a href="/" class="ws-sidebar-brand" onclick="event.preventDefault(); switchSection('dashboard')">
+        <a href="/" class="ws-sidebar-brand" onclick="event.preventDefault(); brandClick()">
           <span class="ws-sidebar-mark brand">
             <img src="/static/img/jobspike-icon.svg" alt="" width="17" height="17">
           </span>
           <span class="ws-sidebar-name">
-            <img src="/static/img/jobspike-wordmark.svg" alt="JobSpike" height="17">
+            <img class="ws-brand-light" src="/static/img/jobspike-wordmark.svg" alt="JobSpike" height="17">
+            <img class="ws-brand-dark" src="/static/img/jobspike-wordmark-on-dark.svg" alt="" aria-hidden="true" height="17">
           </span>
         </a>
         <button class="ws-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
@@ -2362,6 +2363,14 @@
       localStorage.setItem('ws-sidebar', state.sidebarCollapsed);
       const toggle = document.getElementById('sidebarToggle');
       if (toggle) toggle.checked = state.sidebarCollapsed;
+    }
+
+    function brandClick() {
+      // In the collapsed rail the toggle button is hidden and the mark takes
+      // its place, so clicking the logo has to be what brings the sidebar
+      // back. Expanded, it behaves as it always did.
+      if (state.sidebarCollapsed) { toggleSidebar(); return; }
+      switchSection('dashboard');
     }
 
     function toggleMobileSidebar() {

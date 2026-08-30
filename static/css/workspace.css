@@ -214,7 +214,33 @@ ul, ol { list-style: none; }
   transition: opacity var(--ws-duration) var(--ws-ease);
 }
 
-.ws-sidebar.collapsed .ws-sidebar-name { opacity: 0; }
+.ws-sidebar.collapsed .ws-sidebar-name { display: none; }
+
+/* One wordmark per theme. The file is loaded through <img>, so it cannot read
+   [data-theme] or inherit `color` - the swap has to happen out here. */
+.ws-sidebar-name .ws-brand-dark { display: none; }
+[data-theme="dark"] .ws-sidebar-name .ws-brand-light { display: none; }
+[data-theme="dark"] .ws-sidebar-name .ws-brand-dark { display: block; }
+
+/* The collapsed rail is 56px, and 16px of padding either side left 24px for
+   BOTH the brand and the toggle. The toggle is flex-shrink:0 and the brand is
+   not, so the brand collapsed to zero width and was clipped away by its own
+   overflow:hidden - the one placement where an icon-only mark is the entire
+   point was the one place it did not appear. Give the rail to the mark and
+   let it double as the expand control (see brandClick). */
+.ws-sidebar.collapsed .ws-sidebar-header {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ws-sidebar.collapsed .ws-sidebar-brand {
+  overflow: visible;
+  gap: 0;
+  cursor: pointer;
+}
+
+.ws-sidebar.collapsed .ws-sidebar-toggle { display: none; }
 
 .ws-sidebar-toggle {
   width: 24px;
