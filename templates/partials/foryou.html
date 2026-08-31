@@ -1,46 +1,365 @@
 <!--
   For You - the resume-matched shortlist.
 
-  PLACEHOLDER IN THIS PASS, deliberately. The scoring engine already exists in
-  backend/services/digest.py (keyword index + rank, then AI scoring on the
-  survivors only) and has been verified against production Postgres, but wiring
-  it to a route and rendering real recommendations is its own stage.
+  Self-contained: fy-* scoped styles + an IIFE exposing window.initForYou,
+  matching the jobsearch/pipeline partials. It deliberately does NOT reach into
+  jobsearch.html's helpers - that partial wraps everything in an IIFE, so its
+  esc/toast/toneClass are private and borrowing them would break silently.
 
-  What ships here is the shell slot: the tab exists, is reachable, and states
-  honestly that it is not live yet. It does NOT fake a shortlist -- an empty
-  promise is worse than an absent one, and a fabricated match score would be
-  indistinguishable from a broken one.
+  TWO-PHASE by design, and the phases are visible to the user:
+
+    Phase 1  GET /api/digest returns the keyword shortlist. Fast (0.4-1.5s
+             measured), no AI, so the list paints immediately.
+    Phase 2  each card's match percentage comes from the EXISTING
+             /api/jobs/match route, one call per card - the same lazy pattern
+             Browse already uses.
+
+  Phase 2 is not run for the whole list. Ten-plus sequential Groq calls would
+  exceed the serverless time budget in one request, which is exactly why the
+  digest engine's own stage 2 is not wired to the route. Here the top few are
+  scored automatically (two at a time, so the first percentages land in a
+  couple of seconds) and the rest are scored on demand. /api/jobs/match is rate
+  limited to 40 per 300s, so auto-scoring the entire list on every tab visit
+  would also burn a user's budget on roles they never looked at.
 -->
+<style>
+  .fy-list { display: flex; flex-direction: column; gap: 10px; }
+  .fy-card {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 16px; border: 1px solid var(--ws-border); border-radius: 12px;
+    background: var(--ws-surface);
+  }
+  .fy-card:hover { border-color: var(--ws-primary); }
+  .fy-logo {
+    width: 40px; height: 40px; flex: 0 0 40px; border-radius: 9px;
+    overflow: hidden; display: grid; place-items: center;
+    background: var(--ws-primary-subtle); border: 1px solid var(--ws-border);
+  }
+  .fy-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .fy-letter { font-weight: 700; font-size: 15px; color: var(--ws-primary); }
+  .fy-main { min-width: 0; flex: 1; }
+  .fy-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .fy-meta { font-size: 12.5px; color: var(--ws-text-secondary); margin-top: 3px; }
+  .fy-why { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .fy-chip {
+    font-size: 11px; padding: 2px 7px; border-radius: 999px;
+    background: var(--ws-primary-subtle); color: var(--ws-primary); font-weight: 600;
+  }
+  .fy-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .fy-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .fy-pct { font-size: 19px; font-weight: 700; line-height: 1; }
+  .fy-pct-label { font-size: 10.5px; color: var(--ws-text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+  .fy-good { color: var(--ws-success, #1a7f52); }
+  .fy-warn { color: var(--ws-warning, #b26b00); }
+  .fy-bad  { color: var(--ws-text-secondary); }
+  .fy-skel { height: 86px; border-radius: 12px; border: 1px solid var(--ws-border);
+             background: var(--ws-surface); opacity: .55; }
+  .fy-note { font-size: 12.5px; color: var(--ws-text-secondary); }
+  @media (max-width: 640px) { .fy-card { flex-wrap: wrap; } .fy-side { align-items: flex-start; } }
+</style>
+
 <div class="ws-page-header">
   <div>
     <h1 class="ws-page-title">For you</h1>
     <p class="ws-page-subtitle">
-      A short, ranked shortlist matched to your resume — instead of a search box.
+      A short, ranked shortlist matched to your resume &mdash; instead of a search box.
     </p>
   </div>
+  <button class="ws-btn ws-btn-secondary ws-btn-sm" id="fyRefresh" onclick="fyReload()">Refresh</button>
 </div>
 
-<div class="ws-card" style="padding:48px 24px;text-align:center;">
-  <div style="width:44px;height:44px;border-radius:12px;background:var(--ws-primary-subtle);
-              display:grid;place-items:center;margin:0 auto 16px;">
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--ws-primary)"
-         stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 3l2.4 5.4 5.6.6-4.2 3.9 1.2 5.6L12 15.8 6.9 18.5l1.2-5.6L4 9l5.6-.6z"/>
-    </svg>
-  </div>
-  <h2 style="font-size:16px;font-weight:600;margin-bottom:6px;">Not switched on yet</h2>
-  <p style="font-size:13px;color:var(--ws-text-secondary);max-width:420px;margin:0 auto 18px;line-height:1.6;">
-    The matching engine is built and tested, but it isn't wired up to real
-    recommendations yet. Until it is, this tab stays empty rather than showing
-    you a shortlist we can't stand behind.
-  </p>
-  <button class="ws-btn ws-btn-primary" onclick="switchSection('jobsearch')">
-    Browse jobs instead
-  </button>
-</div>
+<div id="fyKeywords" class="fy-note" style="margin-bottom:14px;display:none;"></div>
+<div id="fyBody"></div>
 
 <script>
-  // Nothing to load yet. Defined so switchSection('foryou') has the same shape
-  // as the other sections and does not need a special case later.
-  window.initForYou = function () {};
+(function () {
+  var loaded = false;
+  var jobs = [];
+
+  function esc(s) {
+    return (s == null ? '' : String(s)).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function toast(msg) { if (window.showToast) window.showToast(msg, 'info'); }
+  function toneClass(p) { return p >= 70 ? 'fy-good' : p >= 40 ? 'fy-warn' : 'fy-bad'; }
+  function body() { return document.getElementById('fyBody'); }
+
+  // Only fetch once per page load. switchSection() calls initForYou on every
+  // visit to the tab, and refetching there would re-run the AI scoring each
+  // time the user flicks between tabs. Refresh is an explicit button instead.
+  window.initForYou = function () { if (!loaded) load(); };
+  window.fyReload = function () { loaded = false; jobs = []; load(); };
+
+  async function load() {
+    loaded = true;
+    var host = body();
+    host.innerHTML = '<div class="fy-list">' +
+      new Array(6).join('<div class="fy-skel"></div>') + '</div>';   // join gives n-1
+    document.getElementById('fyKeywords').style.display = 'none';
+
+    var data;
+    try {
+      var res = await fetch('/api/digest');
+      data = await res.json();
+      if (!res.ok) throw new Error(data && data.error ? data.error : 'Request failed');
+    } catch (e) {
+      loaded = false;   // a failed load must be retryable
+      host.innerHTML = state(
+        'Could not build your shortlist',
+        'Something went wrong reaching the matching service. Try again in a moment.',
+        '<button class="ws-btn ws-btn-primary" onclick="fyReload()">Try again</button>');
+      return;
+    }
+
+    // A brand-new account has no analysis to match against. That is a normal
+    // state with a clear next step, not an error and not an empty list.
+    if (data.no_resume) {
+      host.innerHTML = state(
+        'Analyze a resume first',
+        'We match roles against the skills your latest analysis found. Once you have run one, your shortlist appears here.',
+        '<button class="ws-btn ws-btn-primary" onclick="switchSection(\'analysis-upload\')">Analyze a resume</button>');
+      return;
+    }
+
+    jobs = data.candidates || [];
+    if (!jobs.length) {
+      host.innerHTML = state(
+        'Nothing matched yet',
+        'No roles posted in the last 30 days matched your resume’s skills. The job corpus refreshes daily, so this is worth checking again.',
+        '<button class="ws-btn ws-btn-secondary" onclick="switchSection(\'jobsearch\')">Browse all jobs</button>');
+      return;
+    }
+
+    var kw = document.getElementById('fyKeywords');
+    if ((data.keywords || []).length) {
+      kw.innerHTML = 'Matched on skills from your latest analysis: ' +
+        data.keywords.map(function (k) { return '<span class="fy-chip">' + esc(k) + '</span>'; }).join(' ');
+      kw.style.display = '';
+    }
+
+    render();
+    autoScore();
+  }
+
+  // Single place that paints the list, so `reorder` repaints identically to
+  // the first load. Every piece of per-card state the user can have caused
+  // (_match, _saved, _opened) lives on the job object rather than in the DOM,
+  // so a repaint cannot silently discard a Save the user made while the
+  // scoring batch was still running.
+  function render() {
+    body().innerHTML = '<div class="fy-list">' +
+      jobs.map(function (j, i) { return card(j, i); }).join('') + '</div>';
+    jobs.forEach(function (j, i) { wire(i); });
+  }
+
+  function state(title, desc, action) {
+    return '<div class="ws-card" style="padding:44px 24px;text-align:center;">' +
+      '<h2 style="font-size:16px;font-weight:600;margin-bottom:6px;">' + esc(title) + '</h2>' +
+      '<p style="font-size:13px;color:var(--ws-text-secondary);max-width:430px;' +
+      'margin:0 auto 18px;line-height:1.6;">' + desc + '</p>' + action + '</div>';
+  }
+
+  function card(job, i) {
+    var initial = esc((job.company || '?').trim().charAt(0).toUpperCase() || '?');
+    var logo = job.company_logo
+      ? '<span class="fy-logo"><img src="' + esc(job.company_logo) + '" alt="" loading="lazy"></span>'
+      : '<span class="fy-logo"><span class="fy-letter">' + initial + '</span></span>';
+
+    var bits = [];
+    if (job.company) bits.push(esc(job.company));
+    if (job.location) bits.push(esc(job.location));
+    if (job.work_mode) bits.push(esc(job.work_mode));
+    if (job.employment_type) bits.push(esc(job.employment_type));
+
+    // Say WHY the role surfaced. A bare score the user cannot interrogate is
+    // indistinguishable from a broken one.
+    var why = (job.matched_keywords || []).slice(0, 6).map(function (k) {
+      return '<span class="fy-chip">' + esc(k) + '</span>';
+    }).join('');
+
+    // The stored URL is the employer's own application page for every ATS
+    // row, but the label still follows apply_is_direct rather than asserting
+    // it, so this cannot start lying if a non-direct source is ever merged in.
+    var viewLabel = job.apply_is_direct ? 'View posting' : ('View on ' + (job.source || 'source'));
+    var acct = job.requires_account
+      ? '<div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer&#39;s ATS</div>'
+      : '';
+
+    var viewBtn = job._opened
+      ? '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView' + i + '" disabled>Opened &#8599;</button>'
+      : '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView' + i + '">' +
+          esc(viewLabel) + ' <span aria-hidden="true" style="opacity:.7;">&#8599;</span></button>';
+    var saveBtn = job._saved
+      ? '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave' + i + '" disabled>Saved</button>'
+      : '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave' + i + '">Save</button>';
+    var side = job._match != null
+      ? '<div class="fy-pct ' + toneClass(job._match) + '">' + job._match + '%</div>' +
+        '<div class="fy-pct-label">match</div>'
+      : '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch' + i + '">Check match</button>';
+
+    return '<div class="fy-card" id="fyCard' + i + '">' + logo +
+      '<div class="fy-main">' +
+        '<div class="fy-title">' + esc(job.title || 'Untitled role') + '</div>' +
+        '<div class="fy-meta">' + bits.join(' &middot; ') + '</div>' +
+        (why ? '<div class="fy-why">' + why + '</div>' : '') + acct +
+        '<div class="fy-actions">' + viewBtn + saveBtn +
+          '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor' + i + '">Tailor for this</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fy-side" id="fySide' + i + '">' + side + '</div>' +
+    '</div>';
+  }
+
+  function wire(i) {
+    var job = jobs[i];
+    var card = document.getElementById('fyCard' + i);
+    if (!card) return;
+    // Bound in JS, not an inline onerror="" - the inline form needs quotes
+    // nested three deep and takes the whole script block down when one level
+    // loses its escaping (see the note in jobsearch.html).
+    var img = card.querySelector('.fy-logo img');
+    if (img) {
+      var initial = (job.company || '?').trim().charAt(0).toUpperCase() || '?';
+      img.addEventListener('error', function () {
+        var box = img.parentNode;
+        if (box) box.innerHTML = '<span class="fy-letter">' + esc(initial) + '</span>';
+      });
+      if (img.complete && img.naturalWidth === 0) img.dispatchEvent(new Event('error'));
+    }
+    byId('fyView' + i, function (b) { b.addEventListener('click', function () { applyJob(i, b); }); });
+    byId('fySave' + i, function (b) { b.addEventListener('click', function () { saveJob(i, b); }); });
+    byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
+    byId('fyTailor' + i, function (b) { b.addEventListener('click', function () { tailorFor(i); }); });
+  }
+
+  function byId(id, fn) { var el = document.getElementById(id); if (el) fn(el); }
+
+  // Score the top few automatically, two in flight at a time so the first
+  // percentages appear in a couple of seconds rather than after a serial
+  // walk of the whole list.
+  var AUTO_SCORE = 5, CONCURRENCY = 2;
+
+  function autoScore() {
+    var next = 0;
+    function worker() {
+      if (next >= Math.min(AUTO_SCORE, jobs.length)) return Promise.resolve();
+      var i = next++;
+      return checkMatch(i, false).then(worker);
+    }
+    var runners = [];
+    for (var w = 0; w < CONCURRENCY; w++) runners.push(worker());
+    return Promise.all(runners).then(reorder);
+  }
+
+  // Re-order ONCE, after the auto-scored batch lands.
+  //
+  // The two numbers on this screen come from different stages: the list
+  // arrives ordered by keyword `match_score`, but the figure each card DISPLAYS
+  // is the AI match percentage. Left alone those disagree visibly - the first
+  // render measured 30%, 68%, 20%, 20%, 20% straight down the page, which reads
+  // as a broken ranking whatever the shortlist logic did. The keyword score
+  // decides WHICH roles make the shortlist; the percentage decides the order of
+  // the ones actually scored.
+  //
+  // Deliberately a single reflow after the batch, not a re-sort per arriving
+  // score, which would shuffle cards under the user's cursor while they read.
+  // Unscored roles keep their keyword order and stay below the scored ones,
+  // since there is no percentage to rank them by - they are not claimed to be
+  // worse, just not yet measured.
+  function reorder() {
+    if (!jobs.length) return;
+    var scored = jobs.filter(function (j) { return j._match != null; });
+    if (scored.length < 2) return;
+    var rest = jobs.filter(function (j) { return j._match == null; });
+    scored.sort(function (a, b) { return b._match - a._match; });
+    jobs = scored.concat(rest);
+    render();
+  }
+
+  async function checkMatch(i, manual) {
+    var job = jobs[i];
+    var side = document.getElementById('fySide' + i);
+    if (!side || job._match != null) return;
+    var desc = (job.description || '').trim();
+    if (!desc) desc = (job.title || '') + ' at ' + (job.company || '');
+
+    side.innerHTML = '<span class="fy-pct-label">Scoring…</span>';
+    try {
+      var res = await fetch('/api/jobs/match', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: desc })
+      });
+      var d = await res.json();
+      if (d.no_resume || d.error) {
+        side.innerHTML = '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch' + i + '">Check match</button>';
+        byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
+        if (manual) toast(d.error || 'Analyze a resume first to see matches.');
+        return;
+      }
+      job._match = d.match_percent;
+      side.innerHTML =
+        '<div class="fy-pct ' + toneClass(d.match_percent) + '">' + d.match_percent + '%</div>' +
+        '<div class="fy-pct-label">match</div>';
+    } catch (e) {
+      side.innerHTML = '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch' + i + '">Check match</button>';
+      byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
+      if (manual) toast('Could not compute match.');
+    }
+  }
+
+  async function saveJob(i, btn) {
+    var job = jobs[i];
+    btn.disabled = true;
+    try {
+      var res = await fetch('/api/jobs/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: job.title, company: job.company, location: job.location,
+          listing_url: job.redirect_url,
+          match_percent: (job._match != null ? job._match : null)
+        })
+      });
+      if (res.ok) { job._saved = true; btn.textContent = 'Saved'; toast('Saved to your pipeline.'); }
+      else { btn.disabled = false; toast('Could not save this role.'); }
+    } catch (e) { btn.disabled = false; toast('Could not save this role.'); }
+  }
+
+  // Opening a posting is NOT an application. It is tracked as 'Viewed' and the
+  // user self-reports the application later, exactly as Browse does.
+  async function applyJob(i, btn) {
+    var job = jobs[i];
+    if (job.redirect_url) window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
+    btn.disabled = true;
+    try {
+      var res = await fetch('/api/jobs/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: job.title, company: job.company, location: job.location,
+          listing_url: job.redirect_url,
+          match_percent: (job._match != null ? job._match : null)
+        })
+      });
+      if (res.ok) {
+        job._opened = true;
+        btn.textContent = 'Opened ↗';
+        toast('Opened listing — saved to your tracker.');
+      } else { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+    } catch (e) { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+  }
+
+  // Hands the job description to the analysis flow, which is what actually
+  // tailors a resume against a role today.
+  function tailorFor(i) {
+    var job = jobs[i];
+    var jd = (job.description || '').trim();
+    if (!jd) jd = (job.title || '') + ' at ' + (job.company || '');
+    try {
+      if (typeof switchSection === 'function') switchSection('analysis-upload');
+      var box = document.getElementById('analysisJobDesc');
+      if (box) { box.value = jd; box.dispatchEvent(new Event('input', { bubbles: true })); }
+      toast('Job description loaded — pick your resume to tailor it.');
+    } catch (e) { toast('Could not open the tailoring step.'); }
+  }
+})();
 </script>

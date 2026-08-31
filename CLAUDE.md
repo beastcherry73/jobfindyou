@@ -269,23 +269,36 @@ Adapter behavior to remember:
 
 ## 8. CURRENT GIT / DEPLOYMENT STATE
 
-- HEAD: `6fb0463` (fix(prod): serialize the shared Supabase connection per request)
+- HEAD: `924987f` (fix(improve): stop the optimiser reporting "+-18 Points Boost!")
 - Branch: main. Remote: https://github.com/beastcherry73/jobfindyou.git
-- Working tree: clean (only this doc and PROJECT_HANDOVER.md are untracked,
-  nothing committed)
 - Live production commit (verified via GET /api/health/db):
-  `6fb0463d547b44a1f4340501d71f0ee0de425e68`
+  `924987fef50fd0e3100482eb33479ef168e9cd07` -- i.e. main and production agree.
 - Pushing to main auto-deploys; ~1-3 min. Confirm served SHA after deploy via
   `/api/health/db` -> `vercel_git_commit_sha`.
+
+NOT YET PUSHED: the For You digest feature (section 14) is committed locally and
+deliberately held. It is read-only and green on every local suite, but its SQL
+has NOT been run against real Supabase Postgres -- `SUPABASE_DB_URL` is not in
+the local `.env`. Run `python scratch/verify_digest_postgres.py` with that set
+before pushing; local SQLite green is not verification (see section 12's dialect
+traps, all of which this path touches).
 
 ## 9. TESTING
 
 Suites to run before and after changes:
 
-- `python scratch/test_production_safe.py` - 79/79
+- `python scratch/test_production_safe.py` - 88/88
 - `python scratch/test_sprint1_1_matrix.py` - 12/12
 - `python scratch/test_export_fidelity.py` - 4 PASS
-- `python scratch/test_ats_layer.py` - 67/67 (keyless ATS layer)
+- `python scratch/test_ats_layer.py` - 77/77 (keyless ATS layer)
+- `python scratch/check_template_js.py` - 8 templates, 0 errors. Run this after
+  ANY template edit: a broken inline script block still renders HTTP 200.
+
+Postgres-only checks (need SUPABASE_DB_URL set locally; they refuse to run
+rather than pass falsely against SQLite):
+
+- `python scratch/verify_ats_postgres.py` - ATS layer schema + sync
+- `python scratch/verify_digest_postgres.py` - the For You digest read path
 
 Then a real production E2E against jobspike.in with 2+ accounts (login,
 analyses, analyze, refresh, detail, sequential AND concurrent).
@@ -433,3 +446,61 @@ write, so the page you photograph is a state a user can actually be in.
 Do not trust an embedded browser pane's getComputedStyle over the pixels: while
 verifying the collapsed rail it reported width 260px for a sidebar that headless
 Chrome demonstrably rendered at 56px.
+
+## 14. FOR YOU (the resume-matched digest)
+
+`backend/services/digest.py` + `GET /api/digest` + `templates/partials/foryou.html`.
+Replaces the honest placeholder that tab used to hold. Two phases, and the
+split is the whole design:
+
+    Phase 1  GET /api/digest    keyword shortlist. No AI. 0.4-1.5s.
+    Phase 2  POST /api/jobs/match  per card, from the browser, a few at a time.
+
+WHY STAGE 2 IS NOT IN THE ROUTE. The digest engine's own `ai_score` makes one
+Groq call per candidate (~10). Ten sequential calls do not fit the serverless
+budget, and the shared connection makes a long request everyone's problem. So
+the browser drives phase 2 through the EXISTING per-card match route that
+Browse already uses - top 5 automatically (2 in flight), the rest on demand.
+/api/jobs/match is rate limited 40/300s, which is also why the whole list is
+not auto-scored on every tab visit.
+
+WHY STAGE 1 HAS TWO IMPLEMENTATIONS. `build_index` + `rank` (batch) tokenizes
+every eligible row inside the `with get_db()` block: measured 13-23s cold with
+the shared lock HELD, which stalls every other request on the instance. The
+request path `recall` + `score_rows` narrows in SQL first and scores after the
+lock is released: 0.4-1.5s total, 0.18-0.77s of it locked. Keep BOTH - the
+batch shape is correct if a nightly job is ever added.
+
+This does not contradict digest.py's "why matching is not done in SQL". LIKE is
+used ONLY for recall (over-matching is harmless, Python re-scores with word
+boundaries); it never decides a score. The docstring's "11.8s for 13 keywords"
+came from one query PER keyword - a single OR'd query is one scan regardless
+(0.82s for the same 13).
+
+Two things measured and fixed while building it, both invisible to the suites:
+
+- Sorting by raw `match_score` let laundry-list job descriptions win. "Partner
+  Solutions Engineer" name-drops five technologies and so scored 5, beating a
+  real "Frontend Engineer" title match on 3 - and it surfaced for a React
+  resume AND a Python one, which is the tell. `score_rows` now ranks any title
+  match above every description-only match.
+- The list arrived ordered by keyword score while each card DISPLAYS the AI
+  percentage, so the first real screenshot read 30%, 68%, 20%, 20%, 20% down
+  the page - a ranking visibly contradicting itself. The UI now re-sorts once,
+  after the auto-scored batch lands (not per arriving score, which would
+  shuffle cards under the reader). Only pixels caught this.
+
+RECALL CAP. `_RECALL_CAP = 2500`, title matches ordered first so truncation can
+only drop description-only rows. Against the batch path this is 15/15 for
+narrow keyword sets and 12/15 or 9/15 for broad ones, every divergence in the
+description-only tail. Removing the cap restores exact parity but costs 3-5.5s
+(single-token probes like "cloud"/"api" recall 76% of the corpus), which is the
+stall the path exists to avoid.
+
+NOT VERIFIED ON POSTGRES YET. Read-only and no schema change, but the SQL uses
+`LIKE ? ESCAPE '\'`, a CASE-tier ORDER BY, `_timestamp_param` on TIMESTAMPTZ,
+and the NULLs-first guard - every one a documented SQLite-hides-it trap. Run
+`python scratch/verify_digest_postgres.py` with SUPABASE_DB_URL set before
+pushing. It refuses to run against SQLite rather than passing falsely, and it
+measures the one number that cannot be inferred locally: how long `recall`
+holds the shared lock on the real pooler.

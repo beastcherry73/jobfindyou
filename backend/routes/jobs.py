@@ -11,7 +11,7 @@ from backend.services.adzuna_service import (
 from backend.services.jobsources import (
     unified_search, get_countries, any_source_configured,
 )
-from backend.services import ats
+from backend.services import ats, digest
 from backend.services.ai import call_groq, GroqError
 from backend.services.helpers import clean_json
 from backend.prompts import JOB_MATCH_PROMPT
@@ -214,6 +214,63 @@ def api_jobs_match():
         "match_percent": match_percent,
         "matching_keywords": mk if isinstance(mk, list) else [],
         "missing_keywords": xk if isinstance(xk, list) else [],
+    })
+
+
+# ── For You: resume-matched shortlist (stage 1 only) ───────────────────
+#
+# Deliberately does NO AI work. The digest engine's stage 2 scores each
+# candidate with a separate Groq call, and ten of those in one request would
+# blow the serverless time budget. Instead this returns the keyword shortlist
+# fast and the UI fills in match percentages per card through the existing
+# /api/jobs/match route - the same lazy pattern Browse already uses.
+#
+# The `with get_db()` block covers ONLY the two queries. Scoring runs after it
+# closes, because the shared connection lock is held for the whole block (see
+# CLAUDE.md) and scoring needs no database.
+
+@jobs_bp.route("/api/digest", methods=["GET"])
+@login_required
+@rate_limit(limit=20, window_seconds=300)
+def api_digest():
+    args = request.args
+    country = (args.get("country") or "").strip().lower()
+    try:
+        limit = max(1, min(30, int(args.get("limit", digest.DEFAULT_LIMIT))))
+    except (TypeError, ValueError):
+        limit = digest.DEFAULT_LIMIT
+    try:
+        max_days_old = max(1, min(365, int(args.get("max_days_old",
+                                                    digest.DEFAULT_MAX_DAYS_OLD))))
+    except (TypeError, ValueError):
+        max_days_old = digest.DEFAULT_MAX_DAYS_OLD
+
+    try:
+        with get_db() as db:
+            keywords = digest.latest_keywords(db, session["user_id"])
+            rows = digest.recall(
+                db, [n for _, n in keywords],
+                max_days_old=max_days_old, country=country,
+            ) if keywords else []
+    except Exception as e:
+        logger.warning(f"Digest query failed: {e}")
+        return jsonify({"error": "Could not build your shortlist just now."}), 502
+
+    # No analysis yet is a normal state for a new account, not an error: the
+    # UI needs to tell them to analyze a resume, so it is flagged rather than
+    # returned as an empty shortlist that would look like "nothing matched".
+    if not keywords:
+        return jsonify({
+            "keywords": [], "candidates": [], "count": 0,
+            "no_resume": True,
+        })
+
+    candidates = digest.score_rows(rows, keywords, limit=limit)
+    return jsonify({
+        "keywords": [d for d, _ in keywords],
+        "candidates": candidates,
+        "count": len(candidates),
+        "no_resume": False,
     })
 
 
