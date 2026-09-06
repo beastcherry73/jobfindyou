@@ -2339,6 +2339,18 @@
       mobileOpen: false,
     };
 
+    /* Escape before interpolating anything user-supplied into innerHTML.
+       Resume filenames are chosen by whoever uploaded the file and are stored
+       verbatim, so a name like `<img src=x onerror=...>.pdf` clears the
+       .pdf/.txt extension check on the server and then runs as markup here.
+       The jobsearch and foryou partials each already carry this helper; the
+       workspace shell did not. */
+    function esc(s) {
+      return (s == null ? '' : String(s)).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
     /* ── Theme ── */
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme);
@@ -2948,7 +2960,7 @@
         if (recentBody) {
           recent.forEach(function(a) {
             const tr = document.createElement('tr');
-            tr.innerHTML = '<td style="font-weight:500;">' + a.filename + '</td>' +
+            tr.innerHTML = '<td style="font-weight:500;">' + esc(a.filename) + '</td>' +
               '<td><span class="ws-badge ws-badge-' + (a.overall_score >= 70 ? 'good' : a.overall_score >= 40 ? 'warn' : 'bad') + '">' + a.overall_score + '%</span></td>' +
               '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(a.created_at).toLocaleDateString() + '</td>' +
               '<td><button class="ws-btn ws-btn-ghost ws-btn-sm" onclick="viewReportDetail(' + a.id + ')">View</button></td>';
@@ -3352,7 +3364,7 @@
           }
         };
         tr.innerHTML =
-          '<td style="font-weight:600;color:var(--ws-primary);">' + item.name + '</td>' +
+          '<td style="font-weight:600;color:var(--ws-primary);">' + esc(item.name) + '</td>' +
           '<td><span class="ws-badge ws-badge-' + (item.type === 'analysis' ? 'primary' : 'accent') + '">' + item.type + '</span></td>' +
           '<td>' + scoreBadge + '</td>' +
           '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
@@ -3836,7 +3848,7 @@
                   restoreBuilderDraft(item.id);
                 }
               };
-              tr.innerHTML = '<td style="font-weight:600;color:var(--ws-primary);">' + item.name + '</td>' +
+              tr.innerHTML = '<td style="font-weight:600;color:var(--ws-primary);">' + esc(item.name) + '</td>' +
                 '<td><span class="ws-badge ws-badge-' + (item.score >= 70 ? 'good' : item.score >= 40 ? 'warn' : 'bad') + '">' + (item.score || 0) + '%</span></td>' +
                 '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
                 '<td><span class="ws-badge ws-badge-primary">' + item.type + '</span></td>';
@@ -3877,7 +3889,7 @@
                   restoreBuilderDraft(item.id);
                 }
               };
-              tr.innerHTML = '<td style="font-weight:600;color:var(--ws-primary);">' + item.name + '</td>' +
+              tr.innerHTML = '<td style="font-weight:600;color:var(--ws-primary);">' + esc(item.name) + '</td>' +
                 '<td><span class="ws-badge ws-badge-' + (item.score >= 70 ? 'good' : item.score >= 40 ? 'warn' : 'bad') + '">' + (item.score || 0) + '%</span></td>' +
                 '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + new Date(item.date).toLocaleDateString() + '</td>' +
                 '<td><span class="ws-badge ws-badge-good">' + item.status + '</span></td>';

@@ -4,17 +4,43 @@ from flask import request, jsonify, session
 from backend.database import get_db
 
 
+def client_ip():
+    """The real client IP, correcting for the fact that we run behind a proxy.
+
+    On Vercel `request.remote_addr` is the platform's own edge address, not
+    the caller: keying on it lumps every anonymous visitor into ONE bucket,
+    so a guest limit either locks out the world at once or does nothing.
+
+    `x-vercel-forwarded-for` is set by Vercel itself and overwrites whatever
+    the client sent, so it cannot be forged. Plain `x-forwarded-for` can be:
+    a client may send its own value which the proxy then appends to, so the
+    LEFTMOST entries are attacker-controlled and only the RIGHTMOST hop --
+    the one our nearest trusted proxy added -- can be believed.
+    """
+    vercel_ip = request.headers.get("X-Vercel-Forwarded-For")
+    if vercel_ip:
+        return vercel_ip.split(",")[0].strip()
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[-1].strip()
+    return request.remote_addr or "anonymous"
+
+
 def _rate_key():
-    return str(session.get("user_id") or request.remote_addr or "anonymous")
+    return str(session.get("user_id") or client_ip())
 
 
-def rate_limit(limit, window_seconds, key_fn=None):
+def rate_limit(limit, window_seconds, key_fn=None, on_limit=None):
     """Simple fixed-window rate limit backed by the app database.
 
     Counts requests per key (user id, or IP for guests) within a time
     window and rejects with 429 once the limit is exceeded. Fails open:
     if the rate-limit infra itself errors, the request proceeds so we
     never break the app over a safety feature.
+
+    `on_limit` lets a form-rendering route answer with HTML instead of the
+    default JSON body, which would otherwise dump a raw JSON blob in front
+    of someone who simply mistyped their password a few times.
     """
 
     def decorator(view):
@@ -39,6 +65,8 @@ def rate_limit(limit, window_seconds, key_fn=None):
                     db.commit()
                     if hits > limit:
                         retry_after = max(0, (window_start + window_seconds) - now)
+                        if on_limit:
+                            return on_limit(retry_after)
                         resp = jsonify({"error": f"Too many requests. Please try again in {retry_after} seconds."})
                         resp.status_code = 429
                         return resp

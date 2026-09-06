@@ -6,14 +6,39 @@ from flask import Blueprint, request, jsonify, render_template, redirect, url_fo
 from werkzeug.security import generate_password_hash, check_password_hash
 from backend.database import get_db, store_oauth_state, verify_oauth_state, cleanup_expired_oauth_states
 from backend.decorators import login_required
+from backend.services.ratelimit import rate_limit, client_ip
 
 logger = logging.getLogger(__name__)
 
 auth_bp = Blueprint("auth", __name__)
 
 
+def _auth_key():
+    """Always key auth attempts on the caller's IP, never the session.
+
+    The default key prefers session["user_id"], which is absent on exactly
+    the requests that need limiting most (a logged-out attacker guessing
+    passwords), so these routes pin to the IP explicitly.
+    """
+    return "auth:" + client_ip()
+
+
+def _too_many(mode):
+    def handler(retry_after):
+        minutes = max(1, retry_after // 60)
+        flash(f"Too many attempts. Please try again in about {minutes} minute(s).", "error")
+        return render_template("auth.html", mode=mode), 429
+    return handler
+
+
+# Brute force / credential stuffing / signup spam all land here, and every
+# other endpoint in the app was already rate limited while these were not.
+# Windows are deliberately generous enough that a shared office or campus
+# NAT does not lock real users out, while still cutting guessing rates to
+# uselessness.
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/auth/register", methods=["GET", "POST"])
+@rate_limit(limit=10, window_seconds=3600, key_fn=_auth_key, on_limit=_too_many("register"))
 def register():
     if "user_id" in session:
         return redirect(url_for("static_routes.index"))
@@ -54,6 +79,7 @@ def register():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 @auth_bp.route("/auth/login", methods=["GET", "POST"])
+@rate_limit(limit=20, window_seconds=900, key_fn=_auth_key, on_limit=_too_many("login"))
 def login():
     if "user_id" in session:
         return redirect(url_for("static_routes.index"))

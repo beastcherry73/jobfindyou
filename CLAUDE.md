@@ -44,9 +44,11 @@ Stack:
 6. Preserve auth (Flask sessions, login_required, Google OAuth).
 7. No permanent diagnostic endpoints. Temp probe routes must be removed.
 8. To reproduce a production bug, hit the live site with a real account and
-   capture the response body (the app renders `str(e)` in JSON `details` or in
-   the HTML `Internal Server Error <p>...</p>`). Vercel Runtime Logs are not
-   accessible without CLI auth.
+   capture the response body. Exception detail is NO LONGER returned by
+   default: it leaked driver messages, SQL fragments and paths to any
+   visitor. Set `DEBUG_ERRORS=1` in the Vercel env to restore `str(e)` in
+   JSON `details` / the HTML body while diagnosing, then UNSET it. Vercel
+   Runtime Logs are not accessible without CLI auth.
 
 ## 3. MOST IMPORTANT FILE: backend/database.py
 
@@ -82,7 +84,8 @@ requests, each `with get_db():` block must be short and self-contained.
 - `api/index.py` - Vercel entrypoint; renders startup exceptions as a plain
   text 500 so boot failures are visible.
 - `backend/__init__.py` - `create_app()`, global error handler that surfaces
-  `str(e)` (used to capture real production exceptions).
+  `str(e)` ONLY when `DEBUG_ERRORS=1` (see rule 8); otherwise a generic
+  message. Also sets the security headers (CSP, HSTS, nosniff, frame-deny).
 - `backend/routes/analysis.py` - `POST /api/analyze`, `GET /api/analyses`,
   `/api/analyses/<id>`, `/claim`. Save failure returns
   `500 {"error":"The analysis completed but could not be saved...","saved":false}`.

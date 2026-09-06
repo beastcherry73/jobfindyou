@@ -1,7 +1,10 @@
 import os
+import secrets
 from dotenv import load_dotenv
 
 load_dotenv()
+
+_DEV_SECRET = "change-this-local-development-secret"
 
 
 def _is_vercel():
@@ -9,7 +12,24 @@ def _is_vercel():
 
 
 def configure_app(app):
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-this-local-development-secret")
+    # SECRET_KEY signs the session cookie, so a known value means anyone can
+    # forge a session for any user. The development default is committed to a
+    # public repo, so it must NEVER be the key in production. If the env var
+    # is missing there we fall back to a random per-instance key instead:
+    # that logs everyone out whenever an instance recycles (visible, annoying,
+    # recoverable) rather than silently shipping a publicly known signing key
+    # (invisible, and full account takeover). It deliberately does not raise,
+    # because taking the live site down over this would be the worse failure.
+    _secret = os.environ.get("SECRET_KEY")
+    if _is_vercel() and not _secret:
+        app.logger.error(
+            "STARTUP BLOCKER: SECRET_KEY is not set in production. Falling back "
+            "to a random per-instance key, so sessions will not survive an "
+            "instance recycle and users will be logged out unpredictably. "
+            "Set SECRET_KEY in the Vercel project env and redeploy."
+        )
+        _secret = secrets.token_hex(32)
+    app.config["SECRET_KEY"] = _secret or _DEV_SECRET
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if os.environ.get("VERCEL") or not os.access(BASE_DIR, os.W_OK):
