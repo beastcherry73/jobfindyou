@@ -1521,7 +1521,7 @@
                   <tbody id="historyBody"></tbody>
                 </table>
               </div>
-              <div class="ws-empty" id="historyEmpty">
+              <div class="ws-empty" id="historyEmpty" style="display:none;">
                 <div class="ws-empty-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg></div>
                 <div class="ws-empty-title">No history yet</div>
                 <div class="ws-empty-desc">Your resume analyses and versions will appear here</div>
@@ -2957,14 +2957,14 @@
         }
 
         const latest = analyses[0];
-        const best = Math.max.apply(Math, analyses.map(function(a) { return a.overall_score; }));
-        const tone = best >= 80 ? 'good' : best >= 60 ? 'warn' : 'bad';
+        const latestScore = latest.overall_score;
+        const tone = latestScore >= 80 ? 'good' : latestScore >= 60 ? 'warn' : 'bad';
         const toneVar = 'var(--ws-' + tone + ')';
-        const toneLabel = best >= 80 ? 'Excellent' : best >= 60 ? 'Good' : 'Needs Work';
+        const toneLabel = latestScore >= 80 ? 'Excellent' : latestScore >= 60 ? 'Good' : 'Needs Work';
 
         // Animate score ring
-        animateRing('healthRing', best);
-        animateCounter('healthScore', best);
+        animateRing('healthRing', latestScore);
+        animateCounter('healthScore', latestScore);
         document.getElementById('healthRing').style.stroke = toneVar;
         document.getElementById('healthScore').style.color = toneVar;
 
@@ -2975,24 +2975,28 @@
 
         const floatHealth = document.getElementById('floatingHealthScore');
         if (floatHealth) {
-          const statusColor = best >= 80 ? '#16A34A' : best >= 60 ? '#D97706' : '#DC2626';
-          const statusBg = best >= 80 ? 'rgba(34,197,94,0.15)' : best >= 60 ? 'rgba(217,119,6,0.15)' : 'rgba(220,38,38,0.15)';
-          floatHealth.innerHTML = best + ' <span style="font-size: 0.7rem; font-weight: 700; color: ' + statusColor + '; background: ' + statusBg + '; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">' + toneLabel + '</span>';
+          const statusColor = latestScore >= 80 ? '#16A34A' : latestScore >= 60 ? '#D97706' : '#DC2626';
+          const statusBg = latestScore >= 80 ? 'rgba(34,197,94,0.15)' : latestScore >= 60 ? 'rgba(217,119,6,0.15)' : 'rgba(220,38,38,0.15)';
+          floatHealth.innerHTML = latestScore + ' <span style="font-size: 0.7rem; font-weight: 700; color: ' + statusColor + '; background: ' + statusBg + '; padding: 2px 6px; border-radius: 4px; vertical-align: middle;">' + toneLabel + '</span>';
         }
 
-        // Score Delta (Compare last scan with first scan)
+        // Score Delta (compare most recent scan with the first scan — true
+        // difference, positive or negative, never hidden: see the improve-
+        // resume delta fix for why silently clamping regressions is wrong).
         const firstScore = analyses[analyses.length - 1].overall_score;
-        const delta = best - firstScore;
+        const delta = latestScore - firstScore;
         const changeEl = document.getElementById('healthChange');
-        changeEl.style.color = delta > 0 ? 'var(--ws-good)' : 'var(--ws-text-tertiary)';
+        changeEl.style.color = delta > 0 ? 'var(--ws-good)' : delta < 0 ? 'var(--ws-bad)' : 'var(--ws-text-tertiary)';
         changeEl.innerHTML = delta > 0
           ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>+' + delta + ' since first scan'
+          : delta < 0
+          ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7 17 17M17 9v8h-8"/></svg>' + delta + ' since first scan'
           : 'Steady score';
 
         // Stat strip — Resume + Skills mirror real analysis data; Applications/
         // Interviews/Offers read the real (if only locally-tracked) Tracker data.
         // Job Match is intentionally absent: no field, no computation exists for it.
-        document.getElementById('statResumeValue').textContent = best;
+        document.getElementById('statResumeValue').textContent = latestScore;
         document.getElementById('statResumeStatus').className = 'ws-stat-tile-status ' + tone;
         document.getElementById('statResumeStatus').innerHTML = '<span class="dot"></span>' + toneLabel;
 
@@ -3236,6 +3240,10 @@
     async function loadHistory() {
       const countEl = document.getElementById('historyCount');
       if (countEl) countEl.textContent = 'Loading…';
+      const emptyEl = document.getElementById('historyEmpty');
+      if (emptyEl) emptyEl.style.display = 'none';
+      const bodyEl = document.getElementById('historyBody');
+      if (bodyEl) bodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ws-text-tertiary);padding:24px;">Loading…</td></tr>';
       var authFailure = null;
 
       function isAuthErr(e) {

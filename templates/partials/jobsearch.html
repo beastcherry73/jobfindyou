@@ -3,7 +3,7 @@
    (called lazily by switchSection('jobsearch')). No global-scope collisions with
    workspace.html; toast() delegates to the shell's showToast. #}
 <style>
-  .jp-wrap { max-width: 980px; }
+  .jp-wrap { max-width: 1280px; }
   /* Primary search bar — one elevated row, the single focal element. */
   .jp-searchbar { display:flex; align-items:stretch; background:var(--ws-elevated); border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); box-shadow:var(--ws-shadow-sm); overflow:hidden; }
   .jp-sb-field { position:relative; display:flex; align-items:center; flex:1; min-width:0; }
@@ -73,7 +73,11 @@
      merely sparse. Flex column so the body takes the leftover height. */
   .jp-detail { position:sticky; top:12px;
                height:calc(100vh - 260px); overflow-y:auto;
-               display:flex; flex-direction:column; }
+               display:flex; flex-direction:column;
+               /* .ws-card itself carries no padding -- only .ws-card-body
+                  does, and this panel's content sits directly in the .ws-card
+                  element without that wrapper, so it needs its own. */
+               padding: 20px; }
   .jp-detail-body { flex:1 1 auto; }
 
   /* Description arriving over the wire. Three bars sized like real prose, so
