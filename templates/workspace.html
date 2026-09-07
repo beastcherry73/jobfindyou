@@ -2209,6 +2209,27 @@
               <p class="ws-page-subtitle">Manage your subscription and invoices</p>
             </div>
           </div>
+
+          <!-- Launch messaging only: the tiers below are unchanged. Inline,
+               above the plans, rather than a modal, so it never blocks the
+               page or has to be dismissed before someone can read pricing. -->
+          <div class="ws-card ws-mb-md" style="max-width:720px;border:1px solid var(--ws-accent);background:var(--ws-primary-subtle);">
+            <div class="ws-card-body" style="display:flex;gap:14px;align-items:flex-start;">
+              <div style="font-size:20px;line-height:1.2;">🎉</div>
+              <div>
+                <div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">
+                  Free for a limited time — everything, no card.
+                </div>
+                <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.6;">
+                  Every feature below is unlocked while we're in launch. Make the most of it
+                  before paid plans begin. Know someone job hunting?
+                  <button class="ws-link-btn" onclick="shareJobSpike()"
+                          style="background:none;border:none;padding:0;font:inherit;color:var(--ws-primary);font-weight:600;cursor:pointer;text-decoration:underline;">Send them the link</button>.
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="ws-grid-3" style="max-width:720px;">
             <div class="ws-card" style="border:2px solid var(--ws-border);">
               <div class="ws-card-body" style="text-align:center;">
@@ -2681,6 +2702,25 @@
     });
 
     /* ── Toast ── */
+    /* Referral share for the launch banner. Uses the native share sheet on
+       mobile (where most sharing actually happens) and falls back to copying
+       the link, since navigator.share is absent on most desktop browsers. */
+    function shareJobSpike() {
+      const url = 'https://www.jobspike.in';
+      const text = 'JobSpike is free right now — it scores your resume against ATS and matches you to real roles.';
+      if (navigator.share) {
+        navigator.share({ title: 'JobSpike', text: text, url: url }).catch(function() {});
+        return;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text + ' ' + url)
+          .then(function() { showToast('Link copied — thanks for sharing', 'success'); })
+          .catch(function() { showToast('Could not copy the link', 'error'); });
+        return;
+      }
+      window.prompt('Copy this link:', url);
+    }
+
     function showToast(message, type) {
       type = type || 'info';
       const container = document.getElementById('toastContainer');

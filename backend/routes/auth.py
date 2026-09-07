@@ -38,7 +38,7 @@ def _too_many(mode):
 # uselessness.
 @auth_bp.route("/register", methods=["GET", "POST"])
 @auth_bp.route("/auth/register", methods=["GET", "POST"])
-@rate_limit(limit=10, window_seconds=3600, key_fn=_auth_key, on_limit=_too_many("register"))
+@rate_limit(limit=10, window_seconds=3600, key_fn=_auth_key, on_limit=_too_many("register"), methods=("POST",))
 def register():
     if "user_id" in session:
         return redirect(url_for("static_routes.index"))
@@ -79,7 +79,7 @@ def register():
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 @auth_bp.route("/auth/login", methods=["GET", "POST"])
-@rate_limit(limit=20, window_seconds=900, key_fn=_auth_key, on_limit=_too_many("login"))
+@rate_limit(limit=20, window_seconds=900, key_fn=_auth_key, on_limit=_too_many("login"), methods=("POST",))
 def login():
     if "user_id" in session:
         return redirect(url_for("static_routes.index"))

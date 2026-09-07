@@ -30,7 +30,7 @@ def _rate_key():
     return str(session.get("user_id") or client_ip())
 
 
-def rate_limit(limit, window_seconds, key_fn=None, on_limit=None):
+def rate_limit(limit, window_seconds, key_fn=None, on_limit=None, methods=None):
     """Simple fixed-window rate limit backed by the app database.
 
     Counts requests per key (user id, or IP for guests) within a time
@@ -41,11 +41,20 @@ def rate_limit(limit, window_seconds, key_fn=None, on_limit=None):
     `on_limit` lets a form-rendering route answer with HTML instead of the
     default JSON body, which would otherwise dump a raw JSON blob in front
     of someone who simply mistyped their password a few times.
+
+    `methods` restricts counting to specific HTTP verbs. The auth routes
+    serve their form on GET and act on POST from the SAME url, so counting
+    every request meant simply LOADING the signup page ~10 times in an hour
+    locked a real person out of a page they had not even submitted yet.
+    Defaults to None (count everything), which keeps the GET-only API
+    routes -- /api/jobs/search and friends -- limited as before.
     """
 
     def decorator(view):
         @wraps(view)
         def wrapped_view(*args, **kwargs):
+            if methods and request.method not in methods:
+                return view(*args, **kwargs)
             key = key_fn() if key_fn else _rate_key()
             now = int(time.time())
             window_start = (now // window_seconds) * window_seconds
