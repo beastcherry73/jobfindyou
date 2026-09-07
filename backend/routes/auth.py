@@ -242,10 +242,34 @@ def user_profile():
             data = request.get_json() or {}
             new_name = data.get("name", "").strip()
             new_password = data.get("password", "")
+            current_password = data.get("current_password", "")
+
+            if new_password:
+                # Changing a password used to need only a live session, so
+                # anyone who got hold of one -- a borrowed laptop, a hijacked
+                # cookie -- could lock the real owner out permanently. Proving
+                # knowledge of the current password makes a stolen session a
+                # temporary problem instead of a permanent takeover.
+                if len(new_password) < 8:
+                    return jsonify({"error": "Password must be at least 8 characters."}), 400
+                row = db.execute(
+                    "SELECT password_hash FROM users WHERE id = ?", (user_id,)
+                ).fetchone()
+                if not row:
+                    return jsonify({"error": "User not found"}), 404
+                stored = row["password_hash"]
+                # Google-only accounts hold a random unusable hash, so there is
+                # no current password to prove; they must keep signing in with
+                # Google rather than being handed a password here.
+                if not current_password or not check_password_hash(stored, current_password):
+                    return jsonify({"error": "Your current password is incorrect."}), 403
+                db.execute(
+                    "UPDATE users SET password_hash = ? WHERE id = ?",
+                    (generate_password_hash(new_password), user_id),
+                )
+
             if new_name:
                 db.execute("UPDATE users SET name = ? WHERE id = ?", (new_name, user_id))
                 session["user_name"] = new_name
-            if new_password and len(new_password) >= 8:
-                db.execute("UPDATE users SET password_hash = ? WHERE id = ?", (generate_password_hash(new_password), user_id))
             db.commit()
             return jsonify({"message": "Profile updated successfully"})

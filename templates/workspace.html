@@ -1586,7 +1586,12 @@
                     </div>
                     <div class="ws-input-group ws-mb-md">
                       <label class="ws-input-label">New Password (leave blank to keep current)</label>
-                      <input class="ws-input" id="profilePassword" type="password" placeholder="••••••••" minlength="8">
+                      <input class="ws-input" id="profilePassword" type="password" placeholder="••••••••" minlength="8" autocomplete="new-password">
+                    </div>
+                    <div class="ws-input-group ws-mb-md" id="currentPasswordGroup" style="display:none;">
+                      <label class="ws-input-label">Current Password</label>
+                      <input class="ws-input" id="profileCurrentPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+                      <div style="font-size:11.5px;color:var(--ws-text-tertiary);margin-top:6px;">Required to change your password.</div>
                     </div>
                     <button class="ws-btn ws-btn-primary" type="submit">Save Changes</button>
                   </form>
@@ -3902,16 +3907,39 @@
       }
     }
 
+    /* Only ask for the current password once a new one is actually being
+       typed, so the common case (renaming yourself) stays a single field. */
+    document.getElementById('profilePassword').addEventListener('input', function() {
+      const group = document.getElementById('currentPasswordGroup');
+      if (group) group.style.display = this.value ? '' : 'none';
+    });
+
     document.getElementById('profileForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const name = document.getElementById('profileName').value.trim();
       const password = document.getElementById('profilePassword').value;
+      const currentPassword = document.getElementById('profileCurrentPassword').value;
       const body = {};
       if (name) body.name = name;
-      if (password && password.length >= 8) body.password = password;
+      if (password) {
+        if (password.length < 8) {
+          showToast('New password must be at least 8 characters', 'error');
+          return;
+        }
+        if (!currentPassword) {
+          showToast('Enter your current password to change it', 'error');
+          return;
+        }
+        body.password = password;
+        body.current_password = currentPassword;
+      }
       try {
         await apiFetch('/api/user/profile', {method: 'PUT', body: body});
         showToast('Profile updated successfully', 'success');
+        // Never leave either secret sitting in the DOM after a save.
+        document.getElementById('profilePassword').value = '';
+        document.getElementById('profileCurrentPassword').value = '';
+        document.getElementById('currentPasswordGroup').style.display = 'none';
       } catch (err) {
         showToast(err.message || 'Update failed', 'error');
       }
