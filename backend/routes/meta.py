@@ -43,4 +43,14 @@ def health():
             "gemini": bool(os.environ.get("GEMINI_API_KEY")),
             "nvidia": bool(os.environ.get("NVIDIA_API_KEY")),
         },
+        # Same presence-only contract. Both of these fail SILENTLY when unset:
+        # CRON_SECRET makes the nightly ATS sync answer 503 (the job corpus
+        # then freezes and prune_stale eventually empties it), and a missing
+        # SECRET_KEY falls back to a random per-instance signing key, which
+        # logs people out at unpredictable moments. Neither is visible from
+        # the outside otherwise, which is exactly how both went unnoticed.
+        "platform_configured": {
+            "cron_secret": bool(os.environ.get("CRON_SECRET")),
+            "secret_key": bool(os.environ.get("SECRET_KEY")),
+        },
     })
