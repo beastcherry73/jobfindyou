@@ -535,6 +535,9 @@ def _create_tables_and_migrations(db):
         "CREATE INDEX IF NOT EXISTS idx_ats_posted ON ats_jobs (posted_at)",
         "CREATE INDEX IF NOT EXISTS idx_ats_seen ON ats_jobs (last_seen_at)",
         "CREATE INDEX IF NOT EXISTS idx_ats_company ON ats_jobs (company_token)",
+        # Every tracker read filters on user_id; without this a fresh database
+        # would seq-scan the pipeline. Applied to the live DB via migration too.
+        "CREATE INDEX IF NOT EXISTS idx_jobs_tracker_user_id ON jobs_tracker (user_id)",
     ):
         try:
             db.execute(_idx)

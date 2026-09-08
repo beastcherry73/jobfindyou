@@ -317,17 +317,31 @@ def api_jobs_track():
     except (ValueError, TypeError):
         match_percent = None
 
+    # A row seeded by clicking Apply is genuinely only 'Viewed'. But someone
+    # adding a job by hand has usually already applied somewhere else, and
+    # forcing them to add it then immediately re-mark it was the reason the
+    # tracker could not represent applications made off-site at all.
+    # _VALID_STATUSES deliberately excludes 'Viewed' because a PATCH must not
+    # move a row backwards into it -- but 'Viewed' is exactly the state a row
+    # is CREATED in by the Apply-from-Browse flow, so creation accepts it too.
+    status = (body.get("status") or "Viewed").strip()
+    if status not in (_VALID_STATUSES | {"Viewed"}):
+        return jsonify({"error": "Invalid status."}), 400
+    # applied_date carries a NOT NULL DEFAULT CURRENT_TIMESTAMP, and callers
+    # gate on status rather than reading it for 'Viewed' rows, so letting the
+    # default stand is correct for both paths.
     try:
         with get_db() as db:
             cursor = db.execute(
                 """INSERT INTO jobs_tracker
                    (user_id, job_title, company, location, listing_url, match_percent,
                     status, viewed_date)
-                   VALUES (?, ?, ?, ?, ?, ?, 'Viewed', CURRENT_TIMESTAMP)""",
-                (session["user_id"], title, company, location, listing_url, match_percent),
+                   VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+                (session["user_id"], title, company, location, listing_url, match_percent,
+                 status),
             )
             new_id = cursor.lastrowid
-        return jsonify({"id": new_id, "status": "Viewed"}), 201
+        return jsonify({"id": new_id, "status": status}), 201
     except Exception as e:
         logger.error(f"Tracker insert failed: {e}")
         return jsonify({"error": "Could not save this listing."}), 500

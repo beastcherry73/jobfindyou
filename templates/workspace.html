@@ -796,6 +796,49 @@
                   <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Ultra-clean spacing, line divisions, lightweight fonts.</p>
                 </div>
               </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('technical', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Technical</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Dense skills-forward layout with monospace accents. Built for engineers.</p>
+                </div>
+              </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('academic', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/></svg></div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Academic</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Serif body, publication-friendly spacing. For research and faculty roles.</p>
+                </div>
+              </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('compact', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="14" y2="18"/></svg></div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Compact One-Page</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Tight leading to keep a long history on a single page.</p>
+                </div>
+              </div>
+              <div class="ws-card template-card" onclick="selectBuilderTemplate('impact', this)" style="cursor:pointer;border:2px solid transparent;">
+                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
+                <div class="ws-card-body" style="padding:16px;">
+                  <h4 style="font-weight:700;margin-bottom:4px;">Impact</h4>
+                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Bold accent rule and heavy section headers. Puts metrics front and centre.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live preview. Previously the only preview element lived inside
+               #section-builder, so switching a template here updated a node on
+               a hidden page and the user saw nothing but a toast. -->
+          <div class="ws-card ws-mt-md" id="templatesPreviewCard">
+            <div class="ws-card-header" style="padding:16px 20px 0;">
+              <div>
+                <div class="ws-card-title">Live preview</div>
+                <div class="ws-card-subtitle" id="templatesPreviewHint">Switching a template re-renders this instantly.</div>
+              </div>
+            </div>
+            <div class="ws-card-body">
+              <div id="templatesPreview" style="font-size:13px;line-height:1.6;padding:16px;background:var(--ws-surface);border:1px solid var(--ws-border);border-radius:8px;min-height:180px;"></div>
             </div>
           </div>
         </section>
@@ -2213,20 +2256,20 @@
           <!-- Launch messaging only: the tiers below are unchanged. Inline,
                above the plans, rather than a modal, so it never blocks the
                page or has to be dismissed before someone can read pricing. -->
-          <div class="ws-card ws-mb-md" style="max-width:720px;border:1px solid var(--ws-accent);background:var(--ws-primary-subtle);">
-            <div class="ws-card-body" style="display:flex;gap:14px;align-items:flex-start;">
-              <div style="font-size:20px;line-height:1.2;">🎉</div>
-              <div>
-                <div style="font-weight:700;font-size:14.5px;margin-bottom:4px;">
-                  Free for a limited time — everything, no card.
-                </div>
-                <div style="font-size:13px;color:var(--ws-text-secondary);line-height:1.6;">
-                  Every feature below is unlocked while we're in launch. Make the most of it
-                  before paid plans begin. Know someone job hunting?
-                  <button class="ws-link-btn" onclick="shareJobSpike()"
-                          style="background:none;border:none;padding:0;font:inherit;color:var(--ws-primary);font-weight:600;cursor:pointer;text-decoration:underline;">Send them the link</button>.
-                </div>
+          <div class="ws-card ws-mb-md" style="max-width:720px;border:2px solid var(--ws-accent);background:linear-gradient(135deg, var(--ws-primary-subtle) 0%, var(--ws-surface) 100%);box-shadow:var(--ws-shadow-md);">
+            <div class="ws-card-body" style="text-align:center;padding:28px 24px;">
+              <div style="font-size:34px;line-height:1;margin-bottom:10px;">🎉</div>
+              <div style="font-weight:800;font-size:24px;letter-spacing:-0.02em;line-height:1.25;margin-bottom:8px;">
+                Everything is free — for a limited time
               </div>
+              <div style="font-size:14.5px;color:var(--ws-text-secondary);line-height:1.65;max-width:520px;margin:0 auto 18px;">
+                Every feature below is unlocked while we're in launch, with no card required.
+                Make the most of it before paid plans begin.
+              </div>
+              <button class="ws-btn ws-btn-accent" onclick="shareJobSpike()" style="font-size:14px;padding:10px 22px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg>
+                Know someone job hunting? Send them the link
+              </button>
             </div>
           </div>
 
@@ -2249,8 +2292,8 @@
                 <span class="ws-badge ws-badge-accent" style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);">Popular</span>
                 <div style="margin-bottom:8px;display:flex;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
                 <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Pro</div>
-                <div style="font-size:28px;font-weight:700;margin-bottom:4px;">$19</div>
-                <div style="font-size:12px;color:var(--ws-text-tertiary);margin-bottom:12px;">per month</div>
+                <div style="font-size:26px;font-weight:800;margin-bottom:4px;letter-spacing:-0.02em;color:var(--ws-accent);">Free right now</div>
+                <div style="font-size:12px;color:var(--ws-text-tertiary);margin-bottom:12px;">while we're in launch</div>
                 <ul style="font-size:13px;color:var(--ws-text-secondary);line-height:2;">
                   <li>Unlimited analyses</li>
                   <li>Premium AI Rewrites</li>
@@ -2678,6 +2721,8 @@
       if (section === 'profile') loadProfile();
       if (section === 'settings') loadSettings();
       if (section === 'builder-versions') loadBuilderVersions();
+      // Paint the templates preview on arrival, not only on a later switch.
+      if (section === 'builder-templates' && typeof updatePreview === 'function') updatePreview();
       if (section === 'workspace-insights') loadWorkspaceInsights();
       if (section === 'workspace-progress') loadWorkspaceProgress();
       if (section === 'workspace-goals') loadWeeklyGoals();
@@ -3307,21 +3352,33 @@
         return e && (e.status === 401 || e.status === 403 || /log in|session/i.test(e.message || ''));
       }
 
+      // These two calls are independent, so awaiting them one after the other
+      // just paid the round trip twice -- the measured cost of this page was
+      // two serial requests, not a slow query (the query itself is ~3ms over
+      // 35 rows). Fire both together and settle each outcome separately so a
+      // failure in one still classifies exactly as it did before.
       var analysesRes = null;
       var resumesRes = null;
 
-      try {
-        analysesRes = await apiFetch('/api/analyses');
-      } catch (e) {
-        if (isAuthErr(e)) authFailure = e;
-        else analysesRes = { __error: e };
+      const [analysesOut, resumesOut] = await Promise.allSettled([
+        apiFetch('/api/analyses'),
+        apiFetch('/api/resumes'),
+      ]);
+
+      if (analysesOut.status === 'fulfilled') {
+        analysesRes = analysesOut.value;
+      } else if (isAuthErr(analysesOut.reason)) {
+        authFailure = analysesOut.reason;
+      } else {
+        analysesRes = { __error: analysesOut.reason };
       }
 
-      try {
-        resumesRes = await apiFetch('/api/resumes');
-      } catch (e) {
-        if (isAuthErr(e) && !authFailure) authFailure = e;
-        else resumesRes = { __error: e };
+      if (resumesOut.status === 'fulfilled') {
+        resumesRes = resumesOut.value;
+      } else if (isAuthErr(resumesOut.reason) && !authFailure) {
+        authFailure = resumesOut.reason;
+      } else if (!isAuthErr(resumesOut.reason)) {
+        resumesRes = { __error: resumesOut.reason };
       }
 
       if (authFailure) {
@@ -4545,9 +4602,28 @@
       if (selectedTemplate === 'executive') tplTheme = 'border-top:4px solid #0f172a; font-family:Georgia, serif;';
       else if (selectedTemplate === 'creative') tplTheme = 'border-top:4px solid #7c3aed; background:#faf5ff;';
       else if (selectedTemplate === 'minimalist') tplTheme = 'border-top:2px solid #64748b; font-family:Inter, sans-serif;';
+      else if (selectedTemplate === 'technical') tplTheme = 'border-left:4px solid #0ea5e9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-0.01em;';
+      else if (selectedTemplate === 'academic') tplTheme = 'border-top:3px double #334155; font-family:Georgia, "Times New Roman", serif; line-height:1.75;';
+      else if (selectedTemplate === 'compact') tplTheme = 'border-top:2px solid #475569; line-height:1.35; font-size:12px;';
+      else if (selectedTemplate === 'impact') tplTheme = 'border-top:6px solid #dc2626; font-weight:500;';
 
-      document.getElementById('builderPreview').innerHTML =
-        '<div style="' + tplTheme + ' padding:14px;border-radius:6px;">' + html + '</div>';
+      var rendered = '<div style="' + tplTheme + ' padding:14px;border-radius:6px;">' + html + '</div>';
+      var builderEl = document.getElementById('builderPreview');
+      if (builderEl) builderEl.innerHTML = rendered;
+      // Mirror into the Templates page so switching a template is visible
+      // from the page that actually offers the choice.
+      var tplEl = document.getElementById('templatesPreview');
+      if (tplEl) {
+        tplEl.innerHTML = rendered;
+        var hint = document.getElementById('templatesPreviewHint');
+        if (hint) {
+          var hasContent = (document.getElementById('bName') || {}).value
+            || (document.getElementById('bSummary') || {}).value;
+          hint.textContent = hasContent
+            ? 'Switching a template re-renders this instantly.'
+            : 'Upload or build a resume first, then switch templates to compare styles.';
+        }
+      }
     }
 
     async function aiAssist(mode, btn) {
@@ -5565,7 +5641,42 @@
       document.getElementById('compareModal').style.display = 'none';
     }
 
-    state.refinedGoals = { metrics: false, summary: false, keywords: false, grammar: false };
+    /* Goals were reset to all-false on every page load: ticking one and
+       refreshing silently lost it, which made the whole checklist feel
+       decorative. Persisted per-day in localStorage -- these are "today's"
+       goals, so a new day legitimately starts clean, but a refresh does not.
+       Kept client-side deliberately: no schema change, and the goals are a
+       personal scratchpad rather than shared data. */
+    var GOALS_KEY = 'ws-goals-' + new Date().toISOString().slice(0, 10);
+
+    function loadStoredGoals() {
+      var blank = { metrics: false, summary: false, keywords: false, grammar: false };
+      try {
+        var raw = localStorage.getItem(GOALS_KEY);
+        if (!raw) return blank;
+        var parsed = JSON.parse(raw);
+        for (var k in blank) if (typeof parsed[k] === 'boolean') blank[k] = parsed[k];
+        return blank;
+      } catch (e) {
+        return blank;
+      }
+    }
+
+    function persistGoals() {
+      try {
+        localStorage.setItem(GOALS_KEY, JSON.stringify(state.refinedGoals));
+        // Yesterday's keys would otherwise accumulate forever.
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.indexOf('ws-goals-') === 0 && key !== GOALS_KEY) {
+            localStorage.removeItem(key);
+            i--;
+          }
+        }
+      } catch (e) {}
+    }
+
+    state.refinedGoals = loadStoredGoals();
 
     function updateGoalsProgress() {
       let count = 0;
@@ -5585,6 +5696,7 @@
       const el = document.getElementById('goal_' + type);
       if (el) {
         state.refinedGoals[type] = el.checked;
+        persistGoals();
         // Sync to dashboard checklist if exists
         const dashRecList = document.getElementById('dashboardRecList');
         if (dashRecList) {
@@ -5604,6 +5716,7 @@
         if (index !== -1) {
           const type = index === 0 ? 'metrics' : index === 1 ? 'summary' : index === 2 ? 'keywords' : 'grammar';
           state.refinedGoals[type] = checkbox.checked;
+          persistGoals();
           const el = document.getElementById('goal_' + type);
           if (el) el.checked = checkbox.checked;
           updateGoalsProgress();

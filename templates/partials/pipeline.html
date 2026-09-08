@@ -28,6 +28,52 @@
       you move through each process.
     </p>
   </div>
+  <div class="ws-page-actions">
+    <button class="ws-btn ws-btn-primary" id="plAddToggle" type="button">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add job
+    </button>
+  </div>
+</div>
+
+<!-- Until now a row could only be created by clicking Apply inside Browse, so
+     an application made on LinkedIn or a company site could not be recorded at
+     all -- which is most of a real job hunt. -->
+<div class="ws-card pl-add" id="plAddCard" style="display:none;margin-bottom:16px;">
+  <div class="ws-card-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+      <div class="ws-input-group">
+        <label class="ws-input-label" for="plNewTitle">Job title *</label>
+        <input class="ws-input" id="plNewTitle" placeholder="Senior Backend Engineer">
+      </div>
+      <div class="ws-input-group">
+        <label class="ws-input-label" for="plNewCompany">Company</label>
+        <input class="ws-input" id="plNewCompany" placeholder="Acme Corp">
+      </div>
+      <div class="ws-input-group">
+        <label class="ws-input-label" for="plNewLocation">Location</label>
+        <input class="ws-input" id="plNewLocation" placeholder="Bangalore, India">
+      </div>
+      <div class="ws-input-group">
+        <label class="ws-input-label" for="plNewUrl">Listing URL</label>
+        <input class="ws-input" id="plNewUrl" placeholder="https://...">
+      </div>
+      <div class="ws-input-group">
+        <label class="ws-input-label" for="plNewStatus">Status</label>
+        <select class="ws-select" id="plNewStatus">
+          <option value="Applied">Applied</option>
+          <option value="Viewed">Viewed</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="ws-btn ws-btn-primary" id="plAddSave" type="button">Save to pipeline</button>
+      <button class="ws-btn ws-btn-ghost" id="plAddCancel" type="button">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <div class="ws-card" style="padding:0;overflow:hidden;">
@@ -188,12 +234,66 @@
 
   // Called by switchSection('pipeline'). Wiring happens once; the list is
   // refetched on every visit so a status changed elsewhere is reflected.
+  function byId(id) { return document.getElementById(id); }
+
+  function toggleAddForm(show) {
+    var card = byId('plAddCard');
+    if (card) card.style.display = show ? '' : 'none';
+    if (show) { var t = byId('plNewTitle'); if (t) t.focus(); }
+  }
+
+  async function saveNewJob() {
+    var title = (byId('plNewTitle').value || '').trim();
+    if (!title) {
+      if (window.showToast) window.showToast('Job title is required', 'error');
+      byId('plNewTitle').focus();
+      return;
+    }
+    var btn = byId('plAddSave');
+    btn.disabled = true;
+    var original = btn.textContent;
+    btn.textContent = 'Saving…';
+    try {
+      var res = await fetch('/api/jobs/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: title,
+          company: (byId('plNewCompany').value || '').trim(),
+          location: (byId('plNewLocation').value || '').trim(),
+          listing_url: (byId('plNewUrl').value || '').trim(),
+          status: byId('plNewStatus').value
+        })
+      });
+      if (!res.ok) throw new Error('save failed');
+      ['plNewTitle', 'plNewCompany', 'plNewLocation', 'plNewUrl'].forEach(function (id) {
+        byId(id).value = '';
+      });
+      toggleAddForm(false);
+      if (window.showToast) window.showToast('Added to your pipeline', 'success');
+      await load();
+    } catch (e) {
+      if (window.showToast) window.showToast('Could not add that job', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
   window.initPipeline = function () {
     if (!inited) {
       inited = true;
       document.querySelectorAll('#plTable th.sortable').forEach(function (th) {
         th.addEventListener('click', function () { sortBy(th.dataset.key); });
       });
+      var addBtn = byId('plAddToggle');
+      if (addBtn) addBtn.addEventListener('click', function () {
+        toggleAddForm(byId('plAddCard').style.display === 'none');
+      });
+      var saveBtn = byId('plAddSave');
+      if (saveBtn) saveBtn.addEventListener('click', saveNewJob);
+      var cancelBtn = byId('plAddCancel');
+      if (cancelBtn) cancelBtn.addEventListener('click', function () { toggleAddForm(false); });
     }
     load();
   };

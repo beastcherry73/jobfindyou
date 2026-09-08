@@ -880,7 +880,12 @@
     if (inited) return;
     inited = true;
     wire();
-    loadCountries();
+    // Browse-first: land on results, not on an empty box. doSearch() already
+    // tolerates an empty title/location -- it only needs the country, which
+    // loadCountries() sets -- so the page opens with the newest listings for
+    // the default country instead of asking the visitor to guess a keyword
+    // before the product shows them anything.
+    loadCountries().then(function () { doSearch(); });
   };
 })();
 </script>

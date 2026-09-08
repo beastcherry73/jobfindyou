@@ -270,7 +270,14 @@ def export_pdf():
         "modern": {"primary": colors.HexColor("#1E3A5F"), "accent": colors.HexColor("#2563EB"), "text": colors.HexColor("#0F172A")},
         "executive": {"primary": colors.HexColor("#0F172A"), "accent": colors.HexColor("#475569"), "text": colors.HexColor("#1E293B")},
         "creative": {"primary": colors.HexColor("#6D28D9"), "accent": colors.HexColor("#7C3AED"), "text": colors.HexColor("#1E1B4B")},
-        "minimalist": {"primary": colors.HexColor("#334155"), "accent": colors.HexColor("#64748B"), "text": colors.HexColor("#1E293B")}
+        "minimalist": {"primary": colors.HexColor("#334155"), "accent": colors.HexColor("#64748B"), "text": colors.HexColor("#1E293B")},
+        # Added alongside the four new front-end templates. Without an entry
+        # here the .get() fallback silently exported them as "modern", so the
+        # PDF would not match the style the user picked on screen.
+        "technical": {"primary": colors.HexColor("#0C4A6E"), "accent": colors.HexColor("#0EA5E9"), "text": colors.HexColor("#0F172A")},
+        "academic": {"primary": colors.HexColor("#1F2937"), "accent": colors.HexColor("#4B5563"), "text": colors.HexColor("#111827")},
+        "compact": {"primary": colors.HexColor("#334155"), "accent": colors.HexColor("#475569"), "text": colors.HexColor("#0F172A")},
+        "impact": {"primary": colors.HexColor("#991B1B"), "accent": colors.HexColor("#DC2626"), "text": colors.HexColor("#111827")}
     }
     theme = color_palette.get(template_style, color_palette["modern"])
 
