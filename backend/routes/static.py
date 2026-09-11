@@ -1,6 +1,33 @@
+import logging
+
 from flask import Blueprint, render_template, Response, session, redirect
 
+from backend.database import get_db
+
 static_bp = Blueprint("static_routes", __name__)
+logger = logging.getLogger(__name__)
+
+
+def _workspace_boot(user_id):
+    """Data embedded in the workspace page so its first paint needs no API call.
+
+    Just the analyses LIST -- the same narrow columns GET /api/analyses
+    returns. The dashboard used to render, then fetch this, then fetch the
+    latest report: two serial round trips before anything useful appeared,
+    for rows the server could have sent with the page. Best-effort: any
+    failure returns None and the page falls back to fetching as before.
+    """
+    try:
+        with get_db() as db:
+            rows = db.execute(
+                "SELECT id, filename, overall_score, summary, created_at FROM analyses "
+                "WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,),
+            ).fetchall()
+        return {"analyses": [dict(r) for r in rows]}
+    except Exception as e:
+        logger.warning(f"Workspace boot data unavailable: {e}")
+        return None
 
 
 @static_bp.route("/favicon.ico")
@@ -51,6 +78,7 @@ def index():
     is_authenticated = "user_id" in session
     user_name = session.get("user_name", "there")
     if is_authenticated:
-        return render_template("workspace.html", user_name=user_name)
+        return render_template("workspace.html", user_name=user_name,
+                               boot=_workspace_boot(session["user_id"]))
     return render_template("index.html", is_authenticated=is_authenticated, user_name=user_name)
 

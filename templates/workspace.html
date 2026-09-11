@@ -10,6 +10,56 @@
   <link rel="icon" type="image/svg+xml" href="/static/img/jobspike-icon.svg">
   <link rel="icon" href="/static/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+  <!-- The signed-in user's analyses list, embedded at render time so the
+       dashboard's first paint does not wait on a round trip whose answer the
+       server already had. Every later visit refetches. -->
+  <script>window.__BOOT__ = {{ (boot or {})|tojson }};</script>
+  <style>
+    /* ── Templates: compact picker, preview directly beneath ── */
+    .tpl-picker { display:grid; grid-template-columns:repeat(auto-fill,minmax(208px,1fr)); gap:8px; margin-bottom:12px; }
+    .tpl-option { display:flex; align-items:center; gap:12px; padding:12px; text-align:left; font-family:inherit; color:var(--ws-text);
+                  background:var(--ws-elevated); border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); cursor:pointer;
+                  transition:border-color var(--ws-duration) var(--ws-ease), background var(--ws-duration) var(--ws-ease); }
+    .tpl-option:hover { background:var(--ws-surface-hover); }
+    .tpl-option.active { border-color:var(--ws-primary); background:var(--ws-primary-subtle); }
+    .tpl-swatch { width:24px; height:32px; flex:0 0 24px; border-radius:4px; border:1px solid var(--ws-border); }
+    .tpl-text { display:flex; flex-direction:column; gap:4px; min-width:0; }
+    .tpl-name { font-size:13px; font-weight:600; }
+    .tpl-desc { font-size:12px; line-height:1.4; color:var(--ws-text-tertiary); }
+    .tpl-note { font-size:12px; color:var(--ws-text-tertiary); margin:0 0 16px; }
+    .tpl-preview-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:12px; }
+    .tpl-preview-page { max-width:816px; margin:0 auto; font-size:13px; line-height:1.6; padding:24px; min-height:320px;
+                        background:var(--ws-surface); border:1px solid var(--ws-border); border-radius:var(--ws-radius-md); }
+
+    /* ── Today's goals ── */
+    .goal-list { display:flex; flex-direction:column; gap:8px; }
+    .goal-list-compact { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .goal-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:start; column-gap:12px; padding:12px 16px;
+                background:var(--ws-surface-hover); border:1px solid var(--ws-border-light); border-radius:var(--ws-radius-lg); }
+    .goal-row input[type="checkbox"] { width:16px; height:16px; margin-top:2px; accent-color:var(--ws-primary); }
+    .goal-text { display:flex; flex-direction:column; gap:4px; min-width:0; cursor:pointer; }
+    .goal-title { font-size:13px; font-weight:600; color:var(--ws-text); line-height:1.45; }
+    .goal-detail { font-size:12px; line-height:1.45; color:var(--ws-text-tertiary); }
+    .goal-row.done .goal-title { text-decoration:line-through; color:var(--ws-text-tertiary); }
+    .goal-actions { display:flex; gap:8px; }
+    .goal-panel { grid-column:1 / -1; margin-top:12px; padding:16px; background:var(--ws-elevated);
+                  border:1px solid var(--ws-border); border-radius:var(--ws-radius-lg); }
+    .goal-panel[hidden] { display:none; }
+    .goal-loading { font-size:13px; color:var(--ws-text-tertiary); padding:8px 0; }
+    .goal-ai-summary { font-size:13px; color:var(--ws-text); margin:0 0 12px; line-height:1.55; }
+    .goal-ai-steps { margin:0 0 12px 16px; padding:0; font-size:13px; line-height:1.6; color:var(--ws-text-secondary); }
+    .goal-ai-label { font-size:12px; font-weight:600; color:var(--ws-text-secondary); margin-bottom:4px; }
+    .goal-ai-draft { white-space:pre-wrap; word-break:break-word; font-family:var(--ws-font-sans); font-size:13px; line-height:1.6;
+                     margin:0 0 12px; padding:12px 16px; background:var(--ws-surface); border:1px solid var(--ws-border-light);
+                     border-radius:var(--ws-radius-md); }
+    .goal-ai-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .goal-error { font-size:13px; color:var(--ws-bad); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    @media (max-width: 768px) {
+      .goal-list-compact { grid-template-columns:1fr; }
+      .goal-row { grid-template-columns:auto minmax(0,1fr); }
+      .goal-actions { grid-column:2; margin-top:8px; }
+    }
+  </style>
   <style>
     .ws-sidebar-mark.brand {
       background: var(--ws-primary-subtle);
@@ -178,47 +228,57 @@
           <span class="ws-nav-label">Dashboard</span>
         </a>
 
-        <!-- Applications Section (surfaced high: Job Search is a primary action) -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Jobs</div>
+        <!-- Two groups, in the order the product is used: the Career
+             Workspace (find roles, track them, work today's goals) first,
+             then the Resume tools that feed it. The old nav spread the same
+             items over five headed sections -- three of them holding a single
+             link, one literally "Improve Resume > Improve Resume" -- and hid
+             Career Workspace below everything else. Profile / Settings /
+             Billing live in the account menu (avatar, top right, or the name
+             at the foot of this sidebar), which already carried all three. -->
+        <div class="ws-nav-section-label" style="margin-top:8px;">Career Workspace</div>
         <a class="ws-nav-item" data-section="jobsearch" onclick="switchSection('jobsearch')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-          <span class="ws-nav-label">Browse</span>
+          <span class="ws-nav-label">Browse jobs</span>
         </a>
         <a class="ws-nav-item" data-section="foryou" onclick="switchSection('foryou')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5.4 5.6.6-4.2 3.9 1.2 5.6L12 15.8 6.9 18.5l1.2-5.6L4 9l5.6-.6z"/></svg></span>
           <span class="ws-nav-label">For You</span>
         </a>
-        <!-- Was a link to the standalone /app/tracker page; it is a section of
-             this shell now, so navigating to it no longer reloads the app. -->
         <a class="ws-nav-item" data-section="pipeline" onclick="switchSection('pipeline')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.4"/><rect x="10" y="4" width="5" height="11" rx="1.4"/><rect x="17" y="4" width="4" height="7" rx="1.4"/></svg></span>
           <span class="ws-nav-label">Pipeline</span>
         </a>
+        <a class="ws-nav-item" data-section="workspace-goals" onclick="switchSection('workspace-goals')">
+          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
+          <span class="ws-nav-label">Goals</span>
+        </a>
+        <a class="ws-nav-item" data-section="workspace-insights" onclick="switchSection('workspace-insights')">
+          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2Z"/></svg></span>
+          <span class="ws-nav-label">Insights</span>
+        </a>
+        <a class="ws-nav-item" data-section="workspace-progress" onclick="switchSection('workspace-progress')">
+          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
+          <span class="ws-nav-label">Progress</span>
+        </a>
 
-        <!-- Resume Analysis Section -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Analysis</div>
+        <div class="ws-nav-section-label" style="margin-top:16px;">Resume</div>
         <a class="ws-nav-item" data-section="analysis-upload" onclick="switchSection('analysis-upload')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
-          <span class="ws-nav-label">Upload Resume</span>
+          <span class="ws-nav-label">Analyze resume</span>
         </a>
         <a class="ws-nav-item" data-section="history" onclick="switchSection('history')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/></svg></span>
-          <span class="ws-nav-label">Previous Analyses</span>
+          <span class="ws-nav-label">Previous analyses</span>
         </a>
         <a class="ws-nav-item" data-section="report" onclick="switchSection('report')" id="nav-detailed-report" style="display:none;">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg></span>
           <span class="ws-nav-label">Reports</span>
         </a>
-
-        <!-- Improve Resume Section (Unified Goal-Oriented AI) -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Improve Resume</div>
         <a class="ws-nav-item" data-section="improve" onclick="switchSection('improve')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"/><path d="M17 7h4v4"/></svg></span>
-          <span class="ws-nav-label">Improve Resume</span>
+          <span class="ws-nav-label">Improve</span>
         </a>
-
-        <!-- Resume Builder Section -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Builder</div>
         <a class="ws-nav-item" data-section="builder" onclick="switchSection('builder')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span>
           <span class="ws-nav-label">Build</span>
@@ -230,37 +290,6 @@
         <a class="ws-nav-item" data-section="builder-versions" onclick="switchSection('builder-versions')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span>
           <span class="ws-nav-label">Versions</span>
-        </a>
-
-        <!-- Career Workspace Section -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Career Workspace</div>
-        <a class="ws-nav-item" data-section="workspace-insights" onclick="switchSection('workspace-insights')">
-          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2Z"/></svg></span>
-          <span class="ws-nav-label">Insights</span>
-        </a>
-        <a class="ws-nav-item" data-section="workspace-goals" onclick="switchSection('workspace-goals')">
-          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
-          <span class="ws-nav-label">Goals</span>
-        </a>
-        <a class="ws-nav-item" data-section="workspace-progress" onclick="switchSection('workspace-progress')">
-          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-          <span class="ws-nav-label">Progress</span>
-        </a>
-
-        <!-- Account Section -->
-        <div class="ws-nav-section-label" style="margin-top:8px;">Account</div>
-        <a class="ws-nav-item" data-section="profile" onclick="switchSection('profile')">
-          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></span>
-          <span class="ws-nav-label">Profile</span>
-        </a>
-        <a class="ws-nav-item" data-section="settings" onclick="switchSection('settings')">
-          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 14H3.4a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 5 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.5V3.4a2 2 0 0 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V10a2 2 0 0 1 0 4h-.1Z"/></svg></span>
-          <span class="ws-nav-label">Settings</span>
-        </a>
-        <a class="ws-nav-item" data-section="billing" onclick="switchSection('billing')">
-          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-          <span class="ws-nav-label">Billing</span>
-          <span class="ws-nav-badge">Pro</span>
         </a>
       </nav>
 
@@ -484,41 +513,15 @@
 
               <div class="ws-card" style="grid-column: span 2;">
                 <div class="ws-card-body" style="padding: 20px;">
-                  <div class="ws-card-header" style="margin-bottom: 14px;">
+                  <div class="ws-card-header" style="margin-bottom: 12px;">
                     <div>
-                      <div class="ws-card-title" style="font-size: 14px; font-weight: 700;">Improvement goals</div>
-                      <div class="ws-card-subtitle" style="font-size: 12px;">Pick what to focus on — these carry over to Improve Resume</div>
+                      <div class="ws-card-title" style="font-size: 14px; font-weight: 700;">Today's goals</div>
+                      <div class="ws-card-subtitle" style="font-size: 12px;">Built from your latest analysis and your pipeline</div>
                     </div>
+                    <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="switchSection('workspace-goals')">Work on them &rarr;</button>
                   </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="dashboardRecList">
-                    <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--ws-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--ws-border-light);">
-                      <input type="checkbox" style="width: 16px; height: 16px; margin-top: 2px; accent-color: var(--ws-primary);" onchange="toggleDashGoal(this)">
-                      <div>
-                        <div style="font-size: 12.5px; font-weight: 700;">Add Quantifiable Metrics</div>
-                        <div style="font-size: 11.5px; color: var(--ws-text-muted);">Quantify at least two work experience bullet points (% growth, $ saved).</div>
-                      </div>
-                    </div>
-                    <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--ws-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--ws-border-light);">
-                      <input type="checkbox" style="width: 16px; height: 16px; margin-top: 2px; accent-color: var(--ws-primary);" onchange="toggleDashGoal(this)">
-                      <div>
-                        <div style="font-size: 12.5px; font-weight: 700;">Optimize Professional Summary</div>
-                        <div style="font-size: 11.5px; color: var(--ws-text-muted);">Integrate high-matching keywords into summary block.</div>
-                      </div>
-                    </div>
-                    <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--ws-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--ws-border-light);">
-                      <input type="checkbox" style="width: 16px; height: 16px; margin-top: 2px; accent-color: var(--ws-primary);" onchange="toggleDashGoal(this)">
-                      <div>
-                        <div style="font-size: 12.5px; font-weight: 700;">Inject 5 Missing Keywords</div>
-                        <div style="font-size: 11.5px; color: var(--ws-text-muted);">Add missing target technical skill keywords to skills matrix.</div>
-                      </div>
-                    </div>
-                    <div style="display: flex; align-items: flex-start; gap: 10px; background: var(--ws-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--ws-border-light);">
-                      <input type="checkbox" style="width: 16px; height: 16px; margin-top: 2px; accent-color: var(--ws-primary);" onchange="toggleDashGoal(this)">
-                      <div>
-                        <div style="font-size: 12.5px; font-weight: 700;">Fix Active Voice Verbs</div>
-                        <div style="font-size: 11.5px; color: var(--ws-text-muted);">Replace passive verbiage ('responsible for') with high-impact power verbs.</div>
-                      </div>
-                    </div>
+                  <div id="dashboardRecList" class="goal-list-compact" aria-busy="true">
+                    <div class="goal-loading">Loading your goals…</div>
                   </div>
                 </div>
               </div>
@@ -763,82 +766,69 @@
           <div class="ws-page-header">
             <div>
               <h1 class="ws-page-title">Resume Templates</h1>
-              <p class="ws-page-subtitle">Select a professional design style for your resume preview & download</p>
-            </div>
-          </div>
-          <div class="ws-animate-stagger">
-            <div class="ws-grid-4">
-              <div class="ws-card template-card active" onclick="selectBuilderTemplate('modern', this)" style="cursor:pointer;border:2px solid var(--ws-primary);">
-                <div style="background:var(--ws-primary-subtle);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Modern Classic</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Traditional serif header with balanced text column. ATS-optimized.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('executive', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><path d="M9 22v-4h6v4M9 9h1M14 9h1M9 13h1M14 13h1"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Executive Bold</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Sleek top border, large serif title, bold margins. Perfect for directors.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('creative', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/><circle cx="12" cy="12" r="2.2"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Creative Minimal</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Modern sans-serif typography with generous spacing. Great for startups.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('minimalist', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13v-1a7 7 0 0 1 7-7h6v6a7 7 0 0 1-7 7Z"/><path d="M4 21c6-1 10-5 14-13"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Clean Minimal</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Ultra-clean spacing, line divisions, lightweight fonts.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('technical', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Technical</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Dense skills-forward layout with monospace accents. Built for engineers.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('academic', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2.7 2.5 6 2.5s6-1.5 6-2.5v-5"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Academic</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Serif body, publication-friendly spacing. For research and faculty roles.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('compact', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="3" y1="18" x2="14" y2="18"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Compact One-Page</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Tight leading to keep a long history on a single page.</p>
-                </div>
-              </div>
-              <div class="ws-card template-card" onclick="selectBuilderTemplate('impact', this)" style="cursor:pointer;border:2px solid transparent;">
-                <div style="background:var(--ws-surface-hover);height:140px;display:flex;align-items:center;justify-content:center;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></div>
-                <div class="ws-card-body" style="padding:16px;">
-                  <h4 style="font-weight:700;margin-bottom:4px;">Impact</h4>
-                  <p style="font-size:11.5px;color:var(--ws-text-secondary);line-height:1.4;">Bold accent rule and heavy section headers. Puts metrics front and centre.</p>
-                </div>
-              </div>
+              <p class="ws-page-subtitle">Pick a style and your resume re-renders below instantly. PDF and DOCX downloads use the same template.</p>
             </div>
           </div>
 
-          <!-- Live preview. Previously the only preview element lived inside
-               #section-builder, so switching a template here updated a node on
-               a hidden page and the user saw nothing but a toast. -->
-          <div class="ws-card ws-mt-md" id="templatesPreviewCard">
-            <div class="ws-card-header" style="padding:16px 20px 0;">
-              <div>
-                <div class="ws-card-title">Live preview</div>
-                <div class="ws-card-subtitle" id="templatesPreviewHint">Switching a template re-renders this instantly.</div>
-              </div>
-            </div>
+          <!-- Compact picker, preview directly beneath. The old layout was a
+               grid of ten 220px-tall cards with a decorative icon each, which
+               pushed the preview below the fold -- so switching a template
+               changed something the user could not see. Switching is purely
+               client-side: no network round trip. -->
+          <div class="tpl-picker" role="radiogroup" aria-label="Resume template">
+            <button type="button" class="tpl-option template-card active" role="radio" aria-checked="true" onclick="selectBuilderTemplate('modern', this)">
+              <span class="tpl-swatch" style="background:#1E3A5F;"></span>
+              <span class="tpl-text"><span class="tpl-name">Modern Classic</span><span class="tpl-desc">Balanced default for most roles</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('campus', this)">
+              <span class="tpl-swatch" style="background:#1D4ED8;"></span>
+              <span class="tpl-text"><span class="tpl-name">Campus &amp; Fresher</span><span class="tpl-desc">Education and projects first, for students and new graduates</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('career-change', this)">
+              <span class="tpl-swatch" style="background:#0F766E;"></span>
+              <span class="tpl-text"><span class="tpl-name">Career Change</span><span class="tpl-desc">Skills and projects before past titles</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('technical', this)">
+              <span class="tpl-swatch" style="background:#0C4A6E;"></span>
+              <span class="tpl-text"><span class="tpl-name">Technical</span><span class="tpl-desc">Dense and skills-forward, for engineers</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('compact', this)">
+              <span class="tpl-swatch" style="background:#475569;"></span>
+              <span class="tpl-text"><span class="tpl-name">Compact One-Page</span><span class="tpl-desc">Tight spacing for a long history on one page</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('executive', this)">
+              <span class="tpl-swatch" style="background:#0F172A;"></span>
+              <span class="tpl-text"><span class="tpl-name">Executive</span><span class="tpl-desc">Serif headings for senior and director roles</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('impact', this)">
+              <span class="tpl-swatch" style="background:#991B1B;"></span>
+              <span class="tpl-text"><span class="tpl-name">Impact</span><span class="tpl-desc">Heavy section rules that put results up front</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('minimalist', this)">
+              <span class="tpl-swatch" style="background:#64748B;"></span>
+              <span class="tpl-text"><span class="tpl-name">Clean Minimal</span><span class="tpl-desc">Light rules and generous whitespace</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('academic', this)">
+              <span class="tpl-swatch" style="background:#1F2937;"></span>
+              <span class="tpl-text"><span class="tpl-name">Academic</span><span class="tpl-desc">Serif body for research and faculty roles</span></span>
+            </button>
+            <button type="button" class="tpl-option template-card" role="radio" aria-checked="false" onclick="selectBuilderTemplate('creative', this)">
+              <span class="tpl-swatch" style="background:#6D28D9;"></span>
+              <span class="tpl-text"><span class="tpl-name">Creative</span><span class="tpl-desc">A tinted page for design-adjacent roles</span></span>
+            </button>
+          </div>
+          <p class="tpl-note">Every template is a single column with standard section headings, so applicant tracking systems parse it cleanly.</p>
+
+          <div class="ws-card" id="templatesPreviewCard">
             <div class="ws-card-body">
-              <div id="templatesPreview" style="font-size:13px;line-height:1.6;padding:16px;background:var(--ws-surface);border:1px solid var(--ws-border);border-radius:8px;min-height:180px;"></div>
+              <div class="tpl-preview-head">
+                <div>
+                  <div class="ws-card-title">Preview</div>
+                  <div class="ws-card-subtitle" id="templatesPreviewHint">Loading your resume…</div>
+                </div>
+                <button type="button" class="ws-btn ws-btn-secondary ws-btn-sm" onclick="switchSection('builder')">Edit in Build</button>
+              </div>
+              <div id="templatesPreview" class="tpl-preview-page" aria-live="polite"></div>
             </div>
           </div>
         </section>
@@ -1280,46 +1270,19 @@
         <section id="section-workspace-goals" class="ws-section" style="display:none;">
           <div class="ws-page-header">
             <div>
-              <h1 class="ws-page-title">Today's Recommendations</h1>
-              <p class="ws-page-subtitle">Track your main tasks for boosting your resume's scoring potential</p>
+              <h1 class="ws-page-title">Today's goals</h1>
+              <p class="ws-page-subtitle">Concrete next steps from your latest resume analysis and your pipeline. Work through any of them with AI: it drafts the actual rewrite or email, not advice about one.</p>
             </div>
           </div>
           <div class="ws-animate-stagger">
             <div class="ws-card">
               <div class="ws-card-body" style="padding:24px;">
-                <div id="weeklyGoalsList" style="display:flex;flex-direction:column;gap:12px;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--ws-surface-hover);border-radius:6px;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <input type="checkbox" id="goal_metrics" style="width:18px;height:18px;accent-color:var(--ws-primary);" onchange="toggleRefinedGoal('metrics')">
-                      <span style="font-size:13.5px;font-weight:600;">Add metrics to experiences</span>
-                    </div>
-                    <span class="ws-badge ws-badge-good">+12 ATS</span>
-                  </div>
-                  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--ws-surface-hover);border-radius:6px;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <input type="checkbox" id="goal_summary" style="width:18px;height:18px;accent-color:var(--ws-primary);" onchange="toggleRefinedGoal('summary')">
-                      <span style="font-size:13.5px;font-weight:600;">Improve professional summary density</span>
-                    </div>
-                    <span class="ws-badge ws-badge-good">+8 ATS</span>
-                  </div>
-                  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--ws-surface-hover);border-radius:6px;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <input type="checkbox" id="goal_keywords" style="width:18px;height:18px;accent-color:var(--ws-primary);" onchange="toggleRefinedGoal('keywords')">
-                      <span style="font-size:13.5px;font-weight:600;">Add 5 missing technical keywords</span>
-                    </div>
-                    <span class="ws-badge ws-badge-good">+15 ATS</span>
-                  </div>
-                  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--ws-surface-hover);border-radius:6px;">
-                    <div style="display:flex;align-items:center;gap:12px;">
-                      <input type="checkbox" id="goal_grammar" style="width:18px;height:18px;accent-color:var(--ws-primary);" onchange="toggleRefinedGoal('grammar')">
-                      <span style="font-size:13.5px;font-weight:600;">Fix formatting & grammar issues</span>
-                    </div>
-                    <span class="ws-badge ws-badge-good">+5 ATS</span>
-                  </div>
+                <div id="weeklyGoalsList" class="goal-list" aria-busy="true">
+                  <div class="goal-loading">Loading your goals…</div>
                 </div>
-                <div class="ws-divider" style="margin:20px 0;"></div>
+                <div class="ws-divider" style="margin:24px 0;"></div>
                 <div class="ws-flex-between">
-                  <span style="font-size:13px;color:var(--ws-text-secondary);font-weight:600;">Goal Completion Rate</span>
+                  <span style="font-size:13px;color:var(--ws-text-secondary);font-weight:600;">Done today</span>
                   <span style="font-size:13px;font-weight:700;" id="goalsProgressPct">0%</span>
                 </div>
                 <div class="ws-progress ws-mt-sm" style="height:8px;">
@@ -2696,8 +2659,8 @@
         'enhance-skills': 'Improve Resume',
         'workspace-insights': 'Career Insights',
         'workspace-progress': 'Progress Tracker',
-        'workspace-goals': 'Weekly Goals',
-        jobsearch: 'Browse',
+        'workspace-goals': 'Goals',
+        jobsearch: 'Browse jobs',
         foryou: 'For You',
         pipeline: 'Pipeline',
         tracker: 'Pipeline',
@@ -2722,7 +2685,7 @@
       if (section === 'settings') loadSettings();
       if (section === 'builder-versions') loadBuilderVersions();
       // Paint the templates preview on arrival, not only on a later switch.
-      if (section === 'builder-templates' && typeof updatePreview === 'function') updatePreview();
+      if (section === 'builder-templates') openTemplatesPage();
       if (section === 'workspace-insights') loadWorkspaceInsights();
       if (section === 'workspace-progress') loadWorkspaceProgress();
       if (section === 'workspace-goals') loadWeeklyGoals();
@@ -3025,13 +2988,24 @@
             '  ·  ' + now.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }).toUpperCase();
         }
 
-        const analyses = await apiFetch('/api/analyses');
+        // First paint uses the list embedded in the page (window.__BOOT__):
+        // the server already had it while rendering, so waiting on a second
+        // round trip for the same rows was pure latency. Later visits refetch.
+        let analyses;
+        if (!state.bootUsed && window.__BOOT__ && Array.isArray(window.__BOOT__.analyses)) {
+          analyses = window.__BOOT__.analyses;
+          state.bootUsed = true;
+        } else {
+          analyses = await apiFetch('/api/analyses');
+        }
         state.analyses = analyses;
 
         const emptyState = document.getElementById('dashboardEmptyState');
         const populated = document.getElementById('dashboardPopulated');
 
         if (analyses.length === 0) {
+          state.latestDetail = null;
+          buildAndRenderGoals();
           if (emptyState) emptyState.style.display = 'block';
           if (populated) populated.style.display = 'none';
           const floatHealth = document.getElementById('floatingHealthScore');
@@ -3158,6 +3132,8 @@
             }
           }
           renderDashboardDiagnostics(detail && detail.dimension_scores);
+          state.latestDetail = detail || null;
+          buildAndRenderGoals();
 
           const skillsVal = detail && detail.dimension_scores && detail.dimension_scores.skills;
           const skillsEl = document.getElementById('statSkillsValue');
@@ -3187,13 +3163,21 @@
             matchStatusEl.innerHTML = '<span class="dot"></span>No JD provided';
           }
         } catch (e) {
-          // Fallback to static defaults
-          topRecText.textContent = 'Quantify Experience - Add numerical metrics to your experiences.';
-          priorityText.textContent = 'Estimated ATS +4';
+          // No report detail means no recommendation to show. This used to
+          // print a canned tip and an invented "Estimated ATS +4" -- a number
+          // nothing had measured -- whenever the request failed.
+          topRecText.textContent = 'Open your latest report to see its top fixes.';
+          priorityText.textContent = '—';
+          state.latestDetail = null;
+          buildAndRenderGoals();
         }
 
       } catch (err) {
         console.error('Dashboard load error:', err);
+        if (state.latestDetail === undefined) {
+          state.latestDetail = null;
+          buildAndRenderGoals();
+        }
       }
     }
 
@@ -3341,11 +3325,20 @@
 
     async function loadHistory() {
       const countEl = document.getElementById('historyCount');
-      if (countEl) countEl.textContent = 'Loading…';
       const emptyEl = document.getElementById('historyEmpty');
-      if (emptyEl) emptyEl.style.display = 'none';
       const bodyEl = document.getElementById('historyBody');
-      if (bodyEl) bodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ws-text-tertiary);padding:24px;">Loading…</td></tr>';
+      // Rows already in hand (the page's boot data, an earlier visit) paint
+      // immediately and the fetch below refreshes them. Every visit used to
+      // blank the table to "Loading…" and wait on two requests first.
+      if (Array.isArray(state.analyses) && state.analyses.length) {
+        if (!Array.isArray(state.resumes)) state.resumes = [];
+        if (emptyEl) emptyEl.style.display = 'none';
+        renderHistory();
+      } else {
+        if (countEl) countEl.textContent = 'Loading…';
+        if (emptyEl) emptyEl.style.display = 'none';
+        if (bodyEl) bodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ws-text-tertiary);padding:24px;">Loading your analyses…</td></tr>';
+      }
       var authFailure = null;
 
       function isAuthErr(e) {
@@ -4499,131 +4492,195 @@
       updatePreview();
     }
 
-    function updatePreview() {
-      var name = document.getElementById('bName').value || 'Your Name';
-      var email = document.getElementById('bEmail').value || '';
-      var phone = document.getElementById('bPhone').value || '';
-      var loc = document.getElementById('bLocation').value || '';
-      var summary = document.getElementById('bSummary').value || '';
-      var skills = document.getElementById('bSkills').value || '';
+    /* ── Resume preview: ONE renderer for Build and Templates ──
+       Section ORDER is part of a template: Campus leads with education and
+       projects (students, new graduates), Career Change leads with skills.
+       The default order now matches the PDF/DOCX export (summary, skills,
+       experience, education, projects) -- the preview used to put skills
+       after education, so the download did not look like the screen. The
+       exports read the same orders from TEMPLATE_SECTION_ORDER in
+       backend/routes/export.py. All user text is escaped: it was previously
+       written into innerHTML raw. */
+    var PREVIEW_DEFAULT_ORDER = ['summary', 'skills', 'experience', 'education', 'projects'];
+    var PREVIEW_ORDER = {
+      campus: ['summary', 'education', 'projects', 'skills', 'experience'],
+      'career-change': ['summary', 'skills', 'projects', 'experience', 'education']
+    };
+    var PREVIEW_THEME = {
+      modern: 'border-top:2px solid var(--ws-primary);',
+      executive: 'border-top:4px solid #0f172a; font-family:Georgia, serif;',
+      // A translucent tint, so it reads in dark mode too (the old solid
+      // #faf5ff put light dark-mode text on a near-white page).
+      creative: 'border-top:4px solid #6d28d9; background:rgba(109,40,217,0.06);',
+      minimalist: 'border-top:2px solid #64748b; font-family:Inter, sans-serif;',
+      technical: 'border-left:4px solid #0ea5e9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-0.01em;',
+      academic: 'border-top:3px double #334155; font-family:Georgia, "Times New Roman", serif; line-height:1.75;',
+      compact: 'border-top:2px solid #475569; line-height:1.35; font-size:12px;',
+      impact: 'border-top:6px solid #dc2626; font-weight:500;',
+      campus: 'border-top:3px solid #1d4ed8;',
+      'career-change': 'border-top:3px solid #0f766e;'
+    };
+    // Shown only when the user has no resume at all, and labelled as a sample.
+    var SAMPLE_RESUME = {
+      fullName: 'Your Name', email: 'you@example.com', phone: '+91 98765 43210', location: 'Bengaluru, India',
+      summary: 'Sample content. Backend engineer with four years building payment and data services in Python and Go.',
+      skills: 'Python, Go, PostgreSQL, AWS, Docker, Kafka',
+      experience: [{ role: 'Software Engineer', company: 'Example Payments', dates: '2022 - Present',
+        bullets: ['Built the settlement service that processes [N] transactions a day',
+                  'Cut report generation from [X] to [Y] minutes by moving jobs to a queue'] }],
+      education: [{ school: 'Example Institute of Technology', degree: 'B.Tech, Computer Science', dates: '2018 - 2022' }],
+      projects: [{ name: 'Expense splitter', desc: 'A small web app for splitting shared bills.', tech: 'Flask, SQLite' }]
+    };
 
-      var html = '';
-      // Header
-      html += '<div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--ws-primary);">';
-      html += '<div style="font-size:18px;font-weight:700;letter-spacing:-0.02em;">' + name + '</div>';
-      var contacts = [email, phone, loc].filter(Boolean).join('  •  ');
-      if (contacts) html += '<div style="font-size:11px;color:var(--ws-text-secondary);margin-top:4px;">' + contacts + '</div>';
-      html += '</div>';
+    function builderDataFromForm() {
+      function v(id) { var el = document.getElementById(id); return el ? el.value : ''; }
+      return {
+        fullName: v('bName'), email: v('bEmail'), phone: v('bPhone'), location: v('bLocation'),
+        summary: v('bSummary'), skills: v('bSkills'),
+        experience: builderData.experience || [], education: builderData.education || [],
+        projects: builderData.projects || []
+      };
+    }
 
-      // Summary
+    function hasResumeContent(d) {
+      if (!d) return false;
+      var exp = Array.isArray(d.experience) ? d.experience : [];
+      // The Build form's name field starts as the literal "Your Name", which
+      // is not content: counting it made the Templates page preview an empty
+      // Build form instead of the user's saved resume.
+      var nm = String(d.fullName || d.name || '').trim();
+      if (nm.toLowerCase() === 'your name') nm = '';
+      return !!(nm || String(d.summary || '').trim()
+        || exp.some(function (e) { return e && (e.company || e.role || e.title); }));
+    }
+
+    function previewSectionHead(label) {
+      return '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;'
+        + 'color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">'
+        + label + '</div>';
+    }
+
+    function resumeHtmlFromData(d, template) {
+      d = d || {};
+      var parts = {};
+      var name = String(d.fullName || d.name || '').trim() || 'Your Name';
+      var head = '<div style="text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--ws-primary);">'
+        + '<div style="font-size:18px;font-weight:700;letter-spacing:-0.02em;">' + esc(name) + '</div>';
+      var contacts = [d.email, d.phone, d.location].filter(Boolean)
+        .map(function (x) { return esc(String(x)); }).join('  &bull;  ');
+      if (contacts) head += '<div style="font-size:11px;color:var(--ws-text-secondary);margin-top:4px;">' + contacts + '</div>';
+      head += '</div>';
+
+      var summary = String(d.summary || '').trim();
       if (summary) {
-        html += '<div style="margin-bottom:14px;">';
-        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;">Summary</div>';
-        html += '<div style="font-size:12px;color:var(--ws-text-secondary);line-height:1.6;">' + summary + '</div>';
-        html += '</div>';
+        parts.summary = '<div style="margin-bottom:14px;">' + previewSectionHead('Summary')
+          + '<div style="font-size:12px;color:var(--ws-text-secondary);line-height:1.6;">' + esc(summary) + '</div></div>';
       }
 
-      // Experience
-      var exps = builderData.experience || [];
-      if (exps.length > 0 && exps.some(function(e) { return e.company || e.role; })) {
-        html += '<div style="margin-bottom:14px;">';
-        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Experience</div>';
-        exps.forEach(function(e) {
-          if (!e.company && !e.role) return;
-          html += '<div style="margin-bottom:10px;">';
-          html += '<div style="display:flex;justify-content:space-between;align-items:baseline;">';
-          html += '<span style="font-size:13px;font-weight:600;">' + (e.role || '') + '</span>';
-          html += '<span style="font-size:11px;color:var(--ws-text-tertiary);">' + (e.dates || '') + '</span>';
-          html += '</div>';
-          if (e.company) html += '<div style="font-size:12px;color:var(--ws-text-secondary);">' + e.company + '</div>';
-          if (e.bullets && e.bullets.length > 0 && e.bullets[0]) {
-            html += '<ul style="margin:4px 0 0 14px;padding:0;">';
-            e.bullets.forEach(function(b) {
-              if (b.trim()) html += '<li style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + b + '</li>';
-            });
-            html += '</ul>';
-          }
-          html += '</div>';
-        });
-        html += '</div>';
+      var skills = Array.isArray(d.skills) ? d.skills : String(d.skills || '').split(',');
+      skills = skills.map(function (s) { return String(s).trim(); }).filter(Boolean);
+      if (skills.length) {
+        parts.skills = '<div style="margin-bottom:14px;">' + previewSectionHead('Skills')
+          + '<div style="display:flex;flex-wrap:wrap;gap:4px;">' + skills.map(function (s) {
+            return '<span style="font-size:11px;background:var(--ws-primary-subtle);color:var(--ws-primary);'
+              + 'padding:2px 8px;border-radius:4px;font-weight:500;">' + esc(s) + '</span>';
+          }).join('') + '</div></div>';
       }
 
-      // Education
-      var educ = builderData.education || [];
-      if (educ.length > 0 && educ.some(function(e) { return e.school || e.degree; })) {
-        html += '<div style="margin-bottom:14px;">';
-        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Education</div>';
-        educ.forEach(function(e) {
-          if (!e.school && !e.degree) return;
-          html += '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">';
-          html += '<span style="font-size:12px;font-weight:600;">' + (e.school || '') + ' — ' + (e.degree || '') + '</span>';
-          html += '<span style="font-size:11px;color:var(--ws-text-tertiary);">' + (e.dates || '') + '</span>';
-          html += '</div>';
-        });
-        html += '</div>';
+      var exps = (Array.isArray(d.experience) ? d.experience : [])
+        .filter(function (e) { return e && (e.company || e.role || e.title); });
+      if (exps.length) {
+        parts.experience = '<div style="margin-bottom:14px;">' + previewSectionHead('Experience') + exps.map(function (e) {
+          var bullets = Array.isArray(e.bullets) ? e.bullets : String(e.bullets || e.description || '').split('\n');
+          bullets = bullets.map(function (b) { return String(b || '').replace(/^[-*\u2022]\s*/, '').trim(); }).filter(Boolean);
+          return '<div style="margin-bottom:10px;">'
+            + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;">'
+            + '<span style="font-size:13px;font-weight:600;">' + esc(String(e.role || e.title || '')) + '</span>'
+            + '<span style="font-size:11px;color:var(--ws-text-tertiary);white-space:nowrap;">' + esc(String(e.dates || '')) + '</span></div>'
+            + (e.company ? '<div style="font-size:12px;color:var(--ws-text-secondary);">' + esc(String(e.company)) + '</div>' : '')
+            + (bullets.length ? '<ul style="margin:4px 0 0 16px;padding:0;">' + bullets.map(function (b) {
+                return '<li style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + esc(b) + '</li>';
+              }).join('') + '</ul>' : '')
+            + '</div>';
+        }).join('') + '</div>';
       }
 
-      // Skills
-      if (skills) {
-        html += '<div style="margin-bottom:14px;">';
-        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:4px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Skills</div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-        skills.split(',').forEach(function(s) {
-          s = s.trim();
-          if (s) html += '<span style="font-size:11px;background:var(--ws-primary-subtle);color:var(--ws-primary);padding:2px 8px;border-radius:4px;font-weight:500;">' + s + '</span>';
-        });
-        html += '</div></div>';
+      var edu = (Array.isArray(d.education) ? d.education : [])
+        .filter(function (e) { return e && (e.school || e.degree); });
+      if (edu.length) {
+        parts.education = '<div style="margin-bottom:14px;">' + previewSectionHead('Education') + edu.map(function (e) {
+          return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:4px;">'
+            + '<span style="font-size:12px;font-weight:600;">' + esc([e.school, e.degree].filter(Boolean).join(' \u2014 ')) + '</span>'
+            + '<span style="font-size:11px;color:var(--ws-text-tertiary);white-space:nowrap;">' + esc(String(e.dates || '')) + '</span></div>';
+        }).join('') + '</div>';
       }
 
-      // Projects
-      var projs = builderData.projects || [];
-      if (projs.length > 0 && projs.some(function(p) { return p.name; })) {
-        html += '<div style="margin-bottom:14px;">';
-        html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ws-text-tertiary);margin-bottom:6px;border-bottom:1px solid var(--ws-border-light);padding-bottom:4px;">Projects</div>';
-        projs.forEach(function(p) {
-          if (!p.name) return;
-          html += '<div style="margin-bottom:8px;">';
-          html += '<div style="font-size:13px;font-weight:600;">' + p.name + '</div>';
-          if (p.desc) html += '<div style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + p.desc + '</div>';
-          if (p.tech) html += '<div style="font-size:11px;color:var(--ws-text-tertiary);margin-top:2px;">' + p.tech + '</div>';
-          html += '</div>';
-        });
-        html += '</div>';
+      var projs = (Array.isArray(d.projects) ? d.projects : [])
+        .filter(function (p) { return p && (p.name || p.title); });
+      if (projs.length) {
+        parts.projects = '<div style="margin-bottom:14px;">' + previewSectionHead('Projects') + projs.map(function (p) {
+          var desc = p.desc || p.description || '';
+          return '<div style="margin-bottom:8px;"><div style="font-size:13px;font-weight:600;">' + esc(String(p.name || p.title)) + '</div>'
+            + (desc ? '<div style="font-size:12px;color:var(--ws-text-secondary);line-height:1.5;">' + esc(String(desc)) + '</div>' : '')
+            + (p.tech ? '<div style="font-size:11px;color:var(--ws-text-tertiary);margin-top:2px;">' + esc(String(p.tech)) + '</div>' : '')
+            + '</div>';
+        }).join('') + '</div>';
       }
 
-      if (!html) {
-        html = '<div style="text-align:center;padding:48px 16px;color:var(--ws-text-tertiary);">' +
-          '<div style="margin-bottom:8px;display:flex;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>' +
-          '<div style="font-weight:600;color:var(--ws-text-secondary);">Edit your resume to see preview</div></div>';
+      var order = PREVIEW_ORDER[template] || PREVIEW_DEFAULT_ORDER;
+      var body = order.map(function (k) { return parts[k] || ''; }).join('');
+      var theme = PREVIEW_THEME[template] || PREVIEW_THEME.modern;
+      return '<div style="' + theme + ' padding:14px;border-radius:6px;">' + head + body + '</div>';
+    }
+
+    function latestSavedResumeData() {
+      var list = Array.isArray(state.resumes) ? state.resumes : [];
+      for (var i = 0; i < list.length; i++) {
+        var d = list[i] && list[i].data;
+        if (hasResumeContent(d)) return d;
       }
+      return null;
+    }
 
-      // Template themes make switching visibly change the preview
-      var tplTheme = 'border-top:2px solid var(--ws-primary);';
-      if (selectedTemplate === 'executive') tplTheme = 'border-top:4px solid #0f172a; font-family:Georgia, serif;';
-      else if (selectedTemplate === 'creative') tplTheme = 'border-top:4px solid #7c3aed; background:#faf5ff;';
-      else if (selectedTemplate === 'minimalist') tplTheme = 'border-top:2px solid #64748b; font-family:Inter, sans-serif;';
-      else if (selectedTemplate === 'technical') tplTheme = 'border-left:4px solid #0ea5e9; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-0.01em;';
-      else if (selectedTemplate === 'academic') tplTheme = 'border-top:3px double #334155; font-family:Georgia, "Times New Roman", serif; line-height:1.75;';
-      else if (selectedTemplate === 'compact') tplTheme = 'border-top:2px solid #475569; line-height:1.35; font-size:12px;';
-      else if (selectedTemplate === 'impact') tplTheme = 'border-top:6px solid #dc2626; font-weight:500;';
-
-      var rendered = '<div style="' + tplTheme + ' padding:14px;border-radius:6px;">' + html + '</div>';
-      var builderEl = document.getElementById('builderPreview');
-      if (builderEl) builderEl.innerHTML = rendered;
-      // Mirror into the Templates page so switching a template is visible
-      // from the page that actually offers the choice.
+    // The Templates page previews the resume open in Build; failing that the
+    // most recent saved resume; failing that a labelled sample. It used to
+    // stay blank unless Build happened to be filled in this session.
+    function renderTemplatesPreview(formData) {
       var tplEl = document.getElementById('templatesPreview');
-      if (tplEl) {
-        tplEl.innerHTML = rendered;
-        var hint = document.getElementById('templatesPreviewHint');
-        if (hint) {
-          var hasContent = (document.getElementById('bName') || {}).value
-            || (document.getElementById('bSummary') || {}).value;
-          hint.textContent = hasContent
-            ? 'Switching a template re-renders this instantly.'
-            : 'Upload or build a resume first, then switch templates to compare styles.';
+      if (!tplEl) return;
+      var hint = document.getElementById('templatesPreviewHint');
+      var data = formData || builderDataFromForm();
+      var msg = 'Showing the resume open in Build.';
+      if (!hasResumeContent(data)) {
+        var saved = latestSavedResumeData();
+        if (saved) {
+          data = saved;
+          msg = 'Showing your most recent saved resume. Use Edit in Build to change it.';
+        } else {
+          data = SAMPLE_RESUME;
+          msg = 'Sample content. Analyze or build a resume to preview your own.';
         }
       }
+      tplEl.innerHTML = resumeHtmlFromData(data, selectedTemplate);
+      if (hint) hint.textContent = msg;
+    }
+
+    async function openTemplatesPage() {
+      renderTemplatesPreview();
+      if (!Array.isArray(state.resumes) || !state.resumes.length) {
+        try {
+          var list = await apiFetch('/api/resumes');
+          if (Array.isArray(list)) state.resumes = list;
+        } catch (e) {}
+        renderTemplatesPreview();
+      }
+    }
+
+    function updatePreview() {
+      var formData = builderDataFromForm();
+      var builderEl = document.getElementById('builderPreview');
+      if (builderEl) builderEl.innerHTML = resumeHtmlFromData(formData, selectedTemplate);
+      renderTemplatesPreview(formData);
     }
 
     async function aiAssist(mode, btn) {
@@ -4881,23 +4938,43 @@
     function selectBuilderTemplate(name, cardEl) {
       selectedTemplate = name;
       document.querySelectorAll('.template-card').forEach(function(card) {
-        card.style.borderColor = 'transparent';
         card.classList.remove('active');
+        if (card.classList.contains('tpl-option')) card.setAttribute('aria-checked', 'false');
+        else card.style.borderColor = 'transparent';
       });
       if (cardEl) {
-        cardEl.style.borderColor = 'var(--ws-primary)';
         cardEl.classList.add('active');
+        if (cardEl.classList.contains('tpl-option')) cardEl.setAttribute('aria-checked', 'true');
+        else cardEl.style.borderColor = 'var(--ws-primary)';
       }
-      showToast('Template switched to ' + name, 'success');
+      // No toast: the preview right below changes, which is the confirmation.
       updatePreview();
     }
 
     async function loadBuilderVersions() {
       try {
         const body = document.getElementById('builderVersionsBody');
-        body.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading drafts...</td></tr>';
-        
-        const list = await apiFetch('/api/resumes');
+        // Versions already loaded this session (history, Improve, the
+        // templates page all fetch /api/resumes) paint immediately and are
+        // then revalidated in the background. Every visit used to blank the
+        // table to "Loading drafts..." and wait on a fresh round trip first.
+        const cached = Array.isArray(state.resumes) && state.resumes.length ? state.resumes : null;
+        let list;
+        if (cached) {
+          list = cached;
+          const sig = function (rows) {
+            return JSON.stringify((rows || []).map(function (r) { return [r.id, r.updated_at, r.title, r.template]; }));
+          };
+          apiFetch('/api/resumes').then(function (fresh) {
+            if (Array.isArray(fresh) && sig(fresh) !== sig(cached)) {
+              state.resumes = fresh;
+              loadBuilderVersions();
+            }
+          }).catch(function () {});
+        } else {
+          body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ws-text-tertiary);padding:24px;">Loading your saved versions…</td></tr>';
+          list = await apiFetch('/api/resumes');
+        }
         state.resumes = list;
         body.innerHTML = '';
         
@@ -5540,14 +5617,9 @@
       document.getElementById('progressFunnelOffer').textContent = Math.round(latestScore * 0.35) + '%';
     }
 
-    /* ── Weekly Goals Checklist ── */
+    /* ── Goals page ── */
     function loadWeeklyGoals() {
-      // Sync checkboxes on Goals page from state.refinedGoals
-      for (let k in state.refinedGoals) {
-        const check = document.getElementById('goal_' + k);
-        if (check) check.checked = state.refinedGoals[k];
-      }
-      updateGoalsProgress();
+      buildAndRenderGoals();
     }
 
     /* ── Applications Calendar ── */
@@ -5641,30 +5713,29 @@
       document.getElementById('compareModal').style.display = 'none';
     }
 
-    /* Goals were reset to all-false on every page load: ticking one and
-       refreshing silently lost it, which made the whole checklist feel
-       decorative. Persisted per-day in localStorage -- these are "today's"
-       goals, so a new day legitimately starts clean, but a refresh does not.
-       Kept client-side deliberately: no schema change, and the goals are a
-       personal scratchpad rather than shared data. */
+    /* ── Today's goals ──
+       DERIVED, not hardcoded: the latest analysis's own top fixes, its missing
+       keywords for the target role, and the pipeline (a stale application to
+       follow up, or nothing applied to yet). The old list was four fixed items
+       carrying invented "+12 ATS" gains that nothing had measured.
+
+       Completion is remembered per day in localStorage -- a personal
+       scratchpad, no schema change -- so a refresh keeps it and a new day
+       starts clean. Goal ids hash the goal text, so a tick survives reloads. */
     var GOALS_KEY = 'ws-goals-' + new Date().toISOString().slice(0, 10);
 
     function loadStoredGoals() {
-      var blank = { metrics: false, summary: false, keywords: false, grammar: false };
       try {
-        var raw = localStorage.getItem(GOALS_KEY);
-        if (!raw) return blank;
-        var parsed = JSON.parse(raw);
-        for (var k in blank) if (typeof parsed[k] === 'boolean') blank[k] = parsed[k];
-        return blank;
+        var parsed = JSON.parse(localStorage.getItem(GOALS_KEY) || '{}');
+        return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
       } catch (e) {
-        return blank;
+        return {};
       }
     }
 
     function persistGoals() {
       try {
-        localStorage.setItem(GOALS_KEY, JSON.stringify(state.refinedGoals));
+        localStorage.setItem(GOALS_KEY, JSON.stringify(state.goalsDone));
         // Yesterday's keys would otherwise accumulate forever.
         for (var i = 0; i < localStorage.length; i++) {
           var key = localStorage.key(i);
@@ -5676,51 +5747,193 @@
       } catch (e) {}
     }
 
-    state.refinedGoals = loadStoredGoals();
+    state.goals = [];
+    state.goalsDone = loadStoredGoals();
+
+    function goalId(text) {
+      var h = 0;
+      for (var i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+      return 'g' + (h >>> 0).toString(36);
+    }
+
+    function goalText(item) {
+      if (!item) return '';
+      if (typeof item === 'string') return item.trim();
+      return String(item.title || item.issue || item.text || item.fix || item.description || '').trim();
+    }
+
+    async function fetchTrackerRows() {
+      try {
+        var res = await fetch('/api/tracker');
+        if (!res.ok) return [];
+        var rows = await res.json();
+        return Array.isArray(rows) ? rows : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function buildAndRenderGoals() {
+      // undefined = the dashboard has not resolved the latest report yet. Keep
+      // the loading line rather than flashing "analyze your resume" first.
+      if (state.latestDetail === undefined) return;
+      var detail = state.latestDetail;
+      var goals = [];
+      if (!detail) {
+        goals.push({ kind: 'link', title: 'Analyze your resume',
+          detail: 'Your goals are built from your latest analysis. It takes about ten seconds.',
+          action: 'analysis-upload', actionLabel: 'Analyze resume' });
+      } else {
+        var fixes = ((detail.ai_recommendations || {}).top_5_fixes || []).map(goalText).filter(Boolean);
+        if (!fixes.length) fixes = (detail.weaknesses || []).map(goalText).filter(Boolean);
+        fixes.slice(0, 3).forEach(function (t) {
+          goals.push({ kind: 'resume_fix', title: t, detail: 'From your latest resume analysis' });
+        });
+        var jm = detail.job_match;
+        var missing = (jm && Array.isArray(jm.missing_keywords))
+          ? jm.missing_keywords.map(goalText).filter(Boolean).slice(0, 6) : [];
+        if (missing.length) {
+          goals.push({ kind: 'keywords',
+            title: 'Work the target role’s missing keywords into your resume, where you honestly can',
+            detail: missing.join(', '), keywords: missing });
+        }
+      }
+      var tracker = await fetchTrackerRows();
+      var now = Date.now();
+      var stale = tracker.filter(function (r) {
+        return r.status === 'Applied' && r.applied_date
+          && (now - new Date(r.applied_date).getTime()) > 7 * 864e5;
+      }).sort(function (a, b) { return new Date(a.applied_date) - new Date(b.applied_date); });
+      if (stale.length) {
+        var r = stale[0];
+        var days = Math.floor((now - new Date(r.applied_date).getTime()) / 864e5);
+        goals.push({ kind: 'follow_up',
+          title: 'Follow up on ' + (r.job_title || 'your application') + (r.company ? ' at ' + r.company : ''),
+          detail: 'Applied ' + days + ' days ago with no status change since.',
+          company: r.company || '', role: r.job_title || '', applied: r.applied_date });
+      }
+      var appliedAnywhere = tracker.some(function (row) { return row.status && row.status !== 'Viewed'; });
+      if (detail && !appliedAnywhere) {
+        goals.push({ kind: 'link', title: 'Apply to your best-matched roles',
+          detail: 'For You ranks live roles against this resume.', action: 'foryou', actionLabel: 'Open For You' });
+      }
+      goals.forEach(function (g) { g.id = goalId(g.kind + '|' + g.title); });
+      state.goals = goals;
+      renderGoalList('weeklyGoalsList', goals, false);
+      renderGoalList('dashboardRecList', goals.slice(0, 4), true);
+      updateGoalsProgress();
+    }
+
+    function renderGoalList(containerId, goals, compact) {
+      var box = document.getElementById(containerId);
+      if (!box) return;
+      box.setAttribute('aria-busy', 'false');
+      box.innerHTML = '';
+      goals.forEach(function (g) {
+        var done = !!state.goalsDone[g.id];
+        var row = document.createElement('div');
+        row.className = 'goal-row' + (done ? ' done' : '');
+        var cbId = containerId + '-' + g.id;
+        var action = '';
+        if (g.kind === 'link') {
+          action = '<button type="button" class="ws-btn ws-btn-secondary ws-btn-sm goal-link">' + esc(g.actionLabel) + '</button>';
+        } else if (!compact) {
+          action = '<button type="button" class="ws-btn ws-btn-primary ws-btn-sm goal-ai" aria-expanded="false">Work on it with AI</button>';
+        }
+        row.innerHTML = '<input type="checkbox" id="' + cbId + '"' + (done ? ' checked' : '') + '>'
+          + '<label class="goal-text" for="' + cbId + '"><span class="goal-title">' + esc(g.title) + '</span>'
+          + (g.detail ? '<span class="goal-detail">' + esc(g.detail) + '</span>' : '') + '</label>'
+          + (action ? '<div class="goal-actions">' + action + '</div>' : '')
+          + (compact ? '' : '<div class="goal-panel" hidden></div>');
+        row.querySelector('input').addEventListener('change', function (e) { setGoalDone(g.id, e.target.checked); });
+        var link = row.querySelector('.goal-link');
+        if (link) link.addEventListener('click', function () { switchSection(g.action); });
+        var ai = row.querySelector('.goal-ai');
+        if (ai) ai.addEventListener('click', function () { runGoalAI(g, row, ai); });
+        box.appendChild(row);
+      });
+    }
+
+    function setGoalDone(id, done) {
+      state.goalsDone[id] = !!done;
+      persistGoals();
+      document.querySelectorAll('.goal-row input[id$="-' + id + '"]').forEach(function (cb) {
+        cb.checked = !!done;
+        var row = cb.closest('.goal-row');
+        if (row) row.classList.toggle('done', !!done);
+      });
+      updateGoalsProgress();
+    }
 
     function updateGoalsProgress() {
-      let count = 0;
-      let total = 0;
-      for (let k in state.refinedGoals) {
-        total++;
-        if (state.refinedGoals[k]) count++;
-      }
-      const pct = Math.round((count / total) * 100);
-      const bar = document.getElementById('goalsProgressBar');
-      const text = document.getElementById('goalsProgressPct');
+      var total = state.goals.length;
+      var count = state.goals.filter(function (g) { return state.goalsDone[g.id]; }).length;
+      var pct = total ? Math.round((count / total) * 100) : 0;
+      var bar = document.getElementById('goalsProgressBar');
+      var text = document.getElementById('goalsProgressPct');
       if (bar) bar.style.width = pct + '%';
       if (text) text.textContent = pct + '%';
     }
 
-    function toggleRefinedGoal(type) {
-      const el = document.getElementById('goal_' + type);
-      if (el) {
-        state.refinedGoals[type] = el.checked;
-        persistGoals();
-        // Sync to dashboard checklist if exists
-        const dashRecList = document.getElementById('dashboardRecList');
-        if (dashRecList) {
-          const index = type === 'metrics' ? 0 : type === 'summary' ? 1 : type === 'keywords' ? 2 : 3;
-          const check = dashRecList.querySelectorAll('input[type="checkbox"]')[index];
-          if (check) check.checked = el.checked;
-        }
-        updateGoalsProgress();
+    // "Work on it with AI" does the work: the rewrite, the keyword lines, the
+    // follow-up email -- from the user's own resume -- shown inline under the
+    // goal with Copy and Mark done. It never writes into the resume itself;
+    // the user decides what to paste.
+    async function runGoalAI(g, row, btn) {
+      var panel = row.querySelector('.goal-panel');
+      if (!panel) return;
+      if (!panel.hidden && panel.dataset.loaded) {
+        panel.hidden = true;
+        btn.textContent = 'Work on it with AI';
+        btn.setAttribute('aria-expanded', 'false');
+        return;
       }
-    }
-
-    function toggleDashGoal(checkbox) {
-      const dashRecList = document.getElementById('dashboardRecList');
-      if (dashRecList) {
-        const checks = Array.from(dashRecList.querySelectorAll('input[type="checkbox"]'));
-        const index = checks.indexOf(checkbox);
-        if (index !== -1) {
-          const type = index === 0 ? 'metrics' : index === 1 ? 'summary' : index === 2 ? 'keywords' : 'grammar';
-          state.refinedGoals[type] = checkbox.checked;
-          persistGoals();
-          const el = document.getElementById('goal_' + type);
-          if (el) el.checked = checkbox.checked;
-          updateGoalsProgress();
-        }
+      panel.hidden = false;
+      btn.setAttribute('aria-expanded', 'true');
+      if (panel.dataset.loaded) { btn.textContent = 'Hide'; return; }
+      panel.setAttribute('aria-busy', 'true');
+      panel.innerHTML = '<div class="goal-loading">Working through this with your resume. Usually 5 to 10 seconds.</div>';
+      btn.disabled = true;
+      try {
+        var result = await apiFetch('/api/goals/assist', { method: 'POST', body: {
+          kind: g.kind, goal: g.title, detail: g.detail || '', keywords: g.keywords || [],
+          company: g.company || '', role: g.role || '', applied: g.applied || '' } });
+        panel.dataset.loaded = '1';
+        var steps = (result.steps || []).map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('');
+        panel.innerHTML = (result.summary ? '<p class="goal-ai-summary">' + esc(result.summary) + '</p>' : '')
+          + (steps ? '<ol class="goal-ai-steps">' + steps + '</ol>' : '')
+          + (result.draft ? '<div class="goal-ai-label">' + esc(result.draft_label || 'Draft') + '</div>'
+              + '<pre class="goal-ai-draft">' + esc(result.draft) + '</pre>' : '')
+          + '<div class="goal-ai-actions">'
+          + (result.draft ? '<button type="button" class="ws-btn ws-btn-secondary ws-btn-sm goal-copy">Copy</button>' : '')
+          + (g.kind === 'follow_up'
+              ? '<button type="button" class="ws-btn ws-btn-ghost ws-btn-sm goal-open" data-to="pipeline">Open Pipeline</button>'
+              : '<button type="button" class="ws-btn ws-btn-ghost ws-btn-sm goal-open" data-to="improve">Open Improve</button>')
+          + '<button type="button" class="ws-btn ws-btn-primary ws-btn-sm goal-done">Mark done</button></div>';
+        var copy = panel.querySelector('.goal-copy');
+        if (copy) copy.addEventListener('click', function () {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(result.draft)
+              .then(function () { showToast('Copied', 'success'); })
+              .catch(function () { showToast('Could not copy. Select the text instead.', 'error'); });
+          } else {
+            showToast('Select the text to copy it.', 'info');
+          }
+        });
+        var open = panel.querySelector('.goal-open');
+        if (open) open.addEventListener('click', function () { switchSection(open.getAttribute('data-to')); });
+        panel.querySelector('.goal-done').addEventListener('click', function () { setGoalDone(g.id, true); });
+        btn.textContent = 'Hide';
+      } catch (e) {
+        panel.innerHTML = '<div class="goal-error"><span>' + esc((e && e.message) || 'Could not reach the AI service.')
+          + '</span><button type="button" class="ws-btn ws-btn-secondary ws-btn-sm goal-retry">Try again</button></div>';
+        panel.querySelector('.goal-retry').addEventListener('click', function () {
+          panel.hidden = true; runGoalAI(g, row, btn);
+        });
+        btn.textContent = 'Work on it with AI';
+      } finally {
+        panel.setAttribute('aria-busy', 'false');
+        btn.disabled = false;
       }
     }
 

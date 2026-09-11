@@ -224,6 +224,50 @@ def parse_resume_text():
     return jsonify({"data": parsed})
 
 
+# Section ORDER is part of a template. Campus leads with education and projects
+# (students, new graduates with thin work history); Career Change leads with
+# skills and projects so past titles do not frame the candidate. Mirrored by
+# PREVIEW_ORDER in templates/workspace.html, so the download matches the
+# on-screen preview. Custom sections always come last.
+DEFAULT_SECTION_ORDER = ["summary", "skills", "experience", "education", "projects", "certifications"]
+TEMPLATE_SECTION_ORDER = {
+    "campus": ["summary", "education", "projects", "skills", "experience", "certifications"],
+    "career-change": ["summary", "skills", "projects", "experience", "education", "certifications"],
+}
+
+
+def template_section_order(template):
+    return TEMPLATE_SECTION_ORDER.get((template or "").lower(), DEFAULT_SECTION_ORDER)
+
+
+def _docx_content_len(doc):
+    # python-docx keeps the section properties (sectPr) as the LAST child of
+    # the body and inserts every new paragraph before it.
+    return len(doc.element.body) - 1
+
+
+def _reorder_docx_sections(doc, bounds, order):
+    """Move each section's paragraphs into `order`.
+
+    `bounds` is [(name, start_index), ..., ("end", index)] recorded while the
+    document was written top to bottom, so each name owns the body elements
+    between its start and the next start.
+    """
+    body = doc.element.body
+    items = list(body)
+    if not items or not str(items[-1].tag).endswith("}sectPr"):
+        return                       # unexpected layout: keep document order
+    sect_pr = items[-1]
+    spans = {name: items[start:end]
+             for (name, start), (_next, end) in zip(bounds, bounds[1:])}
+    for els in spans.values():
+        for el in els:
+            body.remove(el)
+    for name in list(order) + [n for n in spans if n not in order]:
+        for el in spans.get(name, []):
+            sect_pr.addprevious(el)
+
+
 @export_bp.route("/api/export/pdf", methods=["POST"])
 @login_required
 def export_pdf():
@@ -277,7 +321,9 @@ def export_pdf():
         "technical": {"primary": colors.HexColor("#0C4A6E"), "accent": colors.HexColor("#0EA5E9"), "text": colors.HexColor("#0F172A")},
         "academic": {"primary": colors.HexColor("#1F2937"), "accent": colors.HexColor("#4B5563"), "text": colors.HexColor("#111827")},
         "compact": {"primary": colors.HexColor("#334155"), "accent": colors.HexColor("#475569"), "text": colors.HexColor("#0F172A")},
-        "impact": {"primary": colors.HexColor("#991B1B"), "accent": colors.HexColor("#DC2626"), "text": colors.HexColor("#111827")}
+        "impact": {"primary": colors.HexColor("#991B1B"), "accent": colors.HexColor("#DC2626"), "text": colors.HexColor("#111827")},
+        "campus": {"primary": colors.HexColor("#1E3A8A"), "accent": colors.HexColor("#1D4ED8"), "text": colors.HexColor("#0F172A")},
+        "career-change": {"primary": colors.HexColor("#134E4A"), "accent": colors.HexColor("#0F766E"), "text": colors.HexColor("#0F172A")}
     }
     theme = color_palette.get(template_style, color_palette["modern"])
 
@@ -375,18 +421,26 @@ def export_pdf():
         story.append(Paragraph(" | ".join(contact_parts), contact_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=theme["accent"], spaceAfter=8))
 
+    # Each section below is collected into its own list so the template can
+    # order them (see TEMPLATE_SECTION_ORDER); the header stays first.
+    head = story
+    sections = {}
+
     # 2. Professional Summary
+    story = sections.setdefault("summary", [])
     if summary:
         story.append(Paragraph("PROFESSIONAL SUMMARY", sec_heading_style))
         story.append(Paragraph(esc(summary), body_style))
 
     # 3. Skills Matrix
+    story = sections.setdefault("skills", [])
     if skills:
         story.append(Paragraph("SKILLS & COMPETENCIES", sec_heading_style))
         skills_text = skills if isinstance(skills, str) else ", ".join(skills)
         story.append(Paragraph(esc(skills_text), body_style))
 
     # 4. Work Experience
+    story = sections.setdefault("experience", [])
     if experience:
         story.append(Paragraph("WORK EXPERIENCE", sec_heading_style))
         for exp in experience:
@@ -416,6 +470,7 @@ def export_pdf():
                 story.append(Spacer(1, 4))
 
     # 5. Education
+    story = sections.setdefault("education", [])
     if education:
         story.append(Paragraph("EDUCATION", sec_heading_style))
         for edu in education:
@@ -439,6 +494,7 @@ def export_pdf():
                 story.append(Spacer(1, 4))
 
     # 6. Projects
+    story = sections.setdefault("projects", [])
     if projects:
         story.append(Paragraph("PROJECTS", sec_heading_style))
         for proj in projects:
@@ -452,6 +508,7 @@ def export_pdf():
                 story.append(Spacer(1, 4))
 
     # 7. Certifications
+    story = sections.setdefault("certifications", [])
     if certifications:
         story.append(Paragraph("CERTIFICATIONS & LICENSES", sec_heading_style))
         for cert in certifications:
@@ -477,6 +534,7 @@ def export_pdf():
                 story.append(Paragraph(f"• {esc(cert)}", bullet_style))
 
     # 8. Custom sections parsed from markdown (headings not otherwise classified)
+    story = sections.setdefault("custom", [])
     if custom_sections:
         for section in custom_sections:
             if isinstance(section, dict):
@@ -505,7 +563,11 @@ def export_pdf():
             else:
                 story.append(Paragraph(esc(s), body_style))
 
-    doc.build(story)
+    ordered = list(head)
+    for key in template_section_order(template_style):
+        ordered.extend(sections.get(key, []))
+    ordered.extend(sections.get("custom", []))       # custom + plain-text fallback
+    doc.build(ordered)
     buffer.seek(0)
     clean_filename = re.sub(r'[^a-zA-Z0-9_-]', '_', title) + '.pdf'
     return send_file(
@@ -526,6 +588,7 @@ def export_docx():
     raw_data = req_json.get("data")
     raw_text = req_json.get("text", "").strip()
     title = req_json.get("title", "Optimized_Resume").strip()
+    template_style = (req_json.get("template") or "modern").lower()
 
     if isinstance(raw_data, str):
         try:
@@ -581,6 +644,10 @@ def export_docx():
             r_c.font.color.rgb = RGBColor(100, 116, 139)
             p_c.paragraph_format.space_after = Pt(10)
 
+        # Record where each section starts so the template's order can be
+        # applied once everything is written (_reorder_docx_sections).
+        bounds = [("summary", _docx_content_len(doc))]
+
         # Summary
         if summary:
             p_h = doc.add_paragraph()
@@ -595,6 +662,7 @@ def export_docx():
             p_s.add_run(summary)
             p_s.paragraph_format.space_after = Pt(8)
 
+        bounds.append(("skills", _docx_content_len(doc)))
         # Skills
         if skills:
             p_h = doc.add_paragraph()
@@ -609,6 +677,7 @@ def export_docx():
             p_sk.add_run(skills if isinstance(skills, str) else ", ".join(skills))
             p_sk.paragraph_format.space_after = Pt(8)
 
+        bounds.append(("experience", _docx_content_len(doc)))
         # Experience
         if experience:
             p_h = doc.add_paragraph()
@@ -641,6 +710,7 @@ def export_docx():
                             p_b.add_run(str(b))
                             p_b.paragraph_format.space_after = Pt(2)
 
+        bounds.append(("education", _docx_content_len(doc)))
         # Education
         if education:
             p_h = doc.add_paragraph()
@@ -665,6 +735,7 @@ def export_docx():
                         p_ed.add_run(f"\t{dates}")
                     p_ed.paragraph_format.space_after = Pt(2)
 
+        bounds.append(("projects", _docx_content_len(doc)))
         # Projects
         if projects:
             p_h = doc.add_paragraph()
@@ -691,6 +762,7 @@ def export_docx():
                         p_pd.add_run(p_desc)
                         p_pd.paragraph_format.space_after = Pt(4)
 
+        bounds.append(("certifications", _docx_content_len(doc)))
         # Certifications
         if certifications:
             p_h = doc.add_paragraph()
@@ -719,6 +791,7 @@ def export_docx():
                     p_b.add_run(cert)
                     p_b.paragraph_format.space_after = Pt(2)
 
+        bounds.append(("custom", _docx_content_len(doc)))
         # Custom sections
         if custom_sections:
             for section in custom_sections:
@@ -737,6 +810,9 @@ def export_docx():
                             p_b = doc.add_paragraph(style='List Bullet')
                             p_b.add_run(str(cl))
                             p_b.paragraph_format.space_after = Pt(2)
+
+        bounds.append(("end", _docx_content_len(doc)))
+        _reorder_docx_sections(doc, bounds, template_section_order(template_style) + ["custom"])
 
     else:
         # Fallback to lines parsing

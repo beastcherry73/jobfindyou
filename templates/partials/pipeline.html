@@ -1,31 +1,48 @@
 <!--
-  Pipeline (formerly the standalone /app/tracker page).
-
-  Moved INTO the workspace shell so Browse / For You / Pipeline are three tabs
-  of one app rather than one SPA plus a separate full-page document. The old
-  page carried its own <html>, its own topbar and its own theme bootstrap, all
-  of which the shell already provides.
+  Pipeline -- the application tracker, a section of the workspace shell.
 
   Self-contained the same way jobsearch.html is: pl-* scoped styles and an IIFE
   exposing window.initPipeline, called by switchSection('pipeline').
 
-  Status stages are unchanged in this pass -- the Saved/Applied/Interviewing/
-  Offer/Hired/Rejected rebuild is the next stage, and mixing it into the move
-  would make a regression impossible to attribute.
+  2026-09 pass, so it works as a product rather than a list:
+    * a stage strip (All / Saved / Applied / Interview / Offer / Rejected) with
+      live counts that doubles as the filter -- real <button aria-pressed>, so
+      it is keyboard- and screen-reader-operable;
+    * search across role and company;
+    * edit a row's title / company / location / link (PATCH /api/tracker/<id>);
+    * applications with no movement for 7+ days are flagged to follow up;
+    * rows already loaded paint instantly on a revisit, then refresh behind;
+    * removing a row asks first -- it is the user's own record.
+  "Viewed" rows are labelled "Saved": that is what the Save button in Browse
+  creates, and "Viewed" read as something that happened to them.
 -->
 <style>
-  .pl-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 20px; }
+  .pl-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 24px; line-height:1.6; }
   .pl-empty a { color:var(--ws-primary); font-weight:600; text-decoration:none; cursor:pointer; }
   .pl-table th.sortable { cursor:pointer; user-select:none; }
   .pl-table th.sortable:hover { color:var(--ws-text); }
+  .pl-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+  .pl-stages { display:flex; flex-wrap:wrap; gap:8px; }
+  .pl-stage { display:inline-flex; align-items:center; gap:8px; font-family:inherit; font-size:13px; font-weight:500;
+              color:var(--ws-text-secondary); background:var(--ws-elevated); border:1px solid var(--ws-border);
+              border-radius:var(--ws-radius-full); padding:4px 12px; cursor:pointer; }
+  .pl-stage:hover { background:var(--ws-surface-hover); }
+  .pl-stage[aria-pressed="true"] { color:var(--ws-primary); border-color:var(--ws-primary); background:var(--ws-primary-subtle); }
+  .pl-stage .pl-n { font-family:var(--ws-font-mono); font-size:12px; color:var(--ws-text); }
+  .pl-stage[aria-pressed="true"] .pl-n { color:var(--ws-primary); }
+  .pl-search { width:240px; max-width:100%; }
+  .pl-followup { color:var(--ws-warn); font-weight:600; }
+  .pl-row-actions { display:flex; gap:4px; justify-content:flex-end; }
+  .pl-note td { text-align:center; color:var(--ws-text-tertiary); padding:24px; font-size:13px; }
+  @media (max-width: 720px) { .pl-search { width:100%; } }
 </style>
 
 <div class="ws-page-header">
   <div>
     <h1 class="ws-page-title">Pipeline</h1>
     <p class="ws-page-subtitle">
-      Listings you open from Browse land here automatically. Update the status as
-      you move through each process.
+      Every role you save or open from Browse lands here, and you can add ones
+      you applied to anywhere else. Move each through its stages as you hear back.
     </p>
   </div>
   <div class="ws-page-actions">
@@ -36,11 +53,9 @@
   </div>
 </div>
 
-<!-- Until now a row could only be created by clicking Apply inside Browse, so
-     an application made on LinkedIn or a company site could not be recorded at
-     all -- which is most of a real job hunt. -->
 <div class="ws-card pl-add" id="plAddCard" style="display:none;margin-bottom:16px;">
   <div class="ws-card-body">
+    <div class="ws-card-title" id="plFormTitle" style="margin-bottom:12px;">Add a job</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
       <div class="ws-input-group">
         <label class="ws-input-label" for="plNewTitle">Job title *</label>
@@ -52,17 +67,17 @@
       </div>
       <div class="ws-input-group">
         <label class="ws-input-label" for="plNewLocation">Location</label>
-        <input class="ws-input" id="plNewLocation" placeholder="Bangalore, India">
+        <input class="ws-input" id="plNewLocation" placeholder="Bengaluru, India">
       </div>
       <div class="ws-input-group">
         <label class="ws-input-label" for="plNewUrl">Listing URL</label>
         <input class="ws-input" id="plNewUrl" placeholder="https://...">
       </div>
-      <div class="ws-input-group">
+      <div class="ws-input-group" id="plStatusGroup">
         <label class="ws-input-label" for="plNewStatus">Status</label>
         <select class="ws-select" id="plNewStatus">
           <option value="Applied">Applied</option>
-          <option value="Viewed">Viewed</option>
+          <option value="Viewed">Saved (not applied yet)</option>
           <option value="Interview">Interview</option>
           <option value="Offer">Offer</option>
           <option value="Rejected">Rejected</option>
@@ -76,6 +91,11 @@
   </div>
 </div>
 
+<div class="pl-toolbar">
+  <div class="pl-stages" id="plStages" role="group" aria-label="Filter by stage"></div>
+  <input class="ws-input pl-search" id="plSearch" type="search" placeholder="Search role or company" aria-label="Search role or company">
+</div>
+
 <div class="ws-card" style="padding:0;overflow:hidden;">
   <div class="ws-table-wrap" style="border:none;">
     <table class="ws-table pl-table" id="plTable">
@@ -84,27 +104,35 @@
         <th class="sortable" data-key="match_percent">Match</th>
         <th class="sortable" data-key="status">Status</th>
         <th class="sortable" data-key="applied_date">Date</th>
-        <th></th>
+        <th><span class="ws-sr-only">Actions</span></th>
       </tr></thead>
-      <tbody id="plBody"></tbody>
+      <tbody id="plBody" aria-live="polite"></tbody>
     </table>
   </div>
   <div id="plEmpty" class="pl-empty" style="display:none;">
-    Nothing tracked yet. <a onclick="switchSection('jobsearch')">Browse jobs &rarr;</a>
+    Nothing tracked yet. Save or open a role from Browse and it lands here, or add
+    one you applied to elsewhere.<br>
+    <a onclick="switchSection('jobsearch')">Browse jobs &rarr;</a>
   </div>
 </div>
 
 <script>
 (function () {
-  var rows = [];
+  var rows = null;            // null = never loaded this session
   var sortKey = 'applied_date';
   var sortDir = -1;
   var inited = false;
+  var stageFilter = '';
+  var query = '';
+  var editingId = null;
 
   var STATUSES = ['Applied', 'Interview', 'Offer', 'Rejected'];
+  var STAGES = [['', 'All'], ['Viewed', 'Saved'], ['Applied', 'Applied'],
+                ['Interview', 'Interview'], ['Offer', 'Offer'], ['Rejected', 'Rejected']];
+  var FOLLOW_UP_DAYS = 7;
 
   function esc(s) {
-    return (s || '').replace(/[&<>"]/g, function (c) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
   }
@@ -114,20 +142,67 @@
     var d = new Date(iso);
     return isNaN(d) ? '—' : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   }
-  // The shell owns the toast; fall back to a no-op rather than throwing if it
-  // is ever absent.
-  function toast(msg) {
-    if (typeof window.showToast === 'function') return window.showToast(msg);
-    if (typeof window.toast === 'function') return window.toast(msg);
+  function daysSince(iso) {
+    var d = new Date(iso);
+    return isNaN(d) ? 0 : Math.floor((Date.now() - d.getTime()) / 864e5);
   }
+  function toast(msg, kind) {
+    if (typeof window.showToast === 'function') return window.showToast(msg, kind || 'info');
+  }
+  function byId(id) { return document.getElementById(id); }
 
   async function load() {
+    if (rows === null) renderNote('Loading your pipeline…', true);
+    else render();                                  // instant repaint, then refresh
     try {
       var res = await fetch('/api/tracker');
-      rows = await res.json();
-      if (!Array.isArray(rows)) rows = [];
-    } catch (e) { rows = []; }
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      var data = await res.json();
+      rows = Array.isArray(data) ? data : [];
+    } catch (e) {
+      if (rows === null) {
+        rows = [];
+        renderNote('Could not load your pipeline. Check your connection and reopen this tab.', false);
+        return;
+      }
+      toast('Could not refresh your pipeline', 'error');
+    }
     render();
+  }
+
+  function renderNote(text, busy) {
+    var body = byId('plBody');
+    byId('plTable').style.display = '';
+    byId('plEmpty').style.display = 'none';
+    body.setAttribute('aria-busy', busy ? 'true' : 'false');
+    body.innerHTML = '<tr class="pl-note"><td colspan="5">' + esc(text) + '</td></tr>';
+  }
+
+  function renderStages() {
+    var box = byId('plStages');
+    if (!box) return;
+    var counts = {};
+    (rows || []).forEach(function (r) { counts[r.status] = (counts[r.status] || 0) + 1; });
+    box.innerHTML = STAGES.map(function (s) {
+      var n = s[0] ? (counts[s[0]] || 0) : (rows || []).length;
+      return '<button type="button" class="pl-stage" data-stage="' + s[0] + '" aria-pressed="'
+        + (stageFilter === s[0] ? 'true' : 'false') + '">' + esc(s[1]) + ' <span class="pl-n">' + n + '</span></button>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.pl-stage'), function (b) {
+      b.addEventListener('click', function () {
+        stageFilter = b.getAttribute('data-stage');
+        render();
+      });
+    });
+  }
+
+  function visibleRows() {
+    var q = query.toLowerCase();
+    return (rows || []).filter(function (r) {
+      if (stageFilter && r.status !== stageFilter) return false;
+      if (q && ((r.job_title || '') + ' ' + (r.company || '')).toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
   }
 
   function sortBy(key) {
@@ -136,14 +211,21 @@
   }
 
   function render() {
-    var body = document.getElementById('plBody');
-    var empty = document.getElementById('plEmpty');
-    var table = document.getElementById('plTable');
-    if (!body) return;
+    var body = byId('plBody');
+    var empty = byId('plEmpty');
+    var table = byId('plTable');
+    if (!body || rows === null) return;
+    renderStages();
+    body.setAttribute('aria-busy', 'false');
     if (!rows.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
     table.style.display = ''; empty.style.display = 'none';
 
-    var sorted = rows.slice().sort(function (a, b) {
+    var list = visibleRows();
+    if (!list.length) {
+      renderNote(query ? 'Nothing in this stage matches “' + query + '”.' : 'Nothing in this stage yet.', false);
+      return;
+    }
+    list.sort(function (a, b) {
       var x = a[sortKey], y = b[sortKey];
       if (sortKey === 'match_percent') { x = x == null ? -1 : x; y = y == null ? -1 : y; }
       if (x < y) return -1 * sortDir;
@@ -152,7 +234,7 @@
     });
 
     body.innerHTML = '';
-    sorted.forEach(function (r) {
+    list.forEach(function (r) {
       var tr = document.createElement('tr');
       var matchCell = (r.match_percent != null)
         ? '<span class="ws-badge ' + toneClass(r.match_percent) + '">' + r.match_percent + '%</span>'
@@ -161,21 +243,25 @@
         ? '<a href="' + esc(r.listing_url) + '" target="_blank" rel="noopener noreferrer" style="color:var(--ws-text);font-weight:600;text-decoration:none;">' + esc(r.job_title) + '</a>'
         : '<span style="font-weight:600;">' + esc(r.job_title) + '</span>';
 
-      // A Viewed row never auto-progresses: it gets an explicit action rather
+      // A Saved row never auto-progresses: it gets an explicit action rather
       // than a dropdown, so nothing is ever recorded as applied on the user's
       // behalf.
-      var isViewed = (r.status === 'Viewed');
+      var isSaved = (r.status === 'Viewed');
       var statusHtml, dateHtml;
-      if (isViewed) {
-        statusHtml = '<span class="ws-badge" style="background:var(--ws-surface-hover);color:var(--ws-text-secondary);margin-right:8px;">Viewed</span>'
-          + '<button class="ws-btn ws-btn-primary ws-btn-sm pl-mark-applied">Mark as Applied</button>';
-        dateHtml = '<span style="color:var(--ws-text-tertiary);">Viewed ' + fmtDate(r.viewed_date) + '</span>';
+      if (isSaved) {
+        statusHtml = '<span class="ws-badge" style="background:var(--ws-surface-hover);color:var(--ws-text-secondary);margin-right:8px;">Saved</span>'
+          + '<button type="button" class="ws-btn ws-btn-primary ws-btn-sm pl-mark-applied">Mark as applied</button>';
+        dateHtml = 'Saved ' + fmtDate(r.viewed_date);
       } else {
         var opts = STATUSES.map(function (s) {
           return '<option value="' + s + '"' + (s === r.status ? ' selected' : '') + '>' + s + '</option>';
         }).join('');
-        statusHtml = '<select class="ws-select ws-select-sm" style="width:130px;">' + opts + '</select>';
+        statusHtml = '<select class="ws-select ws-select-sm" style="width:128px;" aria-label="Status for ' + esc(r.job_title) + '">' + opts + '</select>';
         dateHtml = 'Applied ' + fmtDate(r.applied_date);
+        var age = daysSince(r.applied_date);
+        if (r.status === 'Applied' && age >= FOLLOW_UP_DAYS) {
+          dateHtml += '<div class="pl-followup">' + age + ' days, no reply: follow up</div>';
+        }
       }
 
       tr.innerHTML =
@@ -184,15 +270,19 @@
         + '<td>' + matchCell + '</td>'
         + '<td>' + statusHtml + '</td>'
         + '<td style="color:var(--ws-text-tertiary);font-size:12px;">' + dateHtml + '</td>'
-        + '<td><button class="ws-btn ws-btn-ghost ws-btn-sm pl-del" title="Remove">&times;</button></td>';
+        + '<td><div class="pl-row-actions">'
+        + '<button type="button" class="ws-btn ws-btn-ghost ws-btn-sm pl-edit">Edit</button>'
+        + '<button type="button" class="ws-btn ws-btn-ghost ws-btn-sm pl-del" aria-label="Remove ' + esc(r.job_title) + '">&times;</button>'
+        + '</div></td>';
 
-      if (isViewed) {
+      if (isSaved) {
         tr.querySelector('.pl-mark-applied').addEventListener('click', function () { updateStatus(r.id, 'Applied'); });
       } else {
         var sel = tr.querySelector('select');
         sel.addEventListener('change', function () { updateStatus(r.id, sel.value); });
       }
-      tr.querySelector('.pl-del').addEventListener('click', function () { removeRow(r.id); });
+      tr.querySelector('.pl-edit').addEventListener('click', function () { openForm(r); });
+      tr.querySelector('.pl-del').addEventListener('click', function () { removeRow(r); });
       body.appendChild(tr);
     });
   }
@@ -204,48 +294,54 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: status })
       });
-      if (res.ok) {
-        var row = rows.find(function (r) { return r.id === id; });
-        if (row) {
-          var wasViewed = (row.status === 'Viewed');
-          row.status = status;
-          // The server stamps applied_date; mirror it so the row swaps to the
-          // progression select without a refetch.
-          if (status === 'Applied') row.applied_date = new Date().toISOString();
-          if (wasViewed) render();
-        }
-        toast(status === 'Applied' ? 'Marked as applied' : 'Status updated');
-      } else {
-        toast('Could not update status');
+      if (!res.ok) { toast('Could not update status', 'error'); render(); return; }
+      var row = (rows || []).find(function (r) { return r.id === id; });
+      if (row) {
+        row.status = status;
+        // The server stamps applied_date; mirror it so the row moves without
+        // a refetch.
+        if (status === 'Applied') row.applied_date = new Date().toISOString();
       }
-    } catch (e) { toast('Could not update status'); }
+      render();                                     // counts in the strip change
+      toast(status === 'Applied' ? 'Marked as applied' : 'Moved to ' + status, 'success');
+    } catch (e) { toast('Could not update status', 'error'); }
   }
 
-  async function removeRow(id) {
+  async function removeRow(r) {
+    if (!window.confirm('Remove “' + (r.job_title || 'this role') + '” from your pipeline? This cannot be undone.')) return;
     try {
-      var res = await fetch('/api/tracker/' + id, { method: 'DELETE' });
-      if (res.ok) {
-        rows = rows.filter(function (r) { return r.id !== id; });
-        render();
-        toast('Removed');
-      }
-    } catch (e) { toast('Could not remove'); }
+      var res = await fetch('/api/tracker/' + r.id, { method: 'DELETE' });
+      if (!res.ok) throw new Error('delete failed');
+      rows = rows.filter(function (x) { return x.id !== r.id; });
+      render();
+      toast('Removed', 'success');
+    } catch (e) { toast('Could not remove', 'error'); }
   }
 
-  // Called by switchSection('pipeline'). Wiring happens once; the list is
-  // refetched on every visit so a status changed elsewhere is reflected.
-  function byId(id) { return document.getElementById(id); }
-
-  function toggleAddForm(show) {
-    var card = byId('plAddCard');
-    if (card) card.style.display = show ? '' : 'none';
-    if (show) { var t = byId('plNewTitle'); if (t) t.focus(); }
+  function openForm(row) {
+    editingId = row ? row.id : null;
+    byId('plFormTitle').textContent = row ? 'Edit job' : 'Add a job';
+    byId('plAddSave').textContent = row ? 'Save changes' : 'Save to pipeline';
+    // Status is changed from the table, where the rules for moving a row
+    // live; the edit form only corrects the details.
+    byId('plStatusGroup').style.display = row ? 'none' : '';
+    byId('plNewTitle').value = row ? (row.job_title || '') : '';
+    byId('plNewCompany').value = row ? (row.company || '') : '';
+    byId('plNewLocation').value = row ? (row.location || '') : '';
+    byId('plNewUrl').value = row ? (row.listing_url || '') : '';
+    byId('plAddCard').style.display = '';
+    byId('plNewTitle').focus();
   }
 
-  async function saveNewJob() {
+  function closeForm() {
+    editingId = null;
+    byId('plAddCard').style.display = 'none';
+  }
+
+  async function saveForm() {
     var title = (byId('plNewTitle').value || '').trim();
     if (!title) {
-      if (window.showToast) window.showToast('Job title is required', 'error');
+      toast('Job title is required', 'error');
       byId('plNewTitle').focus();
       return;
     }
@@ -253,47 +349,52 @@
     btn.disabled = true;
     var original = btn.textContent;
     btn.textContent = 'Saving…';
+    var fields = {
+      job_title: title,
+      company: (byId('plNewCompany').value || '').trim(),
+      location: (byId('plNewLocation').value || '').trim(),
+      listing_url: (byId('plNewUrl').value || '').trim()
+    };
     try {
-      var res = await fetch('/api/jobs/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          job_title: title,
-          company: (byId('plNewCompany').value || '').trim(),
-          location: (byId('plNewLocation').value || '').trim(),
-          listing_url: (byId('plNewUrl').value || '').trim(),
-          status: byId('plNewStatus').value
-        })
-      });
+      var res;
+      if (editingId != null) {
+        res = await fetch('/api/tracker/' + editingId, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields)
+        });
+      } else {
+        fields.status = byId('plNewStatus').value;
+        res = await fetch('/api/jobs/track', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fields)
+        });
+      }
       if (!res.ok) throw new Error('save failed');
-      ['plNewTitle', 'plNewCompany', 'plNewLocation', 'plNewUrl'].forEach(function (id) {
-        byId(id).value = '';
-      });
-      toggleAddForm(false);
-      if (window.showToast) window.showToast('Added to your pipeline', 'success');
+      var wasEdit = editingId != null;
+      closeForm();
+      toast(wasEdit ? 'Saved' : 'Added to your pipeline', 'success');
       await load();
     } catch (e) {
-      if (window.showToast) window.showToast('Could not add that job', 'error');
+      toast('Could not save that job', 'error');
     } finally {
       btn.disabled = false;
       btn.textContent = original;
     }
   }
 
+  // Called by switchSection('pipeline'). Wiring happens once; the list is
+  // refetched on every visit so a status changed elsewhere is reflected.
   window.initPipeline = function () {
     if (!inited) {
       inited = true;
       document.querySelectorAll('#plTable th.sortable').forEach(function (th) {
         th.addEventListener('click', function () { sortBy(th.dataset.key); });
       });
-      var addBtn = byId('plAddToggle');
-      if (addBtn) addBtn.addEventListener('click', function () {
-        toggleAddForm(byId('plAddCard').style.display === 'none');
+      byId('plAddToggle').addEventListener('click', function () {
+        if (byId('plAddCard').style.display === 'none' || editingId != null) openForm(null);
+        else closeForm();
       });
-      var saveBtn = byId('plAddSave');
-      if (saveBtn) saveBtn.addEventListener('click', saveNewJob);
-      var cancelBtn = byId('plAddCancel');
-      if (cancelBtn) cancelBtn.addEventListener('click', function () { toggleAddForm(false); });
+      byId('plAddSave').addEventListener('click', saveForm);
+      byId('plAddCancel').addEventListener('click', closeForm);
+      byId('plSearch').addEventListener('input', function (e) { query = e.target.value.trim(); render(); });
     }
     load();
   };
