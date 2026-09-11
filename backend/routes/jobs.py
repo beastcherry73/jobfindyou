@@ -115,26 +115,48 @@ def api_jobs_categories():
 
 
 # ── Keyless ATS layer: daily sync + corpus visibility ──────────────────
-# Triggered by the Vercel cron entry in vercel.json. Vercel sends
-# `Authorization: Bearer $CRON_SECRET` when CRON_SECRET is configured; we
-# require it, so this is never an open endpoint. Without CRON_SECRET set the
-# route refuses outright rather than running unauthenticated.
+# Triggered by the Vercel cron entries in vercel.json.
+#
+# This used to refuse outright unless CRON_SECRET was set, and that is exactly
+# how the job corpus froze: the variable was never live in production, every
+# cron answered 503, nothing surfaced it, and the board served listings last
+# synced 2026-08-27 -- thousands of them already taken down by the employer.
+# A secret that silently disables the feature when missing is the wrong
+# failure mode for the one job that keeps the product fresh.
+#
+# So the route now has two tiers:
+#   * a correct `Bearer $CRON_SECRET` runs immediately (when it is configured);
+#   * anything else is THROTTLED rather than refused -- see
+#     ats.sync_allowed_unauthenticated(). The worst an anonymous caller can do
+#     is make a public-board sync happen no more often than the schedule we
+#     would want anyway. It reads only public job boards and writes only our
+#     own job table, so there is nothing to leak and nothing user-owned to harm.
+# A wrong bearer is still a 401: that is a misconfiguration worth seeing.
 @jobs_bp.route("/api/jobs/ats/sync", methods=["GET", "POST"])
 def api_ats_sync():
     secret = os.environ.get("CRON_SECRET")
-    if not secret:
-        return jsonify({"error": "Sync is not configured."}), 503
     provided = request.headers.get("Authorization", "")
-    if provided != f"Bearer {secret}":
+    authorized = bool(secret) and provided == f"Bearer {secret}"
+    if provided and not authorized:
         return jsonify({"error": "Not authorized."}), 401
 
     # Bounded so the function returns inside its wall-clock ceiling; the cursor
     # is persisted per company, so the next run resumes rather than restarting.
     try:
-        budget = float(request.args.get("budget", 50))
+        budget = float(request.args.get("budget", ats.SYNC_DEFAULT_BUDGET))
     except (TypeError, ValueError):
-        budget = 50.0
+        budget = ats.SYNC_DEFAULT_BUDGET
+    if not authorized:
+        allowed, retry_after = ats.sync_allowed_unauthenticated()
+        if not allowed:
+            resp = jsonify({"error": "A sync ran recently; nothing to do yet.",
+                            "retry_after": int(retry_after)})
+            resp.headers["Retry-After"] = str(int(retry_after))
+            return resp, 429
+        # An anonymous caller never gets to choose a bigger budget.
+        budget = min(budget, ats.SYNC_DEFAULT_BUDGET)
     try:
+        ats.mark_sync_started()
         return jsonify(ats.run_sync(time_budget=budget))
     except Exception as e:
         logger.error(f"ATS sync failed: {e}")
@@ -382,11 +404,31 @@ def api_tracker_update(row_id):
 
     body = request.get_json(silent=True) or {}
     status = (body.get("status") or "").strip()
-    if status not in _VALID_STATUSES:
+    # Detail edits from the Pipeline's Edit form. The column names come from
+    # this fixed list, never from the request, so the SET clause below cannot
+    # be steered by user input.
+    fields = {}
+    for key in ("job_title", "company", "location", "listing_url"):
+        if key in body:
+            fields[key] = str(body.get(key) or "").strip()[:500]
+    if "job_title" in fields and not fields["job_title"]:
+        return jsonify({"error": "Job title can't be empty."}), 400
+    if not status and not fields:
+        return jsonify({"error": "Nothing to update."}), 400
+    if status and status not in _VALID_STATUSES:
         return jsonify({"error": "Invalid status."}), 400
     try:
         with get_db() as db:
-            if status == "Applied":
+            if fields:
+                sets = ", ".join(f"{k} = ?" for k in fields)
+                db.execute(
+                    f"UPDATE jobs_tracker SET {sets}, updated_at = CURRENT_TIMESTAMP "
+                    "WHERE id = ? AND user_id = ?",
+                    list(fields.values()) + [row_id, user_id],
+                )
+            if not status:
+                pass
+            elif status == "Applied":
                 # Self-reported application (confirmation prompt or the tracker's
                 # "Mark as Applied"): stamp applied_date now so it reflects the
                 # real moment, not the earlier 'Viewed' placeholder.

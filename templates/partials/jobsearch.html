@@ -138,6 +138,13 @@
   .jp-logo .jp-letter { font-size:15px; font-weight:700; color:var(--ws-text-secondary); }
   .jp-card-head > div:first-child { display:flex; align-items:flex-start; }
   .jp-empty { text-align:center; color:var(--ws-text-tertiary); font-size:13px; padding:48px 20px; }
+  /* Freshness is the first thing a job seeker checks, so it is the one badge
+     a card carries unprompted. Cobalt-subtle, not green: green is reserved
+     for health/success signals. */
+  .jp-new { font-size:11px; font-weight:600; color:var(--ws-primary); background:var(--ws-primary-subtle);
+            border-radius:var(--ws-radius-full); padding:1px 8px; }
+  .jp-fresh { color:var(--ws-text-secondary); }
+  .jp-more { width:100%; justify-content:center; margin:4px 0 16px; }
   .jp-notice { padding:14px 16px; border-radius:var(--ws-radius-lg); background:var(--ws-warn-bg); color:var(--ws-warn); font-size:13px; margin-bottom:20px; }
 </style>
 
@@ -267,7 +274,7 @@
               <option value="3">Last 3 days</option>
               <option value="7">Last week</option>
               <option value="14">Last 2 weeks</option>
-              <option value="30">Last 30 days</option>
+              <option value="30" selected>Last 30 days</option>
             </select>
           </div>
           <div class="jp-filter jp-span2">
@@ -282,7 +289,7 @@
   </form>
 
   <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
-  <div class="jp-attribution">Listings come straight from employers&#39; own job boards (Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), plus Adzuna, Careerjet &amp; Jooble — each listing is labelled with its source.</div>
+  <div class="jp-attribution">Every listing comes straight from the employer&#39;s own careers site (Workday, Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), so &ldquo;Apply&rdquo; takes you to the real application &mdash; not a job-board repost. Roles the employer takes down are removed on the next refresh.</div>
   <div class="jp-split" id="jpSplit">
     <div class="jp-list" id="jpResults"></div>
     <aside class="jp-detail ws-card" id="jpDetail">
@@ -312,6 +319,11 @@
   // Backs the split pane: the rendered result set and which row is open.
   var currentList = [];
   var selectedIdx = -1;
+  // Paging: the last search's parameters, the page loaded so far, and the
+  // total, so "Show more" can extend the list instead of re-running it.
+  var lastParams = null;
+  var currentPage = 1;
+  var totalCount = 0;
 
   function cur(){ return CURRENCY[activeCountry] || CURRENCY.in; }
   function fmtSalary(min, max, predicted) {
@@ -326,6 +338,25 @@
     var d = new Date(iso);
     if (isNaN(d)) return '';
     return d.toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' });
+  }
+  // Calendar-day wording on purpose. Workday reports only "Posted Today /
+  // 3 Days Ago", so an hours-level "posted 2h ago" would be invented
+  // precision for those listings.
+  function fmtAgo(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var day = new Date(d.getTime()); day.setHours(0, 0, 0, 0);
+    var days = Math.round((today - day) / 864e5);
+    if (days <= 0) return 'Posted today';
+    if (days === 1) return 'Posted yesterday';
+    if (days < 30) return 'Posted ' + days + ' days ago';
+    return 'Posted ' + fmtDate(iso);
+  }
+  function isNew(iso) {
+    var d = new Date(iso);
+    return !!iso && !isNaN(d) && (Date.now() - d.getTime()) < 864e5;
   }
   function toneClass(pct) { return pct >= 70 ? 'ws-badge-good' : pct >= 40 ? 'ws-badge-warn' : 'ws-badge-bad'; }
   function val(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; }
@@ -456,22 +487,29 @@
     refreshChips();                      // currency symbol changed
   }
 
-  async function doSearch(e) {
-    if (e) e.preventDefault();
+  async function doSearch(e, append) {
+    if (e && e.preventDefault) e.preventDefault();
     var status = document.getElementById('jpStatus');
     var results = document.getElementById('jpResults');
-    var salaryMin = val('jpSalaryMin');
-    var salaryMax = val('jpSalaryMax');
-    if (salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax)) {
-      status.textContent = "Minimum salary can't be higher than maximum salary.";
+    var country = val('jpCountry') || 'in';
+    var params;
+    if (append && lastParams) {
+      params = new URLSearchParams(lastParams.toString());
+      currentPage += 1;
+      params.set('page', String(currentPage));
+      var more = document.getElementById('jpMore');
+      if (more) { more.disabled = true; more.textContent = 'Loading…'; }
+    } else {
+      var salaryMin = val('jpSalaryMin');
+      var salaryMax = val('jpSalaryMax');
+      if (salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax)) {
+        status.textContent = "Minimum salary can't be higher than maximum salary.";
+        results.innerHTML = '';
+        return false;
+      }
+      status.textContent = 'Searching…';
       results.innerHTML = '';
-      return false;
-    }
-    status.textContent = 'Searching…';
-    results.innerHTML = '';
-    try {
-      var params = new URLSearchParams();
-      var country = val('jpCountry') || 'in';
+      params = new URLSearchParams();
       params.set('country', country);
       var what = val('jpWhat'), where = val('jpWhere');
       if (what) params.set('what', what);
@@ -484,44 +522,86 @@
       var workMode = val('jpWorkMode'); if (workMode) params.set('work_mode', workMode);
       var experience = val('jpExperience'); if (experience) params.set('experience_level', experience);
       var sortBy = val('jpSortBy'); if (sortBy) params.set('sort_by', sortBy);
-
+      currentPage = 1;
+    }
+    try {
       var res = await fetch('/api/jobs/search?' + params.toString());
       if (res.status === 503) {
         document.getElementById('jpConfigNotice').style.display = 'block';
         status.textContent = '';
         return false;
       }
+      if (res.status === 429) {
+        if (append) { currentPage -= 1; renderMoreButton(); }
+        else status.textContent = 'You are searching very quickly — give it a few seconds, then try again.';
+        toast('Too many searches in a row. Try again in a few seconds.');
+        return false;
+      }
       var data = await res.json();
-      if (data.error) { status.textContent = data.error; return false; }
+      if (data.error) {
+        if (append) { currentPage -= 1; renderMoreButton(); }
+        status.textContent = data.error;
+        return false;
+      }
       activeCountry = data.country || country;
-      renderResults(data.results || [], data.count || 0);
+      if (!append) lastParams = params;
+      renderResults(data.results || [], data.count || 0, data.fresh_24h || 0, !!append);
     } catch (err) {
-      status.textContent = 'Search failed. Please try again.';
+      if (append) { currentPage -= 1; renderMoreButton(); toast('Could not load more roles.'); }
+      else status.textContent = 'Search failed. Please try again.';
     }
     return false;
   }
 
-  function renderResults(list, count) {
+  function renderMoreButton() {
+    var wrap = document.getElementById('jpResults');
+    var old = document.getElementById('jpMore');
+    if (old) old.remove();
+    if (!wrap || currentList.length >= totalCount) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'jpMore';
+    b.className = 'ws-btn ws-btn-secondary jp-more';
+    b.textContent = 'Show more roles (' + (totalCount - currentList.length).toLocaleString() + ' more)';
+    b.addEventListener('click', function () { doSearch(null, true); });
+    wrap.appendChild(b);
+  }
+
+  function renderResults(list, count, fresh, append) {
     var status = document.getElementById('jpStatus');
     var wrap = document.getElementById('jpResults');
     var detail = document.getElementById('jpDetail');
     var split = document.getElementById('jpSplit');
+    list = list || [];
+    var startIdx = 0;
 
-    // A new search invalidates whatever was open in the panel.
-    currentList = list || [];
-    selectedIdx = -1;
-    if (split) split.classList.remove('jp-showing-detail');
+    if (append) {
+      startIdx = currentList.length;
+      currentList = currentList.concat(list);
+    } else {
+      // A new search invalidates whatever was open in the panel.
+      currentList = list;
+      selectedIdx = -1;
+      if (split) split.classList.remove('jp-showing-detail');
+    }
 
-    if (!list.length) {
+    if (!append && !list.length) {
       status.textContent = '';
-      wrap.innerHTML = '<div class="jp-empty">No listings found. Try broader keywords or a different location.</div>';
+      wrap.innerHTML = '<div class="jp-empty">No listings match those filters. Try a broader keyword, a wider &ldquo;Posted within&rdquo; window, or clear the location.</div>';
       if (detail) detail.innerHTML = '<div class="jp-detail-empty">Select a role to see the full description.</div>';
       return;
     }
-    status.textContent = count.toLocaleString() + ' result' + (count !== 1 ? 's' : '') + ' found';
-    wrap.innerHTML = '';
-    if (detail) detail.innerHTML = '<div class="jp-detail-empty">Select a role to see the full description.</div>';
-    list.forEach(function(job, idx) {
+    totalCount = count;
+    status.innerHTML = '<b>' + count.toLocaleString() + '</b> role' + (count !== 1 ? 's' : '')
+      + (fresh ? ' &middot; <span class="jp-fresh">' + fresh.toLocaleString() + ' posted in the last 24 hours</span>' : '');
+    if (!append) {
+      wrap.innerHTML = '';
+      if (detail) detail.innerHTML = '<div class="jp-detail-empty">Select a role to see the full description.</div>';
+    }
+    var oldMore = document.getElementById('jpMore');
+    if (oldMore) oldMore.remove();
+    list.forEach(function(job, i) {
+      var idx = startIdx + i;
       var card = document.createElement('div');
       card.className = 'ws-card jp-card';
       var salary = job.salary_text ? job.salary_text : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
@@ -535,9 +615,10 @@
       // Set expectations before the click: SmartRecruiters is the one source
       // whose apply flow needs an account, where the rest allow a guest apply.
       if (job.requires_account) {
-        sub.push('<span class="ws-badge ws-badge-warn" title="This employer&#39;s ATS asks you to create an account or sign in with Google/LinkedIn before applying.">Account required</span>');
+        sub.push('<span class="ws-badge ws-badge-warn" title="This employer&#39;s application site asks you to create an account (or sign in) before applying.">Account required</span>');
       }
-      if (job.created) sub.push('<span>Posted ' + esc(fmtDate(job.created)) + '</span>');
+      if (isNew(job.created)) sub.unshift('<span class="jp-new">New</span>');
+      if (job.created) sub.push('<span>' + esc(fmtAgo(job.created)) + '</span>');
       // Be honest about provenance: name the true publisher when the source
       // gives us one, and say plainly when the link only reaches the aggregator.
       if (job.apply_is_direct) {
@@ -561,7 +642,8 @@
         '<div class="jp-card-head">' +
           '<div>' + logoHtml + '<div>' +
             '<div class="jp-title">' + esc(job.title || 'Untitled role') + '</div>' +
-            '<div class="jp-meta">' + esc(job.company || 'Company undisclosed') + (job.location ? ' · ' + esc(job.location) : '') + '</div>' +
+            '<div class="jp-meta">' + esc(job.company || 'Company undisclosed') + (job.location ? ' · ' + esc(job.location) : '')
+              + (job.duplicates ? ' · +' + job.duplicates + ' more location' + (job.duplicates > 1 ? 's' : '') : '') + '</div>' +
             (sub.length ? '<div class="jp-sub">' + sub.join('') + '</div>' : '') +
           '</div></div>' +
         '</div>';
@@ -569,10 +651,11 @@
       card.addEventListener('click', function(){ selectJob(idx); });
       wrap.appendChild(card);
     });
+    renderMoreButton();
 
     // Open the first result so a successful search never shows an empty
     // column. Narrow screens keep the list in front instead.
-    if (list.length && window.innerWidth > 980) selectJob(0);
+    if (!append && list.length && window.innerWidth > 980) selectJob(0);
   }
 
   // Swap a logo that fails to load for a lettermark.

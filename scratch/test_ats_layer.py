@@ -239,22 +239,28 @@ def test_schema():
     check("source names the real platform",
           all(r["source"] in [p["label"] for p in ats.PLATFORMS.values()] for r in rows))
 
-    # Apply-friction labelling: SmartRecruiters wants an account, the other six
-    # allow a guest apply. This must come from the platform spec, not a string
-    # match on the source name.
-    sr = ats.search(per_page=5)
-    sr_rows = [r for r in ats.search(per_page=200)["results"]
-               if r["source"] == "SmartRecruiters"]
-    other_rows = [r for r in ats.search(per_page=200)["results"]
-                  if r["source"] != "SmartRecruiters"]
+    # Apply-friction labelling: SmartRecruiters and Workday ask for an account,
+    # the other six allow a guest apply. It must come from the platform spec,
+    # never a string match on the source name. Sampled one row per platform
+    # straight from the corpus: browse ranking now interleaves employers, so
+    # the first page no longer reliably contains any particular platform (the
+    # old version of this check read the first 50 rows and found no SR row).
+    with get_db() as db:
+        sample = [dict(r) for r in db.execute(
+            "SELECT * FROM ats_jobs WHERE id IN "
+            "(SELECT MIN(id) FROM ats_jobs GROUP BY platform)").fetchall()]
+    unified = [(s["platform"], ats.to_unified(s)) for s in sample]
     check("requires_account present on every ATS row",
           all("requires_account" in r for r in rows))
+    sr_rows = [u for p, u in unified if p == "smartrecruiters"]
     check("SmartRecruiters rows are flagged account-required",
           bool(sr_rows) and all(r["requires_account"] for r in sr_rows),
           "%d rows" % len(sr_rows))
-    check("guest-apply platforms are NOT flagged",
-          all(not r["requires_account"] for r in other_rows),
-          "%d rows" % len(other_rows))
+    mismatched = [p for p, u in unified
+                  if u["requires_account"] != bool(ats.PLATFORMS[p].get("requires_account"))]
+    check("every platform's flag matches its spec (guest-apply platforms unflagged)",
+          bool(unified) and not mismatched,
+          mismatched or "%d platforms" % len(unified))
 
     # Ranking: ATS above aggregators, per the approved ordering.
     ats_row = dict(rows[0])
@@ -289,7 +295,13 @@ def test_idempotency():
         return
     stats = {"companies": 0, "fetched": 0, "stored": 0, "pruned": 0, "failed": 0}
     ats._store_company(entry, jobs, stats)
-    ats._store_company(entry, jobs, stats)      # deliberately twice
+    # Count AFTER the first store. The live board may genuinely have gained a
+    # posting since the last sync -- that is a new row, not a duplicate, and it
+    # made this check fail on a correct system. What must hold is that storing
+    # the same fetched rows again adds nothing.
+    with get_db() as db:
+        before = db.execute("SELECT COUNT(*) AS n FROM ats_jobs").fetchone()["n"]
+    ats._store_company(entry, jobs, stats)      # the same rows, again
     with get_db() as db:
         after = db.execute("SELECT COUNT(*) AS n FROM ats_jobs").fetchone()["n"]
     check("storing the same board twice adds no rows", after == before,

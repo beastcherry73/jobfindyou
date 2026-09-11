@@ -312,6 +312,9 @@ def unified_search(what="", where="", country="in", page=1, per_page=20,
     # cards with no way to reach the rest.
     return {
         "count": (res or {}).get("count", len(results)),
+        # Of those, how many were posted in the last 24 hours -- the number a
+        # job seeker actually asks about.
+        "fresh_24h": (res or {}).get("fresh_24h", 0),
         "results": results,
         "country": country,
         "currency": CURRENCY_SYMBOLS.get(country, ""),

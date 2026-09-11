@@ -1,6 +1,7 @@
 import os
 from flask import Blueprint, jsonify
 from backend.database import db_diagnostic
+from backend.services import ats
 
 meta_bp = Blueprint("meta", __name__)
 
@@ -53,4 +54,9 @@ def health():
             "cron_secret": bool(os.environ.get("CRON_SECRET")),
             "secret_key": bool(os.environ.get("SECRET_KEY")),
         },
+        # When the job board was last refreshed. The corpus froze for two
+        # weeks (2026-08-27 -> 2026-09-11) with nothing visible from outside;
+        # this makes that failure one glance instead of a database query.
+        # Timestamps and a cursor only -- nothing user-owned.
+        "jobs_freshness": ats.sync_status(),
     })

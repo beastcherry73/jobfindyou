@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "regions": ["sin1"],
   "builds": [
     {
       "src": "api/index.py",
@@ -13,9 +14,11 @@
     }
   ],
   "crons": [
-    {
-      "path": "/api/jobs/ats/sync",
-      "schedule": "0 2 * * *"
-    }
+    { "path": "/api/jobs/ats/sync", "schedule": "30 0 * * *" },
+    { "path": "/api/jobs/ats/sync", "schedule": "30 4 * * *" },
+    { "path": "/api/jobs/ats/sync", "schedule": "30 8 * * *" },
+    { "path": "/api/jobs/ats/sync", "schedule": "30 12 * * *" },
+    { "path": "/api/jobs/ats/sync", "schedule": "30 16 * * *" },
+    { "path": "/api/jobs/ats/sync", "schedule": "30 20 * * *" }
   ]
 }

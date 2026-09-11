@@ -287,12 +287,22 @@ def resolve_country(location, explicit=None):
         if token in _COUNTRY_ALIASES:
             return _COUNTRY_ALIASES[token]
 
-    # "San Mateo, CA" -- a bare US state code.
+    city_code = _known_city_country(segments, text)
+
+    # "San Mateo, CA" -- a bare US state code. Except where the "state" is
+    # also the ISO code of a known city's own country: "Pune, IN" and
+    # "Bangalore, In" are India, not Indiana. The city wins that tie.
     for seg in reversed(segments):
         if seg in _US_STATES:
+            if city_code and city_code != "us" and seg == city_code:
+                return city_code
             return "us"
 
     # Fall back to a known hiring hub ("Bengaluru", "New York City", "Dubai").
+    return city_code
+
+
+def _known_city_country(segments, text):
     for seg in segments:
         if seg in _CITY_COUNTRY:
             return _CITY_COUNTRY[seg]
@@ -619,6 +629,192 @@ def _breezy_normalize(j, token, company):
     }
 
 
+# ── Workday ────────────────────────────────────────────────────────────────
+# Workday career sites expose a KEYLESS public JSON endpoint -- the same one
+# the employer's own careers page calls:
+#
+#     POST https://{tenant}.{pod}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs
+#          {"limit": 20, "offset": N, "searchText": "", "appliedFacets": {}}
+#
+# Verified 2026-09-11 against 129 candidate employers: 73 answered with live
+# postings (NVIDIA, Salesforce, Adobe, JLL, Kyndryl, Deutsche Bank, Citi ...),
+# most of them with a first page that was entirely "Posted Today/Yesterday".
+# This is where the large employers -- and much of India hiring -- actually
+# live; the seven startup-leaning platforms above could not reach them.
+#
+# Shape constraints, all measured:
+#   * a page is capped at 20 rows, so a board is paged;
+#   * the unfiltered board is newest-first, so paging can stop once a whole
+#     page is "30+ Days Ago";
+#   * dates are RELATIVE ("Posted 3 Days Ago") -- converted to an absolute day
+#     at fetch time; "30+ Days" is skipped because its true age is unknown,
+#     and storing it as 30 days old would understate how stale it is;
+#   * searchText="India" returns India-located roles (NVIDIA 278, Kyndryl 354,
+#     JLL 539 on the day) -- a second slice, because the newest-first page of a
+#     global board is mostly US;
+#   * the list response carries no description (like SmartRecruiters), so it is
+#     fetched when the user opens the role.
+#
+# Registry token format: "tenant|pod|site", e.g. "nvidia|wd5|NVIDIAExternalCareerSite".
+_WD_PAGE = 20
+# Measured 2026-09-11: a Workday page takes 1.2-2.2s, so walking 15 pages one
+# after another cost ~25s per employer and a 68-employer pass took most of an
+# hour. Pages are now fetched in parallel after the first (5 pages ~2s), and
+# the caps target the freshest slice -- older pages are exactly what the "30+
+# days" filter throws away anyway.
+WORKDAY_MAX_GLOBAL = 120
+WORKDAY_MAX_INDIA = 60
+_WD_PAGE_WORKERS = 4
+_WD_POSTED_RE = re.compile(r"posted\s+(\d+)\s+days?\s+ago", re.I)
+_WD_MULTI_LOC_RE = re.compile(r"^\s*(\d+)\s+locations?\s*$", re.I)
+
+
+def _wd_parts(token):
+    tenant, pod, site = token.split("|", 2)
+    return tenant, pod, site
+
+
+def _wd_api(token):
+    tenant, pod, site = _wd_parts(token)
+    return f"https://{tenant}.{pod}.myworkdayjobs.com/wday/cxs/{tenant}/{site}"
+
+
+def _wd_posted(text, fetched_at):
+    """'Posted Today' / 'Posted Yesterday' / 'Posted 3 Days Ago' -> ISO date.
+
+    None for '30+ Days Ago' and anything unrecognised: we do not know those
+    dates, and the job is then skipped rather than stored with a made-up one.
+    """
+    t = (text or "").strip().lower()
+    if not t or "30+" in t:
+        return None
+    if "today" in t:
+        days = 0
+    elif "yesterday" in t:
+        days = 1
+    else:
+        m = _WD_POSTED_RE.search(t)
+        if not m:
+            return None
+        days = int(m.group(1))
+    return (fetched_at - timedelta(days=days)).isoformat()
+
+
+def _wd_fetch(token, sess):
+    """Newest-first slice of the board, plus an India-located slice."""
+    url = _wd_api(token) + "/jobs"
+    headers = dict(HTTP_HEADERS)
+    headers["Content-Type"] = "application/json"
+    fetched_at = datetime.now(timezone.utc)
+    seen, rows = set(), []
+
+    def page(search_text, offset):
+        r = sess.post(url, json={"limit": _WD_PAGE, "offset": offset,
+                                 "searchText": search_text, "appliedFacets": {}},
+                      headers=headers, timeout=HTTP_TIMEOUT)
+        if r.status_code != 200:
+            return None, []
+        d = r.json() or {}
+        return d.get("total"), d.get("jobPostings") or []
+
+    def keep(postings):
+        for j in postings:
+            path = j.get("externalPath")
+            if not path or path in seen or _wd_posted(j.get("postedOn"), fetched_at) is None:
+                continue
+            seen.add(path)
+            j["_fetched_at"] = fetched_at
+            rows.append(j)
+
+    def pull(search_text, cap):
+        # The first page says how many exist; the rest are fetched together.
+        total, first = page(search_text, 0)
+        keep(first)
+        if not first or len(first) < _WD_PAGE:
+            return
+        # The unfiltered board is newest-first: a first page that is already
+        # all "30+ days" means nothing fresher follows.
+        if not search_text and all("30+" in (j.get("postedOn") or "") for j in first):
+            return
+        try:
+            total = int(total or 0)
+        except (TypeError, ValueError):
+            total = 0
+        limit = min(cap, total) if total else cap
+        offsets = list(range(_WD_PAGE, limit, _WD_PAGE))
+        if not offsets:
+            return
+        with ThreadPoolExecutor(max_workers=_WD_PAGE_WORKERS) as pool:
+            for _total, postings in pool.map(lambda off: page(search_text, off), offsets):
+                keep(postings)
+
+    # Each slice fails independently: a broken India search must not throw away
+    # a good global page (fetch_board would otherwise return nothing at all).
+    for search_text, cap in (("", WORKDAY_MAX_GLOBAL), ("India", WORKDAY_MAX_INDIA)):
+        try:
+            pull(search_text, cap)
+        except (http_requests.RequestException, ValueError) as e:
+            logger.info(f"ATS workday/{token} slice {search_text!r} failed: {e}")
+    return rows
+
+
+def _wd_country(*texts):
+    """City first, then the general resolver.
+
+    Workday location strings use state abbreviations that collide with ISO
+    country codes -- "Gurugram, HR" (Haryana, not Croatia), "Mumbai, MH"
+    (Maharashtra, not the Marshall Islands) -- which the generic resolver would
+    read as bare country codes. A known hiring-hub city is the stronger signal.
+    """
+    for t in texts:
+        low = (t or "").lower()
+        for city in _CITIES_BY_LENGTH:
+            if re.search(r"\b" + re.escape(city) + r"\b", low):
+                return _CITY_COUNTRY[city]
+    for t in texts:
+        code = resolve_country(t)
+        if code:
+            return code
+    return ""
+
+
+def _wd_normalize(j, token, company):
+    tenant, pod, site = _wd_parts(token)
+    path = j.get("externalPath") or ""
+    loc_text = (j.get("locationsText") or "").strip()
+    # "/job/India-Bengaluru/Title_JR123" -> "India Bengaluru"
+    parts = path.split("/")
+    from_path = ""
+    if len(parts) > 2:
+        from_path = parts[2].replace("---", " - ").replace("-", " ").strip()
+    multi = _WD_MULTI_LOC_RE.match(loc_text)
+    if loc_text and not multi:
+        location = loc_text
+    elif from_path:
+        extra = int(multi.group(1)) - 1 if multi else 0
+        location = from_path + (f" (+{extra} more)" if extra > 0 else "")
+    else:
+        location = loc_text
+    title = j.get("title") or ""
+    return {
+        "source_id": path,
+        "title": title,
+        "company": company,
+        "location": location,
+        "country_code": _wd_country(location, from_path),
+        "work_mode": resolve_work_mode(f"{location} {from_path}"),
+        "employment_type": "",
+        "experience_level": normalize_experience_level(None, title),
+        "salary_min": None, "salary_max": None, "salary_currency": "",
+        "salary_text": "",
+        "posted_at": _wd_posted(j.get("postedOn"),
+                                j.get("_fetched_at") or datetime.now(timezone.utc)),
+        "apply_url": (f"https://{tenant}.{pod}.myworkdayjobs.com/en-US/{site}{path}"
+                      if path else ""),
+        "description": "",
+    }
+
+
 PLATFORMS = {
     "greenhouse": {
         "label": "Greenhouse",
@@ -702,6 +898,22 @@ PLATFORMS = {
         "destination": "<company>.breezy.hr posting page. Guest application; "
                        "no account required.",
     },
+    "workday": {
+        "label": "Workday",
+        "url": lambda t: _wd_api(t) + "/jobs",
+        "rows": lambda d: (d.get("jobPostings") or []) if isinstance(d, dict) else [],
+        "total": lambda d, rows: (d.get("total") if isinstance(d, dict) else None) or len(rows),
+        "apply_url": lambda j, t: "",
+        "normalize": _wd_normalize,
+        # POST + paging + two slices: see _wd_fetch.
+        "fetch": _wd_fetch,
+        # Workday asks the candidate to create an account on that employer's
+        # Workday site before an application can be submitted.
+        "requires_account": True,
+        "destination": "The employer's own Workday career site "
+                       "(<tenant>.myworkdayjobs.com). Applying requires creating "
+                       "an account on that employer's Workday site.",
+    },
 }
 
 
@@ -750,7 +962,9 @@ def fetch_board(platform, token, session=None):
     sess = session or http_requests
     rows = []
     try:
-        if spec.get("paginated"):
+        if spec.get("fetch"):
+            rows = spec["fetch"](token, sess)
+        elif spec.get("paginated"):
             offset = 0
             while len(rows) < MAX_JOBS_PER_COMPANY:
                 url = spec["url"](token) + f"&offset={offset}"
@@ -1041,6 +1255,113 @@ def prune_unregistered():
     return removed
 
 
+# ── Sync scheduling ────────────────────────────────────────────────────────
+# The sync route no longer refuses when CRON_SECRET is missing (that is how the
+# corpus froze for two weeks unnoticed). An unauthenticated trigger is instead
+# THROTTLED, using two timestamps kept in app_meta alongside the cursor:
+#
+#   * at least _UNAUTH_MIN_GAP between anonymous runs, so overlapping calls
+#     cannot pile up;
+#   * once a cycle has completed, anonymous runs rest for _UNAUTH_CYCLE_REST
+#     unless a cycle is part-way through (cursor > 0) and needs finishing.
+#
+# So the worst an anonymous caller can cause is roughly one full refresh every
+# few hours -- the schedule we want anyway. A correct CRON_SECRET bypasses it.
+SYNC_DEFAULT_BUDGET = 50.0
+_SYNC_STARTED_KEY = "ats_sync_last_started"
+_SYNC_COMPLETED_KEY = "ats_sync_last_completed"
+_UNAUTH_MIN_GAP = 240
+_UNAUTH_CYCLE_REST = 3 * 3600
+
+
+def _meta_get(db, key):
+    try:
+        row = db.execute("SELECT meta_value FROM app_meta WHERE meta_key = ?",
+                         (key,)).fetchone()
+        return row["meta_value"] if row else None
+    except Exception:
+        return None
+
+
+def _meta_set(db, key, value):
+    try:
+        db.execute(
+            "INSERT INTO app_meta (meta_key, meta_value) VALUES (?, ?) "
+            "ON CONFLICT (meta_key) DO UPDATE SET meta_value = excluded.meta_value",
+            (key, str(value)),
+        )
+    except Exception:
+        pass
+
+
+def _meta_float(db, key):
+    try:
+        return float(_meta_get(db, key) or 0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def sync_allowed_unauthenticated():
+    """(allowed, retry_after_seconds) for an anonymous sync trigger."""
+    from backend.database import get_db
+
+    now = time.time()
+    try:
+        with get_db() as db:
+            started = _meta_float(db, _SYNC_STARTED_KEY)
+            completed = _meta_float(db, _SYNC_COMPLETED_KEY)
+            cursor = _read_cursor(db)
+    except Exception:
+        # Fail open: if we cannot read the throttle we cannot run the sync
+        # either, and run_sync will report the real error.
+        return True, 0
+    gap = _UNAUTH_MIN_GAP - (now - started)
+    if gap > 0:
+        return False, gap
+    if cursor == 0 and completed:
+        rest = _UNAUTH_CYCLE_REST - (now - completed)
+        if rest > 0:
+            return False, rest
+    return True, 0
+
+
+def mark_sync_started():
+    from backend.database import get_db
+
+    try:
+        with get_db() as db:
+            _meta_set(db, _SYNC_STARTED_KEY, repr(time.time()))
+    except Exception:
+        pass
+
+
+def sync_status():
+    """Freshness facts for /api/health: when the corpus was last refreshed."""
+    from backend.database import get_db
+
+    try:
+        with get_db() as db:
+            completed = _meta_float(db, _SYNC_COMPLETED_KEY)
+            started = _meta_float(db, _SYNC_STARTED_KEY)
+            cursor = _read_cursor(db)
+            row = db.execute("SELECT MAX(last_seen_at) AS m FROM ats_jobs").fetchone()
+        newest = row["m"] if row else None
+        if newest is not None and not isinstance(newest, str):
+            newest = newest.isoformat()
+        now = time.time()
+        return {
+            "last_row_seen_at": newest,
+            "last_cycle_completed_hours_ago": (round((now - completed) / 3600, 1)
+                                               if completed else None),
+            "last_run_started_hours_ago": (round((now - started) / 3600, 1)
+                                           if started else None),
+            "cursor": cursor,
+        }
+    except Exception as e:
+        logger.warning(f"ATS sync status failed: {e}")
+        return {}
+
+
 def run_sync(limit=None, time_budget=None, reset=False):
     """Advance the daily sync from the persisted cursor.
 
@@ -1094,6 +1415,11 @@ def run_sync(limit=None, time_budget=None, reset=False):
     if completed_cycle:
         stats["pruned_unregistered"] = prune_unregistered()
         stats["pruned_stale"] = prune_stale()
+        try:
+            with get_db() as db:
+                _meta_set(db, _SYNC_COMPLETED_KEY, repr(time.time()))
+        except Exception:
+            pass
     return stats
 
 
@@ -1159,9 +1485,23 @@ def _breezy_full_description(token, source_id):
     return _text(d.get("description") or "")
 
 
+def _workday_full_description(token, source_id):
+    """Workday posting detail -> readable text, or ''. source_id is the path."""
+    try:
+        r = http_requests.get(_wd_api(token) + source_id, timeout=_DESC_TIMEOUT,
+                              headers=HTTP_HEADERS)
+        if r.status_code != 200:
+            return ""
+        info = (r.json() or {}).get("jobPostingInfo") or {}
+    except Exception:
+        return ""
+    return _text(info.get("jobDescription") or "")
+
+
 _DESC_FETCHERS = {
     "smartrecruiters": _sr_full_description,
     "breezy": _breezy_full_description,
+    "workday": _workday_full_description,
 }
 
 
@@ -1276,47 +1616,111 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
             salary_clause = f"({salary_clause} OR (salary_min IS NULL AND salary_max IS NULL))"
         where_sql.append(salary_clause)
 
+    now = datetime.now(timezone.utc)
     try:
         days = int(max_days_old) if max_days_old else 0
     except (ValueError, TypeError):
         days = 0
-    recency_cutoff = None
     if days > 0:
         where_sql.append("posted_at >= ?")
-        recency_cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-        params.append(recency_cutoff)          # converted per driver below
+        params.append(now - timedelta(days=days))   # converted per driver below
 
     clause = (" WHERE " + " AND ".join(where_sql)) if where_sql else ""
 
-    # NULLs must be ordered explicitly. Postgres sorts NULLs FIRST under DESC
-    # while SQLite sorts them last, so without this the production "newest
-    # first" list would open with every undated job.
+    # One listing posted to several cities arrives as several rows with the
+    # same title and company (Elastic had 12 of one role in a row). They are
+    # collapsed to the newest, and the card says "+N more" instead. Measured on
+    # the corpus: 1,505 such multi-city clusters, 2,836 rows that were only
+    # repeating the card above them.
+    #
+    # Ranking runs on NARROW columns; only the page actually shown is widened.
+    # Carrying the description through these window functions measured 5.3s
+    # on production Postgres for an unfiltered US browse -- every row's TOASTed
+    # description was fetched and sorted to disk merely to rank it. Ranking on
+    # a handful of short columns and then looking up the 20 visible ids does
+    # the same job without touching text it is about to throw away.
+    cols = ("id, fingerprint, platform, company_token, title, company, location, "
+            "country_code, work_mode, employment_type, experience_level, "
+            "salary_min, salary_max, salary_currency, salary_text, posted_at, "
+            "apply_url, SUBSTR(description, 1, 1500) AS description")
+    narrow = "id, company_token, title, company, posted_at, salary_max"
+    base = (f"SELECT {narrow}, "
+            "ROW_NUMBER() OVER (PARTITION BY LOWER(title), LOWER(company) "
+            "ORDER BY (posted_at IS NULL), posted_at DESC, id DESC) AS dup_rank, "
+            "COUNT(*) OVER (PARTITION BY LOWER(title), LOWER(company)) AS dup_count "
+            f"FROM ats_jobs{clause}")
+    deduped = ("SELECT f.*, ROW_NUMBER() OVER (PARTITION BY company_token "
+               "ORDER BY (posted_at IS NULL), posted_at DESC, id DESC) AS company_rank "
+               f"FROM ({base}) f WHERE dup_rank = 1")
+
+    # Freshness buckets: posted in the last 3 days, then the last 30, then
+    # older, then undated. NULLs are placed explicitly -- Postgres sorts them
+    # FIRST under DESC while SQLite sorts them last.
+    fresh = ("CASE WHEN posted_at >= ? THEN 0 WHEN posted_at >= ? THEN 1 "
+             "WHEN posted_at IS NULL THEN 3 ELSE 2 END")
+    fresh_params = [now - timedelta(days=3), now - timedelta(days=30)]
+    terms = _like_terms(what)
+    order_params = []
     if sort_by == "salary":
         order = ("ORDER BY (salary_max IS NULL), salary_max DESC, "
-                 "(posted_at IS NULL), posted_at DESC")
+                 "(posted_at IS NULL), posted_at DESC, id DESC")
+    elif sort_by == "date":
+        order = "ORDER BY (posted_at IS NULL), posted_at DESC, id DESC"
+    elif terms:
+        # Relevance with a query: a role whose TITLE carries every term beats
+        # one that carries some, which beats one that only mentions them in the
+        # company or location text; then freshness decides. The old "relevance"
+        # was plain newest-first, so a keyword search ranked a 3-hour-old
+        # tangential match above an exact title posted yesterday.
+        all_in = " AND ".join(["LOWER(title) LIKE ?"] * len(terms))
+        any_in = " OR ".join(["LOWER(title) LIKE ?"] * len(terms))
+        order = (f"ORDER BY CASE WHEN {all_in} THEN 0 WHEN {any_in} THEN 1 ELSE 2 END, "
+                 f"{fresh}, (posted_at IS NULL), posted_at DESC, id DESC")
+        order_params = ([f"%{t}%" for t in terms] * 2) + fresh_params
     else:
-        # We hold no relevance score of our own, so "relevance" and "date" both
-        # resolve to newest-first rather than pretending to rank.
-        order = "ORDER BY (posted_at IS NULL), posted_at DESC"
+        # Browsing with no query: newest first, but round-robin across
+        # employers within each freshness bucket -- otherwise one board that
+        # posted forty roles this morning fills the first two pages alone.
+        order = (f"ORDER BY {fresh}, company_rank, (posted_at IS NULL), "
+                 "posted_at DESC, id DESC")
+        order_params = list(fresh_params)
 
     offset = (page - 1) * per_page
     try:
         with get_db() as db:
-            if recency_cutoff is not None:
-                params = [_timestamp_param(db, v) if v is recency_cutoff else v
-                          for v in params]
+            def conv(seq):
+                return [_timestamp_param(db, v) if isinstance(v, datetime) else v
+                        for v in seq]
             total = db.execute(
-                f"SELECT COUNT(*) AS n FROM ats_jobs{clause}", params).fetchone()
+                "SELECT COUNT(*) AS n, "
+                "SUM(CASE WHEN posted_at >= ? THEN 1 ELSE 0 END) AS fresh "
+                f"FROM ({base}) f WHERE dup_rank = 1",
+                conv([now - timedelta(days=1)] + params)).fetchone()
             count = int(total["n"]) if total else 0
-            rows = db.execute(
-                f"SELECT * FROM ats_jobs{clause} {order} LIMIT ? OFFSET ?",
-                params + [per_page, offset],
+            fresh_24h = int(total["fresh"] or 0) if total else 0
+            page_rows = db.execute(
+                f"SELECT id, dup_count FROM ({deduped}) d {order} LIMIT ? OFFSET ?",
+                conv(params + order_params + [per_page, offset]),
             ).fetchall()
+            page_rows = [dict(r) for r in page_rows]
+            full = {}
+            ids = [r["id"] for r in page_rows]
+            if ids:
+                marks = ", ".join(["?"] * len(ids))
+                for r in db.execute(f"SELECT {cols} FROM ats_jobs WHERE id IN ({marks})",
+                                    ids).fetchall():
+                    full[r["id"]] = dict(r)
     except Exception as e:
         logger.warning(f"ATS search failed: {e}")
-        return {"count": 0, "results": []}
+        return {"count": 0, "fresh_24h": 0, "results": []}
 
-    return {"count": count, "results": [to_unified(dict(r)) for r in rows]}
+    results = []
+    for r in page_rows:                      # keep the ranked order
+        row = full.get(r["id"])
+        if row:
+            row["dup_count"] = r["dup_count"]
+            results.append(to_unified(row))
+    return {"count": count, "fresh_24h": fresh_24h, "results": results}
 
 
 _DOMAIN_BY_TOKEN = None
@@ -1396,6 +1800,8 @@ def to_unified(row):
         "work_mode": row.get("work_mode") or "",
         "experience_level": row.get("experience_level") or "",
         "currency": row.get("salary_currency") or "",
+        # Same title + company posted in other cities, collapsed into this card.
+        "duplicates": max(0, int(row.get("dup_count") or 1) - 1),
         # Empty string when the company has no resolved domain (3 of 251);
         # the card renders a lettermark in that case rather than a broken image.
         "company_domain": _domain_index().get(
