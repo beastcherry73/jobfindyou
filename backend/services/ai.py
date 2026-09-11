@@ -121,7 +121,7 @@ _PROVIDER_CONF = {
 # `reasoning_effort` is a gpt-oss extension - those models return EMPTY content
 # without it - and must not be sent to providers that do not understand it.
 def _m(provider, model, json_ok=True, text_ok=True, extra=None, tpm_hint=8000,
-       min_budget=0, max_budget=None):
+       min_budget=0, max_budget=None, prio=50):
     """One routable model.
 
     `json_ok` / `text_ok` record the OUTPUT SHAPES this model was actually
@@ -133,45 +133,74 @@ def _m(provider, model, json_ok=True, text_ok=True, extra=None, tpm_hint=8000,
     `_TIMEOUT`. Offering one a job it cannot finish is worse than skipping it:
     the attempt burns the full timeout and the request fails anyway, having
     spent the budget the next candidate needed.
+    `prio` is the MEASURED quality/latency rank on JobSpike's own prompts
+    (lower is better). Among models that can fit a request, routing now
+    prefers the better one; headroom only breaks ties and decides fallbacks.
     """
     return {"provider": provider, "model": model, "json_ok": json_ok,
             "text_ok": text_ok, "extra": extra or {}, "tpm_hint": tpm_hint,
-            "min_budget": min_budget, "max_budget": max_budget}
+            "min_budget": min_budget, "max_budget": max_budget, "prio": prio}
 
 
 # `reasoning_effort` is a gpt-oss extension - those models return EMPTY content
 # without it - and must not be sent to providers that do not understand it.
 _OSS = {"reasoning_effort": "low"}
 
+# ROUTING ORDER (re-measured 2026-09-11 on the REAL analysis prompt, real mock
+# resumes, max_tokens as production sends it):
+#
+#   model                         analysis      job match   verdict
+#   groq/openai/gpt-oss-120b      7.4s  full    1.9s        best - first choice
+#   groq/openai/gpt-oss-20b       2.3-2.8s full 1.4s        fast, complete
+#   groq/gpt-oss-safeguard-20b    2.8s  full    0.8s        fast, complete
+#   groq/qwen/qwen3.8-27b         10.7s full    1.7s
+#   gemini-3.1-flash-lite         16.7s full    3.7s        big shared pool
+#   gemini-3.1-flash-lite-preview 13.4s full    6.2s
+#   gemini-3-flash-preview        15.9s full    7.8s
+#   groq/compound-mini            11.3s EMPTY   4.2s        valid JSON, no score,
+#                                                           no dimensions
+#   gemini-flash-lite-latest      12.5s EMPTY   3.6s        same failure
+#
+# Before this, routing sorted on headroom ALONE. The analysis call estimated
+# prompt + 6000 max_tokens (~9000) against gpt-oss's 8000 TPM bucket, so every
+# gpt-oss model scored zero headroom and the 70k-TPM compound-mini won almost
+# every analysis - the slowest usable model, returning a hollow object the
+# normalizer then padded with a default score. Two fixes: the analysis call now
+# asks for 4500 tokens (measured completions: 1132-3161), which fits a fresh
+# 8000 bucket, and the two hollow models carry max_budget=4000 so they are no
+# longer offered the analysis job at all. They stay in the pool for the small
+# JSON calls (job match, digest), where both answered correctly.
 _MODELS = [
     # --- Groq: separate per-model buckets, so spreading multiplies capacity ---
-    _m("groq", "openai/gpt-oss-120b", extra=_OSS, tpm_hint=8000),
-    _m("groq", "openai/gpt-oss-20b", extra=_OSS, tpm_hint=8000),
-    _m("groq", "openai/gpt-oss-safeguard-20b", extra=_OSS, tpm_hint=8000),
-    # Much the largest Groq bucket, and it honours both shapes.
-    _m("groq", "groq/compound-mini", tpm_hint=70000),
-    _m("groq", "qwen/qwen3.8-27b", tpm_hint=8000),
+    _m("groq", "openai/gpt-oss-120b", extra=_OSS, tpm_hint=8000, prio=0),
+    _m("groq", "openai/gpt-oss-20b", extra=_OSS, tpm_hint=8000, prio=1),
+    _m("groq", "openai/gpt-oss-safeguard-20b", extra=_OSS, tpm_hint=8000, prio=2),
+    # Much the largest Groq bucket, and it honours both shapes - but it returns
+    # a hollow analysis (see table above), so it is kept off the big call.
+    _m("groq", "groq/compound-mini", tpm_hint=70000, max_budget=4000, prio=7),
+    _m("groq", "qwen/qwen3.8-27b", tpm_hint=8000, prio=3),
     # JSON only: asked for "# Hello" it returned "Hello", dropping the markdown.
     # `max_budget` because its context window caps max_tokens at 4096: asked
     # for the analysis call's 6000 it answers HTTP 400 every single time
     # (measured 2026-08-29), so offering it that job only burns a round trip.
-    _m("groq", "allam-2-7b", text_ok=False, tpm_hint=6000, max_budget=4096),
+    _m("groq", "allam-2-7b", text_ok=False, tpm_hint=6000, max_budget=4096, prio=9),
 
     # --- Google AI Studio. NOTE: limits are per Cloud PROJECT, not per key,
     # and the flash models SHARE one ~250k TPM pool - so extra entries here buy
     # request-per-day headroom, not more tokens per minute.
     # gemini-2.5-flash / 2.0-flash / 2.5-pro are RETIRED: still listed by
     # /models, but every completion returns 404 "no longer available".
-    _m("gemini", "gemini-3.1-flash-lite", tpm_hint=250000),
-    _m("gemini", "gemini-flash-lite-latest", tpm_hint=250000),
-    _m("gemini", "gemini-3.1-flash-lite-preview", tpm_hint=250000),
+    _m("gemini", "gemini-3.1-flash-lite", tpm_hint=250000, prio=4),
+    # Hollow on the analysis prompt (table above); fine for small JSON calls.
+    _m("gemini", "gemini-flash-lite-latest", tpm_hint=250000, max_budget=4000, prio=8),
+    _m("gemini", "gemini-3.1-flash-lite-preview", tpm_hint=250000, prio=5),
     # Spends a small budget on reasoning tokens and can return
     # finish_reason=length with NO content, so it is only offered a real one.
     # 400 was too generous: measured 2026-08-29 on the job-match prompt at
     # max_tokens=1500 it still came back finish_reason=length mid-string,
     # having billed only 72 completion tokens - the rest went on reasoning.
     # It answers the same prompt cleanly at 2500, so that is the real floor.
-    _m("gemini", "gemini-3-flash-preview", tpm_hint=250000, min_budget=2000),
+    _m("gemini", "gemini-3-flash-preview", tpm_hint=250000, min_budget=2000, prio=6),
 
     # --- NVIDIA NIM (card-free, email signup). Sends no rate-limit headers,
     # so its headroom is estimated locally like Gemini's. Most models in its
@@ -189,14 +218,14 @@ _MODELS = [
     # of budget mid-way. That is the silent shape violation this table exists
     # to prevent, so it is text-only like its nano sibling.
     _m("nvidia", "nvidia/nemotron-3-super-120b-a12b", json_ok=False,
-       tpm_hint=8000, max_budget=2000),
+       tpm_hint=8000, max_budget=2000, prio=10),
     # mistralai/mistral-nemotron was REMOVED (2026-08-29): measured HTTP 500 on
     # the small prompt and no response at all on the large one (still hanging
     # at 180s). It could not serve either shape, and left in the table it cost
     # a full 40s timeout on every failover before the next candidate was tried.
     # Text only: in JSON mode it answers in prose ("We are to return a JSON
     # object..."), silently ignoring response_format.
-    _m("nvidia", "nvidia/nemotron-3-nano-30b-a3b", json_ok=False, tpm_hint=8000),
+    _m("nvidia", "nvidia/nemotron-3-nano-30b-a3b", json_ok=False, tpm_hint=8000, prio=11),
 ]
 
 _TIMEOUT = 40.0
@@ -230,6 +259,34 @@ _PROVIDER_FATAL_COOLDOWN = 900.0
 _lock = threading.Lock()
 # key -> observed quota + back-off state
 _state = {}
+
+# Per-thread routing context. `exclude` lets a caller retry WITHOUT the model
+# that just produced an unusable answer (a quality failure, which the router
+# cannot see - the HTTP call succeeded). `last_key` reports which model served
+# the most recent call on this thread, so the caller knows what to exclude.
+_tls = threading.local()
+
+
+class excluding:
+    """Context manager: skip these model keys for calls made on this thread."""
+
+    def __init__(self, keys):
+        self.keys = frozenset(k for k in (keys or ()) if k)
+        self.prev = frozenset()
+
+    def __enter__(self):
+        self.prev = getattr(_tls, "exclude", frozenset())
+        _tls.exclude = self.prev | self.keys
+        return self
+
+    def __exit__(self, *exc):
+        _tls.exclude = self.prev
+        return False
+
+
+def last_model():
+    """'provider/model' that served this thread's most recent call, or None."""
+    return getattr(_tls, "last_key", None)
 
 
 def _classify(status, body):
@@ -348,10 +405,13 @@ def _select(prompt, max_tokens, json_mode):
     """
     now = time.time()
     want = _estimate_tokens(prompt, max_tokens)
+    excluded = getattr(_tls, "exclude", frozenset())
     scored = []
     with _lock:
         for spec in _MODELS:
             provider, model = spec["provider"], spec["model"]
+            if _key(provider, model) in excluded:
+                continue
             # A model must be verified for the OUTPUT SHAPE this call needs.
             if not (spec["json_ok"] if json_mode else spec["text_ok"]):
                 continue
@@ -368,11 +428,12 @@ def _select(prompt, max_tokens, json_mode):
             score = _headroom(st, want, now)
             if score < 0:
                 continue                # cooling down
-            scored.append((score, provider, model, spec["extra"], conf))
-    # Highest headroom first; ties keep _MODELS order, which puts the models we
-    # trust most for quality first.
-    scored.sort(key=lambda t: t[0], reverse=True)
-    return scored, want
+            scored.append((score, spec["prio"], provider, model, spec["extra"], conf))
+    # Models believed able to fit this request come first, best-measured first
+    # (`prio`); headroom breaks ties. Models believed unable to fit stay in the
+    # list as a last resort - observations are per-instance and can be stale.
+    scored.sort(key=lambda t: (t[0] <= 0.0, t[1], -t[0]))
+    return [(s, p, m, e, c) for s, _prio, p, m, e, c in scored], want
 
 
 def _note_success(key, headers, want_tokens):
@@ -504,6 +565,7 @@ def call_groq(prompt, max_tokens=6000, json_mode=False):
     Raises GroqError only once every candidate is exhausted.
     """
     log = _log()
+    _tls.last_key = None
     candidates, want = _select(prompt, max_tokens, json_mode)
 
     if not candidates:
@@ -535,6 +597,7 @@ def call_groq(prompt, max_tokens=6000, json_mode=False):
                 conf, provider, model, extra, prompt, max_tokens,
                 os.environ.get(conf["env"], ""), json_mode)
             _note_success(key, headers, want)
+            _tls.last_key = key
             if attempted > 1:
                 log.warning(f"AI routed to {key} after {attempted - 1} failed "
                             f"attempt(s); last error: {last_err}")

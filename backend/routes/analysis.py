@@ -1,9 +1,11 @@
 import json
 import hashlib
+from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, jsonify, session
 from backend.database import get_db
 from backend.decorators import login_required
 from backend.services.helpers import extract_text_from_pdf, clean_json, normalize_analysis_dict
+from backend.services import ai
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
 from backend.prompts import ANALYSIS_PROMPT, JOB_MATCH_PROMPT, REFERENCE_STANDARD
@@ -12,6 +14,124 @@ import logging
 logger = logging.getLogger(__name__)
 
 analysis_bp = Blueprint("analysis", __name__)
+
+# 4500, not 6000. Measured 2026-09-11 on the real prompt: completions ran
+# 1,132-3,161 tokens, so 4500 is ample - and prompt (~2,800) + 6000 exceeded
+# gpt-oss's entire 8,000 TPM bucket, which made the router skip the best
+# models for every analysis (see the table in backend/services/ai.py).
+ANALYSIS_MAX_TOKENS = 4500
+# How long to wait for the concurrent job-match call once the analysis itself
+# is done. It normally finishes first (0.8-4s vs 2-8s); this only bounds the
+# failover case so a slow match can never hold the whole response hostage.
+_MATCH_WAIT_SECONDS = 20
+
+
+def _is_substantive(d):
+    """True when a parsed analysis actually contains an analysis.
+
+    Some models return VALID JSON with none of the content - no score, no
+    dimensions (groq/compound-mini and gemini-flash-lite-latest both did on
+    the real prompt, 2026-09-11). normalize_analysis_dict would then pad that
+    with a default score of 75 and canned verdict text, and the user would get
+    a plausible-looking report nobody wrote. Reject it and retry elsewhere.
+    """
+    if not isinstance(d, dict) or not d:
+        return False
+    try:
+        score = float(d.get("overall_score"))
+    except (TypeError, ValueError):
+        return False
+    if not 0 <= score <= 100:
+        return False
+    dims = d.get("dimension_scores")
+    if not isinstance(dims, dict):
+        return False
+    numeric = 0
+    for v in dims.values():
+        try:
+            float(v)
+            numeric += 1
+        except (TypeError, ValueError):
+            pass
+    if numeric < 4:
+        return False
+    # At least one real finding. The hollow responses had none of anything; a
+    # genuine report on a strong resume can legitimately list very few.
+    findings = sum(len(d.get(k)) for k in ("strengths", "weaknesses", "suggestions")
+                   if isinstance(d.get(k), list))
+    return findings >= 1
+
+
+def _run_analysis(prompt):
+    """Up to two attempts; the second never reuses the model that failed.
+
+    Returns (parsed, failure) where failure is None, "unavailable" (every
+    model refused) or "empty" (nothing usable came back twice).
+    """
+    tried = set()
+    for attempt in (1, 2):
+        try:
+            with ai.excluding(tried):
+                raw = clean_json(call_groq(prompt, max_tokens=ANALYSIS_MAX_TOKENS,
+                                           json_mode=True))
+        except GroqError:
+            return None, "unavailable"
+        served = ai.last_model()
+        if served:
+            tried.add(served)
+        try:
+            candidate = json.loads(raw)
+        except Exception:
+            candidate = None
+        # A non-resume verdict is a real answer, not a quality failure.
+        if isinstance(candidate, dict) and candidate.get("is_resume") is False:
+            return candidate, None
+        if _is_substantive(candidate):
+            return candidate, None
+        # Log the head of what actually came back: without it the next person
+        # debugging this has nothing but the 502 to go on.
+        logger.warning(
+            "Analysis unusable on attempt %s/2 (model %s); response head: %r",
+            attempt, served, (raw or "")[:200])
+    return None, "empty"
+
+
+def _compute_job_match(job_description, resume_text):
+    """The job-match call. Returns the job_match dict, or None."""
+    match_prompt = JOB_MATCH_PROMPT.format(
+        job_description=job_description[:4000],
+        resume_text=resume_text[:12000],
+    )
+    # 2500, not 1500: measured 2026-08-29, groq/compound-mini spends 1725
+    # completion tokens on this prompt and so was truncated mid-object at the
+    # old budget, which silently dropped job_match from the response.
+    match_raw = clean_json(call_groq(match_prompt, max_tokens=2500, json_mode=True))
+    match_parsed = json.loads(match_raw)
+    if not (isinstance(match_parsed, dict) and "match_percent" in match_parsed):
+        return None
+    try:
+        match_percent = max(0, min(100, int(match_parsed.get("match_percent", 0))))
+    except (ValueError, TypeError):
+        match_percent = 0
+    matching_keywords = match_parsed.get("matching_keywords")
+    missing_keywords = match_parsed.get("missing_keywords")
+    raw_gaps = match_parsed.get("skill_gaps")
+    skill_gaps = []
+    if isinstance(raw_gaps, list):
+        for g in raw_gaps[:5]:
+            if isinstance(g, dict) and g.get("skill"):
+                skill_gaps.append({
+                    "skill": str(g.get("skill", "")).strip(),
+                    "why_it_matters": str(g.get("why_it_matters", "")).strip(),
+                    "how_to_address": str(g.get("how_to_address", "")).strip(),
+                })
+    return {
+        "match_percent": match_percent,
+        "matching_keywords": matching_keywords if isinstance(matching_keywords, list) else [],
+        "missing_keywords": missing_keywords if isinstance(missing_keywords, list) else [],
+        "gap_summary": str(match_parsed.get("gap_summary", "")).strip(),
+        "skill_gaps": skill_gaps,
+    }
 
 
 @analysis_bp.route("/api/analyze", methods=["POST"])
@@ -57,34 +177,26 @@ def analyze():
             job_context=job_context,
             resume_text=resume_text[:12000],
         )
-        # Two attempts, because a model that emits malformed JSON once is not
-        # broken - it just rolled badly, and the router will usually land on a
-        # different model the second time. Before this, a single unparseable
-        # response failed the user's whole analysis with a 502; that was the
-        # live failure reproduced on 2026-08-29. The happy path still costs
-        # exactly one call, so this is free except when it saves the request.
-        parsed = None
-        for attempt in (1, 2):
-            try:
-                raw = clean_json(call_groq(prompt, json_mode=True))
-            except GroqError:
-                return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
+        # The job match runs CONCURRENTLY with the analysis. Both read only the
+        # resume text and the JD, so running them back to back paid the match
+        # call's full latency (0.8-4s measured) on every analysis with a JD.
+        match_future = None
+        match_pool = None
+        if job_description:
+            match_pool = ThreadPoolExecutor(max_workers=1)
+            match_future = match_pool.submit(_compute_job_match, job_description, resume_text)
 
-            try:
-                candidate = json.loads(raw)
-            except Exception:
-                candidate = None
+        # Two attempts (a bad roll is not a broken model), and the retry never
+        # reuses the model that produced the unusable answer. The happy path
+        # still costs exactly one call.
+        try:
+            parsed, failure = _run_analysis(prompt)
+        finally:
+            if match_pool is not None:
+                match_pool.shutdown(wait=False)
 
-            if isinstance(candidate, dict) and candidate:
-                parsed = candidate
-                break
-
-            # Log the head of what actually came back: without it the next
-            # person debugging this has nothing but the 502 to go on.
-            logger.warning(
-                "Analysis JSON unparseable on attempt %s/2; response head: %r",
-                attempt, (raw or "")[:200])
-
+        if failure == "unavailable":
+            return jsonify({"error": "AI service is temporarily unavailable. Please try again in a few seconds."}), 502
         if parsed is None:
             return jsonify({"error": "AI service returned an empty result. Please try again."}), 502
 
@@ -97,44 +209,11 @@ def analyze():
         result["filename"] = file.filename
         result["raw_text"] = resume_text
 
-        if job_description:
+        if match_future is not None:
             try:
-                match_prompt = JOB_MATCH_PROMPT.format(
-                    job_description=job_description[:4000],
-                    resume_text=resume_text[:12000],
-                )
-                # 2500, not 1500: measured 2026-08-29, groq/compound-mini
-                # spends 1725 completion tokens on this prompt and so was
-                # truncated mid-object at the old budget, which silently
-                # dropped job_match from the response. 2500 still leaves the
-                # whole call inside Groq's 8000 TPM per-model ceiling.
-                match_raw = clean_json(call_groq(match_prompt, max_tokens=2500,
-                                                 json_mode=True))
-                match_parsed = json.loads(match_raw)
-                if isinstance(match_parsed, dict) and "match_percent" in match_parsed:
-                    try:
-                        match_percent = max(0, min(100, int(match_parsed.get("match_percent", 0))))
-                    except (ValueError, TypeError):
-                        match_percent = 0
-                    matching_keywords = match_parsed.get("matching_keywords")
-                    missing_keywords = match_parsed.get("missing_keywords")
-                    raw_gaps = match_parsed.get("skill_gaps")
-                    skill_gaps = []
-                    if isinstance(raw_gaps, list):
-                        for g in raw_gaps[:5]:
-                            if isinstance(g, dict) and g.get("skill"):
-                                skill_gaps.append({
-                                    "skill": str(g.get("skill", "")).strip(),
-                                    "why_it_matters": str(g.get("why_it_matters", "")).strip(),
-                                    "how_to_address": str(g.get("how_to_address", "")).strip(),
-                                })
-                    result["job_match"] = {
-                        "match_percent": match_percent,
-                        "matching_keywords": matching_keywords if isinstance(matching_keywords, list) else [],
-                        "missing_keywords": missing_keywords if isinstance(missing_keywords, list) else [],
-                        "gap_summary": str(match_parsed.get("gap_summary", "")).strip(),
-                        "skill_gaps": skill_gaps,
-                    }
+                job_match = match_future.result(timeout=_MATCH_WAIT_SECONDS)
+                if job_match:
+                    result["job_match"] = job_match
             except Exception as match_err:
                 # Job match is a bonus, not core to the analysis — never fail
                 # the whole request over it. No job_match key means the UI
