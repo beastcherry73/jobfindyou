@@ -290,6 +290,14 @@
               <option value="30" selected>Last 30 days</option>
             </select>
           </div>
+          <div class="jp-filter">
+            <label for="jpApply">Applying</label>
+            <select class="ws-select" id="jpApply">
+              <option value="">Any employer</option>
+              <option value="guest">No account needed</option>
+            </select>
+            <span class="jp-help">Hides employers whose ATS asks you to register first.</span>
+          </div>
           <div class="jp-filter jp-span2">
             <label for="jpExclude">Exclude keywords</label>
             <input class="ws-input" id="jpExclude" placeholder="e.g. senior, sales">
@@ -418,6 +426,7 @@
     { id:'jpJobType',    label:'Job type' },
     { id:'jpWorkMode',   label:'Work mode' },
     { id:'jpMaxDays',    label:'Posted' },
+    { id:'jpApply',      label:'Applying' },
     { id:'jpExclude',    label:'Excluding' }
   ];
 
@@ -534,6 +543,7 @@
       var maxDays = val('jpMaxDays'); if (maxDays) params.set('max_days_old', maxDays);
       var workMode = val('jpWorkMode'); if (workMode) params.set('work_mode', workMode);
       var experience = val('jpExperience'); if (experience) params.set('experience_level', experience);
+      if (val('jpApply') === 'guest') params.set('guest_apply', '1');
       var sortBy = val('jpSortBy'); if (sortBy) params.set('sort_by', sortBy);
       currentPage = 1;
     }

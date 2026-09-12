@@ -262,6 +262,22 @@ def test_schema():
           bool(unified) and not mismatched,
           mismatched or "%d platforms" % len(unified))
 
+    # Guest-apply filter: roughly a third of the board asks for an account
+    # before applying, so it must be possible to exclude those employers.
+    gated = ats.account_required_platforms()
+    total_all = ats.search(per_page=1)["count"]
+    guest = ats.search(per_page=50, guest_apply_only=True)
+    check("account-gated platforms come from the specs", "workday" in gated and "smartrecruiters" in gated, gated)
+    check("guest-apply filter returns only guest-apply rows",
+          bool(guest["results"]) and all(not r["requires_account"] for r in guest["results"]),
+          "%d rows" % len(guest["results"]))
+    check("guest-apply filter narrows, but still returns a real board",
+          0 < guest["count"] < total_all, "%d of %d" % (guest["count"], total_all))
+
+    # Planner statistics: a cycle rewrites tens of thousands of rows, and
+    # stale estimates cost 1,426ms vs 26ms on the same production query.
+    check("statistics refresh runs cleanly", ats.refresh_statistics() is True)
+
     # Ranking: ATS above aggregators, per the approved ordering.
     ats_row = dict(rows[0])
     aggregator = {"title": "Other Role", "company": "Someone", "location": "X",

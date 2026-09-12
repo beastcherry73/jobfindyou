@@ -1415,6 +1415,30 @@ def sync_status():
         return {}
 
 
+def refresh_statistics():
+    """Refresh the planner's statistics for ats_jobs after a full cycle.
+
+    A cycle upserts tens of thousands of rows and prunes thousands more,
+    which leaves Postgres' row estimates badly stale. Measured on production
+    2026-09-12: the default India browse planned a Bitmap Heap Scan and took
+    1,426ms; the SAME query took 26ms after a plain ANALYZE. A composite
+    index was tried first and the planner ignored it -- the statistics were
+    the whole problem -- so it was dropped rather than left to slow down
+    every sync write for nothing.
+    """
+    from backend.database import get_db
+
+    try:
+        with get_db() as db:
+            db.execute("ANALYZE ats_jobs")
+        return True
+    except Exception as e:
+        # SQLite understands ANALYZE too, but a dialect surprise here must
+        # never fail a sync that has already stored its rows.
+        logger.info(f"ATS statistics refresh skipped: {e}")
+        return False
+
+
 def run_sync(limit=None, time_budget=None, reset=False):
     """Advance the daily sync from the persisted cursor.
 
@@ -1468,6 +1492,7 @@ def run_sync(limit=None, time_budget=None, reset=False):
     if completed_cycle:
         stats["pruned_unregistered"] = prune_unregistered()
         stats["pruned_stale"] = prune_stale()
+        stats["stats_refreshed"] = refresh_statistics()
         try:
             with get_db() as db:
                 _meta_set(db, _SYNC_COMPLETED_KEY, repr(time.time()))
@@ -1600,10 +1625,16 @@ def _like_terms(text):
     return [t for t in re.split(r"[\s,]+", (text or "").strip().lower()) if t]
 
 
+def account_required_platforms():
+    """Platforms whose apply flow demands an account, from the specs."""
+    return sorted(name for name, spec in PLATFORMS.items()
+                  if spec.get("requires_account"))
+
+
 def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
            work_mode="", experience_level="", employment_type="",
            salary_min=None, salary_max=None, salary_include_unknown=True,
-           max_days_old=None, sort_by="relevance"):
+           max_days_old=None, sort_by="relevance", guest_apply_only=False):
     """Query the synced ATS corpus. Returns {count, results} in the unified schema."""
     from backend.database import get_db
 
@@ -1651,6 +1682,17 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
     if employment_type in EMPLOYMENT_TYPES:
         where_sql.append("employment_type = ?")
         params.append(employment_type)
+    if guest_apply_only:
+        # Roughly a third of the board (SmartRecruiters, Workday) asks the
+        # candidate to create an account on the employer's ATS before they
+        # can apply. Every card says so, but people who do not want more
+        # logins could not act on it -- now they can filter it out. Driven
+        # off the platform specs, never a hardcoded list.
+        gated = account_required_platforms()
+        if gated:
+            marks = ", ".join(["?"] * len(gated))
+            where_sql.append(f"platform NOT IN ({marks})")
+            params.extend(gated)
 
     smin = _money(salary_min)
     smax = _money(salary_max)

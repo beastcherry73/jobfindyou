@@ -83,6 +83,8 @@ def api_jobs_search():
             # the aggregators, which have no equivalent filter.
             work_mode=(args.get("work_mode") or "").strip().lower(),
             experience_level=(args.get("experience_level") or "").strip().lower(),
+            guest_apply_only=(args.get("guest_apply") or "").strip().lower()
+            in ("1", "true", "yes", "guest"),
         )
         return jsonify(data)
     except AdzunaValidationError as e:
