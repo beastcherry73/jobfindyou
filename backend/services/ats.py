@@ -263,10 +263,13 @@ def resolve_country(location, explicit=None):
     """
     if explicit:
         code = str(explicit).strip().lower()
-        if len(code) == 2 and code.isalpha():
-            return code
+        # Aliases FIRST: a platform that reports "UK" was being stored as
+        # country_code "uk", which is not an ISO code (the ISO code is "gb"),
+        # so those rows never matched a United Kingdom filter.
         if code in _COUNTRY_ALIASES:
             return _COUNTRY_ALIASES[code]
+        if len(code) == 2 and code.isalpha():
+            return code
     if not location:
         return ""
     text = re.sub(r"[()\[\]|/;]", ",", str(location).lower())
@@ -289,17 +292,65 @@ def resolve_country(location, explicit=None):
 
     city_code = _known_city_country(segments, text)
 
-    # "San Mateo, CA" -- a bare US state code. Except where the "state" is
-    # also the ISO code of a known city's own country: "Pune, IN" and
-    # "Bangalore, In" are India, not Indiana. The city wins that tie.
+    # A US state, as a bare code ("San Mateo, CA"), a full name ("Quincy,
+    # Massachusetts"), or a code that merely ENDS a segment -- real Workday
+    # strings arrive as "McLean VA (+2 more)" and "1000 Nicollet Mall,
+    # Minneapolis,MN 55403-2542", where the state never sits in a segment of
+    # its own. Only the LAST token is considered: matching any token would
+    # read "Hyderabad or Pune" as Oregon.
+    #
+    # Except where the code is also the ISO code of a known city's own
+    # country: "Pune, IN" and "Bangalore, In" are India, not Indiana.
     for seg in reversed(segments):
+        tokens = re.findall(r"[a-z]+", seg)
+        last = tokens[-1] if tokens else ""
+        hit = ""
         if seg in _US_STATES:
-            if city_code and city_code != "us" and seg == city_code:
-                return city_code
+            hit = seg
+        elif last in _US_STATES:
+            hit = last
+        elif any(seg == name or seg.endswith(" " + name) for name in _US_STATE_NAMES):
+            hit = "us"
+        if hit:
+            # A known non-US city outranks a bare two-letter code when that
+            # code is also a subdivision of the city's own country:
+            # "Chennai, TN" is Tamil Nadu, not Tennessee, and "Pune, IN" is
+            # India, not Indiana. "Cambridge, MA" still resolves to the US,
+            # because MA is no Indian state -- which is the distinction that
+            # a plain "city wins" rule would get wrong.
+            if city_code and city_code != "us":
+                if hit == city_code:
+                    return city_code
+                if city_code == "in" and hit in _IN_SUBDIVISIONS:
+                    return "in"
             return "us"
 
     # Fall back to a known hiring hub ("Bengaluru", "New York City", "Dubai").
     return city_code
+
+
+# Indian state / union-territory codes, for the tie-break above. India is the
+# product's primary market, so "Chennai, TN" and "Gurugram, HR" are strings
+# that actually arrive; several of these collide with US state codes, which is
+# the whole reason the tie-break needs the city as well.
+_IN_SUBDIVISIONS = {
+    "ap", "ar", "as", "br", "ch", "ct", "dl", "ga", "gj", "hp", "hr", "jh",
+    "jk", "ka", "kl", "la", "ld", "mh", "ml", "mn", "mp", "mz", "nl", "od",
+    "pb", "py", "rj", "sk", "tn", "tr", "ts", "up", "uk", "wb",
+}
+
+_US_STATE_NAMES = {
+    "alabama", "alaska", "arizona", "arkansas", "california", "colorado",
+    "connecticut", "delaware", "florida", "georgia", "hawaii", "idaho",
+    "illinois", "indiana", "iowa", "kansas", "kentucky", "louisiana", "maine",
+    "maryland", "massachusetts", "michigan", "minnesota", "mississippi",
+    "missouri", "montana", "nebraska", "nevada", "new hampshire", "new jersey",
+    "new mexico", "new york state", "north carolina", "north dakota", "ohio",
+    "oklahoma", "oregon", "pennsylvania", "rhode island", "south carolina",
+    "south dakota", "tennessee", "texas", "utah", "vermont", "virginia",
+    "washington state", "west virginia", "wisconsin", "wyoming",
+    "district of columbia",
+}
 
 
 def _known_city_country(segments, text):
@@ -801,7 +852,9 @@ def _wd_normalize(j, token, company):
         "title": title,
         "company": company,
         "location": location,
-        "country_code": _wd_country(location, from_path),
+        # Resolve from the UNDECORATED strings: `location` may carry a
+        # "(+2 more)" suffix, which is display text, not geography.
+        "country_code": _wd_country(loc_text if (loc_text and not multi) else "", from_path),
         "work_mode": resolve_work_mode(f"{location} {from_path}"),
         "employment_type": "",
         "experience_level": normalize_experience_level(None, title),
