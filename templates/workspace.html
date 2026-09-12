@@ -1197,37 +1197,18 @@
             <div class="ws-grid-2 ws-mb-md">
               <div class="ws-card">
                 <div class="ws-card-body" style="padding:24px;">
-                  <h3 class="ws-card-title" style="margin-bottom:12px;">FAANG & Tech Readiness</h3>
-                  <div style="display:flex;flex-direction:column;gap:12px;">
-                    <div>
-                      <div class="ws-flex-between" style="font-size:12.5px;margin-bottom:4px;">
-                        <span>FAANG Target Alignment</span>
-                        <span style="font-weight:600;" id="insightFaang">—</span>
-                      </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="insightFaangBar" style="width:0%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="ws-flex-between" style="font-size:12.5px;margin-bottom:4px;">
-                        <span>Startup Technical Fit</span>
-                        <span style="font-weight:600;" id="insightStartup">—</span>
-                      </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="insightStartupBar" style="width:0%;"></div></div>
-                    </div>
-                    <div>
-                      <div class="ws-flex-between" style="font-size:12.5px;margin-bottom:4px;">
-                        <span>Senior Executive Leadership Rating</span>
-                        <span style="font-weight:600;" id="insightSenior">—</span>
-                      </div>
-                      <div class="ws-progress"><div class="ws-progress-bar" id="insightSeniorBar" style="width:0%;"></div></div>
-                    </div>
+                  <h3 class="ws-card-title" style="margin-bottom:4px;">Where your resume stands</h3>
+                  <p class="ws-card-subtitle" style="margin-bottom:16px;">The six dimensions scored in your latest analysis.</p>
+                  <div id="insightDims" style="display:flex;flex-direction:column;gap:12px;" aria-busy="true">
+                    <div class="goal-loading">Loading your latest analysis…</div>
                   </div>
                 </div>
               </div>
               <div class="ws-card">
                 <div class="ws-card-body" style="padding:24px;">
-                  <h3 class="ws-card-title" style="margin-bottom:12px;">Target Industry Detected</h3>
-                  <div style="font-size:36px;font-weight:800;color:var(--ws-primary);margin:12px 0;" id="insightIndustry">N/A</div>
-                  <p style="font-size:12.5px;color:var(--ws-text-secondary);line-height:1.5;">Based on your experiences, skills frequency, and project scopes. Align job descriptions to fine-tune this focus.</p>
+                  <h3 class="ws-card-title" style="margin-bottom:4px;">Against your target role</h3>
+                  <p class="ws-card-subtitle" style="margin-bottom:16px;">From the job description in your latest analysis.</p>
+                  <div id="insightRole" aria-busy="true"><div class="goal-loading">Loading…</div></div>
                 </div>
               </div>
             </div>
@@ -1245,21 +1226,12 @@
           <div class="ws-animate-stagger">
             <div class="ws-card ws-mb-md">
               <div class="ws-card-body" style="padding:24px;">
-                <h3 class="ws-card-title" style="margin-bottom:16px;">Funnel Conversion Forecasts</h3>
-                <div class="ws-grid-3">
-                  <div style="text-align:center;">
-                    <div style="font-size:24px;font-weight:800;color:var(--ws-primary);" id="progressFunnelCallback">—</div>
-                    <div style="font-size:11px;font-weight:600;color:var(--ws-text-tertiary);text-transform:uppercase;margin-top:4px;">Estimated Callback Chance</div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-size:24px;font-weight:800;color:var(--ws-warn);" id="progressFunnelInterview">—</div>
-                    <div style="font-size:11px;font-weight:600;color:var(--ws-text-tertiary);text-transform:uppercase;margin-top:4px;">Interview Selection Ratio</div>
-                  </div>
-                  <div style="text-align:center;">
-                    <div style="font-size:24px;font-weight:800;color:var(--ws-good);" id="progressFunnelOffer">—</div>
-                    <div style="font-size:11px;font-weight:600;color:var(--ws-text-tertiary);text-transform:uppercase;margin-top:4px;">Estimated Offer Success</div>
-                  </div>
+                <h3 class="ws-card-title" style="margin-bottom:4px;">Your application funnel</h3>
+                <p class="ws-card-subtitle" style="margin-bottom:16px;">Counted from your Pipeline. Rates appear once there are enough applications to count.</p>
+                <div class="ws-grid-4" id="progressFunnel" aria-busy="true">
+                  <div class="goal-loading">Loading your pipeline…</div>
                 </div>
+                <p class="goal-detail" id="progressFunnelNote" style="margin-top:16px;"></p>
               </div>
             </div>
           </div>
@@ -5596,25 +5568,102 @@
     }
 
     /* ── Career Insights & Progress ── */
-    function loadWorkspaceInsights() {
-      const latestScore = state.analyses[0] ? state.analyses[0].overall_score : 70;
-      
-      document.getElementById('insightFaang').textContent = (latestScore + '%');
-      document.getElementById('insightFaangBar').style.width = (latestScore + '%');
-      document.getElementById('insightStartup').textContent = Math.min(100, latestScore + 8) + '%';
-      document.getElementById('insightStartupBar').style.width = Math.min(100, latestScore + 8) + '%';
-      document.getElementById('insightSenior').textContent = Math.max(0, latestScore - 5) + '%';
-      document.getElementById('insightSeniorBar').style.width = Math.max(0, latestScore - 5) + '%';
-      
-      const industries = ["Software Engineering", "Product Management", "Data Engineering", "Cloud DevOps"];
-      document.getElementById('insightIndustry').textContent = industries[latestScore % 4];
+    /* Insights and Progress used to be computed from the resume score alone:
+       "FAANG alignment" = score, "startup fit" = score + 8, "senior
+       leadership" = score - 5, a "target industry" picked from four labels by
+       score % 4, and a "funnel forecast" of 85% / 65% / 35% of the score.
+       None of it was measured. Both pages now show only real data -- the
+       latest analysis and the Pipeline -- or say plainly that there is none. */
+    async function ensureLatestDetail() {
+      if (state.latestDetail !== undefined && state.latestDetail !== null) return state.latestDetail;
+      var list = Array.isArray(state.analyses) ? state.analyses : [];
+      if (!list.length) {
+        try { list = await apiFetch('/api/analyses'); state.analyses = list; } catch (e) { list = []; }
+      }
+      if (!list.length) { state.latestDetail = null; return null; }
+      try { state.latestDetail = await apiFetch('/api/analyses/' + list[0].id); }
+      catch (e) { state.latestDetail = null; }
+      return state.latestDetail;
     }
 
-    function loadWorkspaceProgress() {
-      const latestScore = state.analyses[0] ? state.analyses[0].overall_score : 70;
-      document.getElementById('progressFunnelCallback').textContent = Math.round(latestScore * 0.85) + '%';
-      document.getElementById('progressFunnelInterview').textContent = Math.round(latestScore * 0.65) + '%';
-      document.getElementById('progressFunnelOffer').textContent = Math.round(latestScore * 0.35) + '%';
+    function emptyWithAction(text, label, section) {
+      var wrap = document.createElement('div');
+      wrap.innerHTML = '<p class="goal-detail" style="margin-bottom:12px;">' + esc(text) + '</p>'
+        + '<button type="button" class="ws-btn ws-btn-primary ws-btn-sm">' + esc(label) + '</button>';
+      wrap.querySelector('button').addEventListener('click', function () { switchSection(section); });
+      return wrap;
+    }
+
+    var INSIGHT_DIMS = [['ats_readiness', 'ATS readiness'], ['experience', 'Experience'], ['skills', 'Skills'],
+                        ['impact', 'Impact'], ['clarity', 'Clarity'], ['completeness', 'Completeness']];
+
+    async function loadWorkspaceInsights() {
+      var dimsEl = document.getElementById('insightDims');
+      var roleEl = document.getElementById('insightRole');
+      if (!dimsEl || !roleEl) return;
+      var detail = await ensureLatestDetail();
+      dimsEl.setAttribute('aria-busy', 'false');
+      roleEl.setAttribute('aria-busy', 'false');
+      dimsEl.innerHTML = '';
+      roleEl.innerHTML = '';
+      if (!detail) {
+        dimsEl.appendChild(emptyWithAction('Analyze a resume to see where it stands on each dimension.', 'Analyze resume', 'analysis-upload'));
+        roleEl.appendChild(emptyWithAction('Add a job description when you analyze to see how you compare with a specific role.', 'Analyze resume', 'analysis-upload'));
+        return;
+      }
+      var dims = detail.dimension_scores || {};
+      dimsEl.innerHTML = INSIGHT_DIMS.filter(function (d) { return dims[d[0]] != null; }).map(function (d) {
+        var v = Math.max(0, Math.min(100, Number(dims[d[0]]) || 0));
+        var tone = v >= 70 ? 'good' : v >= 40 ? 'warn' : 'bad';
+        return '<div><div class="ws-flex-between" style="font-size:13px;margin-bottom:4px;"><span>' + d[1] + '</span>'
+          + '<span class="tnum" style="font-family:var(--ws-font-mono);font-weight:600;">' + v + '</span></div>'
+          + '<div class="ws-progress"><div class="ws-progress-bar ' + tone + '" style="width:' + v + '%;"></div></div></div>';
+      }).join('') || '<p class="goal-detail">This analysis has no dimension breakdown. Run a new one to get it.</p>';
+
+      var jm = detail.job_match;
+      if (!jm || typeof jm.match_percent !== 'number') {
+        roleEl.appendChild(emptyWithAction('Your latest analysis had no job description. Paste one when you analyze to see how you compare with that role.', 'Analyze against a role', 'analysis-upload'));
+        return;
+      }
+      var missing = (jm.missing_keywords || []).slice(0, 8);
+      var gaps = (jm.skill_gaps || []).slice(0, 3);
+      roleEl.innerHTML = '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;">'
+          + '<span class="tnum" style="font-family:var(--ws-font-mono);font-size:32px;font-weight:600;color:var(--ws-text);">' + jm.match_percent + '%</span>'
+          + '<span class="goal-detail">match</span></div>'
+        + (jm.gap_summary ? '<p style="font-size:13px;line-height:1.55;color:var(--ws-text-secondary);margin:0 0 12px;">' + esc(jm.gap_summary) + '</p>' : '')
+        + (missing.length ? '<div class="goal-ai-label">Missing keywords</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">'
+            + missing.map(function (k) { return '<span class="ws-badge">' + esc(String(k)) + '</span>'; }).join('') + '</div>' : '')
+        + (gaps.length ? '<div class="goal-ai-label">Biggest gaps</div><ul class="goal-ai-steps">'
+            + gaps.map(function (g) { return '<li><strong>' + esc(g.skill) + '</strong>' + (g.how_to_address ? ': ' + esc(g.how_to_address) : '') + '</li>'; }).join('') + '</ul>' : '');
+    }
+
+    async function loadWorkspaceProgress() {
+      var box = document.getElementById('progressFunnel');
+      var note = document.getElementById('progressFunnelNote');
+      if (!box) return;
+      var rows = await fetchTrackerRows();
+      var c = { Viewed: 0, Applied: 0, Interview: 0, Offer: 0, Rejected: 0 };
+      rows.forEach(function (r) { if (c[r.status] != null) c[r.status]++; });
+      var applied = c.Applied + c.Interview + c.Offer + c.Rejected;
+      var interviewed = c.Interview + c.Offer;
+      // Below five applications a single reply swings a "rate" wildly, so none
+      // is shown rather than one that reads as a trend.
+      function rate(n) { return applied >= 5 ? Math.round((n / applied) * 100) + '% of applications' : ''; }
+      var stages = [['Saved', c.Viewed, 'Not applied yet'], ['Applied', applied, 'Applications sent'],
+                    ['Interviewing', interviewed, rate(interviewed)], ['Offers', c.Offer, rate(c.Offer)]];
+      box.setAttribute('aria-busy', 'false');
+      box.innerHTML = stages.map(function (s) {
+        return '<div><div class="tnum" style="font-family:var(--ws-font-mono);font-size:24px;font-weight:600;color:var(--ws-text);">' + s[1] + '</div>'
+          + '<div style="font-size:12px;font-weight:600;color:var(--ws-text-secondary);margin-top:4px;">' + s[0] + '</div>'
+          + (s[2] ? '<div class="goal-detail">' + esc(s[2]) + '</div>' : '') + '</div>';
+      }).join('');
+      if (note) {
+        note.textContent = !rows.length
+          ? 'Nothing tracked yet. Roles you save or open from Browse land in your Pipeline and are counted here.'
+          : applied < 5
+            ? 'Rates appear after 5 applications, so one early reply does not read as a trend.'
+            : c.Rejected + ' rejected so far. These are your own numbers from the Pipeline, not a forecast.';
+      }
     }
 
     /* ── Goals page ── */
