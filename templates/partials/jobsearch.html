@@ -145,6 +145,19 @@
             border-radius:var(--ws-radius-full); padding:1px 8px; }
   .jp-fresh { color:var(--ws-text-secondary); }
   .jp-more { width:100%; justify-content:center; margin:4px 0 16px; }
+  /* Match evidence: a percentage on its own is a mystery score, so the panel
+     shows WHICH of the role's terms your resume already carries and which it
+     does not. */
+  .jp-evidence { margin:0 0 20px; padding:14px 16px; background:var(--ws-surface-hover);
+                 border:1px solid var(--ws-border-light); border-radius:var(--ws-radius-md); }
+  .jp-ev-row { display:flex; gap:10px; align-items:flex-start; margin-top:8px; }
+  .jp-ev-k { flex:0 0 88px; font-size:11.5px; font-weight:600; color:var(--ws-text-secondary); padding-top:2px; }
+  .jp-ev-chips { display:flex; flex-wrap:wrap; gap:4px; }
+  .jp-ev-chip { font-size:11px; padding:2px 8px; border-radius:var(--ws-radius-full); }
+  .jp-ev-hit { color:var(--ws-good); background:var(--ws-good-bg); }
+  .jp-ev-miss { color:var(--ws-text-secondary); background:var(--ws-surface-active); }
+  .jp-ev-note { font-size:11.5px; color:var(--ws-text-tertiary); margin-top:10px; }
+  @media (max-width: 520px) { .jp-ev-row { flex-direction:column; gap:4px; } .jp-ev-k { flex:none; } }
   .jp-notice { padding:14px 16px; border-radius:var(--ws-radius-lg); background:var(--ws-warn-bg); color:var(--ws-warn); font-size:13px; margin-bottom:20px; }
 </style>
 
@@ -841,9 +854,37 @@
       badge.style.fontWeight = '700';
       badge.textContent = d.match_percent + '% match';
       btn.replaceWith(badge);
+      renderMatchEvidence(d);
     } catch (e) {
       btn.disabled = false; btn.textContent = 'Check match'; toast('Could not compute match.');
     }
+  }
+
+  // Show the working, not just the number: which of this role's terms your
+  // resume already carries, and which it does not. Both lists come from the
+  // match call itself -- nothing here is inferred in the browser.
+  function renderMatchEvidence(d) {
+    var actions = document.querySelector('#jpDetail .jp-detail-actions');
+    if (!actions) return;
+    var hit = (d.matching_keywords || []).slice(0, 12);
+    var miss = (d.missing_keywords || []).slice(0, 12);
+    if (!hit.length && !miss.length) return;
+    var chips = function (list, cls) {
+      return '<div class="jp-ev-chips">' + list.map(function (k) {
+        return '<span class="jp-ev-chip ' + cls + '">' + esc(String(k)) + '</span>';
+      }).join('') + '</div>';
+    };
+    var old = document.getElementById('jpMatchEvidence');
+    if (old) old.remove();
+    var box = document.createElement('div');
+    box.id = 'jpMatchEvidence';
+    box.className = 'jp-evidence';
+    box.innerHTML = '<div class="jp-detail-label" style="margin-bottom:0;">Why this score</div>'
+      + (hit.length ? '<div class="jp-ev-row"><span class="jp-ev-k">On your resume</span>' + chips(hit, 'jp-ev-hit') + '</div>' : '')
+      + (miss.length ? '<div class="jp-ev-row"><span class="jp-ev-k">Not found</span>' + chips(miss, 'jp-ev-miss') + '</div>' : '')
+      + '<div class="jp-ev-note">Compared against your most recently analyzed resume. '
+      + 'Add a missing term only where you can honestly back it up.</div>';
+    actions.insertAdjacentElement('afterend', box);
   }
 
   // Self-reported apply confirmation — we never inspect the opened tab or the

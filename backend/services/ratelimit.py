@@ -55,7 +55,13 @@ def rate_limit(limit, window_seconds, key_fn=None, on_limit=None, methods=None):
         def wrapped_view(*args, **kwargs):
             if methods and request.method not in methods:
                 return view(*args, **kwargs)
-            key = key_fn() if key_fn else _rate_key()
+            # Namespaced PER ROUTE. The key used to be just the user id (or
+            # IP), so every rate-limited endpoint shared one counter: a few
+            # analyses, a handful of job matches and a cover letter all drew
+            # down the same bucket, and whichever route had the smallest
+            # limit effectively capped the others. Each route's number now
+            # means what it says. Existing rows simply expire.
+            key = f"{request.endpoint or view.__name__}:{key_fn() if key_fn else _rate_key()}"
             now = int(time.time())
             window_start = (now // window_seconds) * window_seconds
 

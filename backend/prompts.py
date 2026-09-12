@@ -187,6 +187,59 @@ Original Resume:
 
 IMPROVE_PROMPT = SAFE_OPTIMIZE_PROMPT
 
+# A cover letter is the easiest place in this product to fabricate a career,
+# so the rules against it are the first thing in the prompt and the output
+# carries back the resume facts it used, for the UI to show.
+COVER_LETTER_PROMPT = """You are a careful career writer. Write a cover letter for the role below using ONLY facts that appear in the candidate's resume.
+
+HARD RULES
+- Never invent an employer, job title, date, tool, degree, metric or achievement that is not in the resume.
+- Where a number would strengthen a sentence but the resume does not give one, write a bracketed placeholder such as [X%] or [N users] for the candidate to fill in. Never guess a number.
+- If the role asks for something the resume does not show, do not claim it. Say what the candidate does have instead.
+- 200-280 words, three or four short paragraphs. Plain, direct language.
+- Open with the single strongest piece of evidence in the resume for THIS role.
+- Banned: "I am writing to apply", "I am excited about this opportunity", flattery of the company, and any adjective about the candidate the resume cannot support.
+
+Return ONLY a valid JSON object:
+{{"subject": "short email subject line",
+  "greeting": "Dear Hiring Manager, (use a real name only if the job description names one)",
+  "paragraphs": ["...", "...", "..."],
+  "closing": "sign-off line, without the candidate's name",
+  "evidence_used": ["the resume facts this letter is built on"],
+  "placeholders": ["every bracketed placeholder you left, if any"]}}
+
+JOB DESCRIPTION:
+{job_description}
+
+CANDIDATE RESUME:
+{resume_text}
+"""
+
+# Interview prep, grounded in the candidate's own resume. A question the
+# resume cannot answer becomes a gap to prepare, never invented experience.
+INTERVIEW_PREP_PROMPT = """You are preparing a candidate for an interview for the role below, honestly.
+
+Produce the questions this specific role is likely to ask, and for each, what in THIS candidate's resume they should use as evidence.
+
+HARD RULES
+- Ground every "your_evidence" in something actually written in the resume; quote or closely paraphrase it.
+- If the resume holds no evidence for a question, set "your_evidence" to "" and put the topic in gaps_to_prepare. Never invent experience, projects, employers or numbers.
+- 6 to 8 questions, weighted to what the job description actually emphasises.
+- No filler ("tell me about yourself") unless the role genuinely opens that way.
+
+Return ONLY a valid JSON object:
+{{"role_summary": "one line on what this interview really tests",
+  "questions": [{{"question": "...", "why": "why this role asks it", "your_evidence": "what to cite from the resume, or an empty string"}}],
+  "gaps_to_prepare": ["topics this role needs that the resume does not cover"],
+  "questions_to_ask": ["two or three specific questions for the candidate to ask them"]}}
+
+JOB DESCRIPTION:
+{job_description}
+
+CANDIDATE RESUME:
+{resume_text}
+"""
+
 DIFF_PROMPT = """You are a professional resume editor. You have just rewritten a resume. Your task is to produce a JSON list of the specific improvements you made.
 
 Return ONLY a JSON array of strings. Each string should be one clear, specific improvement that was made.

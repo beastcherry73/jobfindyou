@@ -1,13 +1,153 @@
+import logging
 import re
 import json
-from flask import Blueprint, request, jsonify, redirect, url_for
+from flask import Blueprint, request, jsonify, redirect, url_for, session
 from backend.decorators import login_required
-from backend.services.helpers import extract_text_from_pdf, estimate_resume_score
+from backend.services.helpers import extract_text_from_pdf, estimate_resume_score, clean_json
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
-from backend.prompts import SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT, EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT, OPTIMIZE_STANDARD
+from backend.prompts import SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT, EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT, OPTIMIZE_STANDARD, COVER_LETTER_PROMPT, INTERVIEW_PREP_PROMPT
 
 generate_bp = Blueprint("generate", __name__)
+logger = logging.getLogger(__name__)
+
+
+def _resume_text_for(analysis_id=None):
+    """The user's most recent analyzed resume text (or a specific analysis).
+
+    Lazy import: jobs.py is a sibling route module and already owns this
+    lookup; importing it at load time would couple the blueprints' import
+    order for nothing.
+    """
+    from backend.routes.jobs import _latest_resume_text
+    return (_latest_resume_text(session["user_id"], analysis_id) or "").strip()
+
+
+def _grounded_json_call(prompt, max_tokens, what):
+    """One JSON call for the grounded writers. Returns (parsed, error_response)."""
+    try:
+        raw = clean_json(call_groq(prompt, max_tokens=max_tokens, json_mode=True))
+    except GroqError:
+        return None, (jsonify({"error": "The AI service is busy right now. Try again in a minute."}), 502)
+    try:
+        parsed = json.loads(raw)
+    except Exception:
+        logger.warning("%s: unreadable AI output, head=%r", what, (raw or "")[:200])
+        parsed = None
+    if not isinstance(parsed, dict) or not parsed:
+        return None, (jsonify({"error": "The AI returned something unreadable. Try again."}), 502)
+    return parsed, None
+
+
+def _clean_list(value, limit, length=300):
+    if not isinstance(value, list):
+        return []
+    out = []
+    for item in value:
+        text = str(item).strip()
+        if text:
+            out.append(text[:length])
+    return out[:limit]
+
+
+@generate_bp.route("/api/generate/cover-letter", methods=["POST"])
+@login_required
+@rate_limit(limit=10, window_seconds=300)
+def generate_cover_letter():
+    """A cover letter built only from what the resume actually says.
+
+    The response carries `evidence_used` and `placeholders` so the UI can show
+    which resume facts the letter leans on, and which numbers the candidate
+    still has to fill in themselves. Nothing is written to the resume.
+    """
+    body = request.get_json(silent=True) or {}
+    description = (body.get("description") or "").strip()
+    if not description:
+        return jsonify({"error": "Paste the job description first."}), 400
+
+    resume_text = _resume_text_for(body.get("analysis_id"))
+    if not resume_text:
+        return jsonify({
+            "error": "Analyze a resume first, so the letter has real facts to work from.",
+            "no_resume": True,
+        }), 400
+
+    parsed, err = _grounded_json_call(
+        COVER_LETTER_PROMPT.format(job_description=description[:4000],
+                                   resume_text=resume_text[:9000]),
+        1800, "Cover letter")
+    if err:
+        return err
+
+    paragraphs = _clean_list(parsed.get("paragraphs"), 5, 1200)
+    if not paragraphs:
+        return jsonify({"error": "The AI came back empty. Try again."}), 502
+    greeting = str(parsed.get("greeting") or "Dear Hiring Manager,").strip()[:160]
+    closing = str(parsed.get("closing") or "Thank you for your time.").strip()[:240]
+    letter = "\n\n".join([greeting] + paragraphs + [closing])
+    return jsonify({
+        "subject": str(parsed.get("subject") or "").strip()[:160],
+        "greeting": greeting,
+        "paragraphs": paragraphs,
+        "closing": closing,
+        "letter": letter,
+        "evidence_used": _clean_list(parsed.get("evidence_used"), 6),
+        "placeholders": _clean_list(parsed.get("placeholders"), 8, 80),
+        "words": len(letter.split()),
+    })
+
+
+@generate_bp.route("/api/interview/prep", methods=["POST"])
+@login_required
+@rate_limit(limit=10, window_seconds=300)
+def interview_prep():
+    """Likely questions for one role, each tied to evidence in the resume.
+
+    A question the resume cannot answer comes back with empty evidence and
+    the topic listed under gaps_to_prepare -- the honest answer, rather than
+    inventing experience for the candidate to repeat in a real interview.
+    """
+    body = request.get_json(silent=True) or {}
+    description = (body.get("description") or "").strip()
+    if not description:
+        return jsonify({"error": "Paste the job description first."}), 400
+
+    resume_text = _resume_text_for(body.get("analysis_id"))
+    if not resume_text:
+        return jsonify({
+            "error": "Analyze a resume first, so the prep can point at your own experience.",
+            "no_resume": True,
+        }), 400
+
+    parsed, err = _grounded_json_call(
+        INTERVIEW_PREP_PROMPT.format(job_description=description[:4000],
+                                     resume_text=resume_text[:9000]),
+        2200, "Interview prep")
+    if err:
+        return err
+
+    questions = []
+    for item in (parsed.get("questions") or [])[:10]:
+        if not isinstance(item, dict):
+            continue
+        question = str(item.get("question") or "").strip()
+        if not question:
+            continue
+        questions.append({
+            "question": question[:400],
+            "why": str(item.get("why") or "").strip()[:400],
+            "your_evidence": str(item.get("your_evidence") or "").strip()[:600],
+        })
+    if not questions:
+        return jsonify({"error": "The AI came back empty. Try again."}), 502
+
+    return jsonify({
+        "role_summary": str(parsed.get("role_summary") or "").strip()[:400],
+        "questions": questions,
+        "gaps_to_prepare": _clean_list(parsed.get("gaps_to_prepare"), 6),
+        "questions_to_ask": _clean_list(parsed.get("questions_to_ask"), 4),
+        "grounded": sum(1 for q in questions if q["your_evidence"]),
+    })
 
 
 @generate_bp.route("/generate")
