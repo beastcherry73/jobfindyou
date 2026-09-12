@@ -621,6 +621,52 @@ def call_groq(prompt, max_tokens=6000, json_mode=False):
     raise GroqError(f"All Groq models are unavailable: {last_err}")
 
 
+def pool_status(max_tokens, json_mode=True, prompt_chars=11000):
+    """Read-only: how much of the routable pool can serve a request right now.
+
+    Uses the SAME filters as `_select`, so `eligible` is the set of models
+    that would actually be offered this job, and `ready` counts those whose
+    OBSERVED headroom still fits it -- Groq reports remaining quota in its
+    response headers, so this is measurement, not estimation. `cooling` is
+    models in back-off after a real failure.
+
+    A model we have never heard from counts as ready, matching `_headroom`'s
+    own default: absence of evidence is not evidence of saturation. Nothing
+    here mutates state, and `eligible == 0` means "nothing configured", which
+    callers must read as unknown rather than as busy.
+    """
+    now = time.time()
+    want = _estimate_tokens("x" * max(0, int(prompt_chars)), max_tokens)
+    eligible = ready = cooling = 0
+    excluded = getattr(_tls, "exclude", frozenset())
+    with _lock:
+        for spec in _MODELS:
+            provider, model = spec["provider"], spec["model"]
+            key = _key(provider, model)
+            if key in excluded:
+                continue
+            if not (spec["json_ok"] if json_mode else spec["text_ok"]):
+                continue
+            if max_tokens < spec["min_budget"]:
+                continue
+            if spec["max_budget"] is not None and max_tokens > spec["max_budget"]:
+                continue
+            if not os.environ.get(_PROVIDER_CONF[provider]["env"], ""):
+                continue
+            eligible += 1
+            st = _state.get(key)
+            if st is None:
+                ready += 1                 # never observed; assumed available
+                continue
+            score = _headroom(st, want, now)
+            if score < 0:
+                cooling += 1
+            elif score > 0:
+                ready += 1
+    return {"eligible": eligible, "ready": ready, "cooling": cooling,
+            "saturated": max(0, eligible - ready - cooling)}
+
+
 def routing_snapshot():
     """Current per-model view, for diagnostics and the step-4 health check.
 

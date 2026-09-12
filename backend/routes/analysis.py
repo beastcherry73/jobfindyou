@@ -1,5 +1,9 @@
 import json
 import hashlib
+import statistics
+import threading
+import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, jsonify, session
 from backend.database import get_db
@@ -24,6 +28,45 @@ ANALYSIS_MAX_TOKENS = 4500
 # is done. It normally finishes first (0.8-4s vs 2-8s); this only bounds the
 # failover case so a slow match can never hold the whole response hostage.
 _MATCH_WAIT_SECONDS = 20
+
+# ── "Analyses are slow right now" ──────────────────────────────────────────
+# How long real, completed analyses have actually been taking on THIS
+# instance. In memory and per instance on purpose: Vercel runs several, and a
+# database write per analysis would add contention to the shared connection
+# for what is only a UI hint.
+#
+# Normal was measured at 2.3-2.8s (gpt-oss-20b) and 7.4s (gpt-oss-120b) on
+# 2026-09-11. 14s means the fast models are unavailable and something slower
+# is serving, which is the case worth warning about. Three samples minimum,
+# so one cold start cannot trip it.
+_RECENT_MAX = 8
+_MIN_SAMPLES = 3
+SLOW_ANALYSIS_SECONDS = 14.0
+_recent_seconds = deque(maxlen=_RECENT_MAX)
+_recent_lock = threading.Lock()
+
+
+def _record_analysis_seconds(seconds):
+    try:
+        with _recent_lock:
+            _recent_seconds.append(float(seconds))
+    except (TypeError, ValueError):
+        pass
+
+
+def recent_analysis_median():
+    """(median_seconds, sample_count), or (None, n) below the sample floor."""
+    with _recent_lock:
+        samples = list(_recent_seconds)
+    if len(samples) < _MIN_SAMPLES:
+        return None, len(samples)
+    return statistics.median(samples), len(samples)
+
+
+def reset_recent_analysis_times():
+    """Test hook: forget the measured samples."""
+    with _recent_lock:
+        _recent_seconds.clear()
 
 
 def _is_substantive(d):
@@ -134,6 +177,52 @@ def _compute_job_match(job_description, resume_text):
     }
 
 
+@analysis_bp.route("/api/analyze/load", methods=["GET"])
+def analyze_load():
+    """Whether analyses are genuinely running slow right now.
+
+    Two measured signals, no probability and no claim about how many people
+    are using the site:
+
+      * the AI pool -- how many of the models that could serve an analysis
+        are in back-off or out of OBSERVED token headroom (Groq reports
+        remaining quota in its own response headers). Every one of them
+        unavailable means the next analysis waits on a reset or a slower
+        fallback;
+      * measured latency -- the median of the last few completed analyses on
+        this instance, against a threshold taken from real timings.
+
+    Unknown is NOT high load. With nothing configured, nothing observed, or
+    anything raising, the answer is false and the UI shows nothing, which is
+    exactly the behaviour before this endpoint existed.
+    """
+    high, reason = False, None
+    measured = {}
+
+    try:
+        pool = ai.pool_status(ANALYSIS_MAX_TOKENS, json_mode=True)
+        measured["models_eligible"] = pool["eligible"]
+        measured["models_ready"] = pool["ready"]
+        # Two or more, so a single-model configuration (a dev box with one
+        # key) is never reported as saturated.
+        if pool["eligible"] >= 2 and pool["ready"] == 0:
+            high, reason = True, "ai_capacity"
+    except Exception:
+        logger.warning("Load check: AI pool status unavailable", exc_info=True)
+
+    try:
+        median, samples = recent_analysis_median()
+        measured["samples"] = samples
+        if median is not None:
+            measured["recent_median_seconds"] = round(median, 1)
+            if median >= SLOW_ANALYSIS_SECONDS:
+                high, reason = True, "slow_recent"
+    except Exception:
+        logger.warning("Load check: latency samples unavailable", exc_info=True)
+
+    return jsonify({"high_load": high, "reason": reason, "measured": measured})
+
+
 @analysis_bp.route("/api/analyze", methods=["POST"])
 @rate_limit(limit=10, window_seconds=300)
 def analyze():
@@ -155,6 +244,7 @@ def analyze():
     if size > 10 * 1024 * 1024:
         return jsonify({"error": "File size exceeds 10 MB limit"}), 400
 
+    started_at = time.perf_counter()
     try:
         if file.filename.lower().endswith(".pdf"):
             resume_text = extract_text_from_pdf(file)
@@ -345,6 +435,9 @@ def analyze():
                     "saved": False
                 }), 500
 
+        # Only successful analyses are timed: that is what "how long does an
+        # analysis take" means to the person waiting.
+        _record_analysis_seconds(time.perf_counter() - started_at)
         return jsonify(result)
 
     except Exception as e:
