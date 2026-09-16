@@ -3,6 +3,75 @@ import json
 from pypdf import PdfReader
 
 
+# Every resume upload path accepts exactly these. DOCX was added 2026-09-13:
+# the landing page had been advertising it while the server refused it.
+RESUME_EXTENSIONS = (".pdf", ".docx", ".txt")
+
+
+def is_resume_filename(filename):
+    return (filename or "").lower().endswith(RESUME_EXTENSIONS)
+
+
+def resume_mime_type(filename):
+    name = (filename or "").lower()
+    if name.endswith(".pdf"):
+        return "application/pdf"
+    if name.endswith(".docx"):
+        return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    return "text/plain"
+
+
+def extract_text_from_docx(file_stream):
+    """Paragraphs AND table cells, in document order.
+
+    Many Word resume templates lay out the whole page in a table (a narrow
+    skills column beside the experience column), so paragraphs alone can
+    return a nearly empty resume.
+    """
+    try:
+        from docx import Document
+        doc = Document(file_stream)
+        body = doc.element.body
+        lines = []
+        for child in body.iterchildren():
+            tag = child.tag.rsplit("}", 1)[-1]
+            if tag == "p":
+                text = "".join(t.text or "" for t in child.iter() if t.tag.endswith("}t"))
+                if text.strip():
+                    lines.append(text)
+            elif tag == "tbl":
+                for row in child.iter():
+                    if not row.tag.endswith("}tr"):
+                        continue
+                    cells = []
+                    for cell in row.iterchildren():
+                        if not cell.tag.endswith("}tc"):
+                            continue
+                        paras = []
+                        for para in cell.iter():
+                            if para.tag.endswith("}p"):
+                                t = "".join(x.text or "" for x in para.iter() if x.tag.endswith("}t"))
+                                if t.strip():
+                                    paras.append(t)
+                        if paras:
+                            cells.append("\n".join(paras))
+                    if cells:
+                        lines.append("\n".join(cells))
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+
+def extract_resume_text(file):
+    """Text of an uploaded resume (PDF, DOCX or TXT); '' when unreadable."""
+    name = (getattr(file, "filename", "") or "").lower()
+    if name.endswith(".pdf"):
+        return extract_text_from_pdf(file)
+    if name.endswith(".docx"):
+        return extract_text_from_docx(file)
+    return file.read().decode("utf-8", errors="ignore")
+
+
 def extract_text_from_pdf(file_stream):
     try:
         reader = PdfReader(file_stream)

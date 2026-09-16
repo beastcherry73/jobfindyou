@@ -8,7 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, jsonify, session
 from backend.database import get_db
 from backend.decorators import login_required
-from backend.services.helpers import extract_text_from_pdf, clean_json, normalize_analysis_dict
+from backend.services.helpers import (clean_json, extract_resume_text, is_resume_filename,
+                                     normalize_analysis_dict, resume_mime_type)
 from backend.services import ai
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
@@ -235,8 +236,8 @@ def analyze():
     if file.filename == "":
         return jsonify({"error": "No file selected"}), 400
 
-    if not file.filename.lower().endswith((".pdf", ".txt")):
-        return jsonify({"error": "Please upload a PDF or TXT file"}), 400
+    if not is_resume_filename(file.filename):
+        return jsonify({"error": "Please upload a PDF, DOCX or TXT file"}), 400
 
     file.stream.seek(0, 2)
     size = file.stream.tell()
@@ -246,14 +247,11 @@ def analyze():
 
     started_at = time.perf_counter()
     try:
-        if file.filename.lower().endswith(".pdf"):
-            resume_text = extract_text_from_pdf(file)
-        else:
-            resume_text = file.read().decode("utf-8", errors="ignore")
+        resume_text = extract_resume_text(file)
 
         if not resume_text.strip():
             return jsonify({
-                "error": "Could not read any text from this file. Scanned or image-based PDFs and empty files are not supported. Please upload a text-based PDF or TXT resume."
+                "error": "Could not read any text from this file. Scanned or image-based PDFs and empty files are not supported. Please upload a text-based PDF, a DOCX or a TXT resume."
             }), 400
 
         job_context = (
@@ -292,7 +290,7 @@ def analyze():
 
         if parsed.get("is_resume") is False:
             return jsonify({
-                "error": "This file doesn't look like a resume. Please upload an actual resume or CV (PDF or TXT)."
+                "error": "This file doesn't look like a resume. Please upload an actual resume or CV (PDF, DOCX or TXT)."
             }), 400
 
         result = normalize_analysis_dict(parsed)
@@ -314,7 +312,7 @@ def analyze():
 
         user_id = session.get("user_id")
         file_path = None
-        mime_type = "application/pdf" if file.filename.lower().endswith(".pdf") else "text/plain"
+        mime_type = resume_mime_type(file.filename)
 
         if user_id:
             try:

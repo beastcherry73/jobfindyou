@@ -3,10 +3,14 @@ import re
 import json
 from flask import Blueprint, request, jsonify, redirect, url_for, session
 from backend.decorators import login_required
-from backend.services.helpers import extract_text_from_pdf, estimate_resume_score, clean_json
+from backend.services.helpers import (clean_json, estimate_resume_score, extract_resume_text,
+                                     is_resume_filename)
 from backend.services.ai import call_groq, GroqError
 from backend.services.ratelimit import rate_limit
-from backend.prompts import SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT, EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT, OPTIMIZE_STANDARD, COVER_LETTER_PROMPT, INTERVIEW_PREP_PROMPT
+from backend.prompts import (SCRATCH_PROMPT, IMPROVE_PROMPT, SAFE_OPTIMIZE_PROMPT, ROLE_OPTIMIZE_PROMPT,
+                             EXECUTIVE_OPTIMIZE_PROMPT, DIFF_PROMPT, OPTIMIZE_STANDARD, COVER_LETTER_PROMPT,
+                             INTERVIEW_PREP_PROMPT, BEHAVIORAL_PREP_PROMPT, SYSTEM_DESIGN_PREP_PROMPT,
+                             INTERVIEW_SCORE_PROMPT, ROADMAP_PROMPT)
 
 generate_bp = Blueprint("generate", __name__)
 logger = logging.getLogger(__name__)
@@ -97,6 +101,45 @@ def generate_cover_letter():
     })
 
 
+# Interview practice modes. Each shares the prep response shape, so one UI
+# renders all three; the rubric is what the scorer grades a practice answer on.
+INTERVIEW_KINDS = {
+    "role": {
+        "prompt": INTERVIEW_PREP_PROMPT,
+        "label": "Role-specific question",
+        "rubric": ["Relevance to the question", "Specific evidence", "Impact and results", "Clarity"],
+    },
+    "behavioral": {
+        "prompt": BEHAVIORAL_PREP_PROMPT,
+        "label": "Behavioural question, answered in STAR form",
+        "rubric": ["Situation", "Task", "Action (what YOU did)", "Result, ideally measured", "Reflection"],
+    },
+    "system_design": {
+        "prompt": SYSTEM_DESIGN_PREP_PROMPT,
+        "label": "System design question",
+        "rubric": ["Requirements and scope", "High-level design", "Data model and storage",
+                   "Scale and bottlenecks", "Trade-offs explained"],
+    },
+}
+
+_MIN_ANSWER_WORDS = 25
+
+
+def _squash(text):
+    return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
+
+
+def _quote_in_answer(quote, answer):
+    """True when a feedback quote really appears in the answer.
+
+    Punctuation and case are ignored (models tidy both), but the words must
+    be there in order. A coach that "quotes" something the candidate never
+    said is inventing the answer it is grading.
+    """
+    q = _squash(quote)
+    return bool(q) and q in _squash(answer)
+
+
 @generate_bp.route("/api/interview/prep", methods=["POST"])
 @login_required
 @rate_limit(limit=10, window_seconds=300)
@@ -106,8 +149,14 @@ def interview_prep():
     A question the resume cannot answer comes back with empty evidence and
     the topic listed under gaps_to_prepare -- the honest answer, rather than
     inventing experience for the candidate to repeat in a real interview.
+
+    `kind` selects role-specific (default), behavioral (STAR) or
+    system_design questions.
     """
     body = request.get_json(silent=True) or {}
+    kind = (body.get("kind") or "role").strip().lower()
+    if kind not in INTERVIEW_KINDS:
+        return jsonify({"error": "Unknown interview type."}), 400
     description = (body.get("description") or "").strip()
     if not description:
         return jsonify({"error": "Paste the job description first."}), 400
@@ -120,11 +169,19 @@ def interview_prep():
         }), 400
 
     parsed, err = _grounded_json_call(
-        INTERVIEW_PREP_PROMPT.format(job_description=description[:4000],
-                                     resume_text=resume_text[:9000]),
+        INTERVIEW_KINDS[kind]["prompt"].format(job_description=description[:4000],
+                                               resume_text=resume_text[:9000]),
         2200, "Interview prep")
     if err:
         return err
+
+    if kind == "system_design" and parsed.get("applicable") is False:
+        return jsonify({
+            "kind": kind,
+            "applicable": False,
+            "role_summary": str(parsed.get("role_summary") or "").strip()[:400],
+            "questions": [], "gaps_to_prepare": [], "questions_to_ask": [], "grounded": 0,
+        })
 
     questions = []
     for item in (parsed.get("questions") or [])[:10]:
@@ -142,11 +199,173 @@ def interview_prep():
         return jsonify({"error": "The AI came back empty. Try again."}), 502
 
     return jsonify({
+        "kind": kind,
+        "applicable": True,
         "role_summary": str(parsed.get("role_summary") or "").strip()[:400],
         "questions": questions,
         "gaps_to_prepare": _clean_list(parsed.get("gaps_to_prepare"), 6),
         "questions_to_ask": _clean_list(parsed.get("questions_to_ask"), 4),
         "grounded": sum(1 for q in questions if q["your_evidence"]),
+    })
+
+
+@generate_bp.route("/api/interview/score", methods=["POST"])
+@login_required
+@rate_limit(limit=30, window_seconds=300)
+def interview_score():
+    """Rubric feedback on one practice answer.
+
+    Every rubric line carries a quote from the answer. The server checks each
+    quote against the answer and blanks any that is not really there (and
+    caps that item's score at 2), so the feedback can only be about what the
+    candidate actually said. The overall score is the mean of the rubric, not
+    a number the model picks separately.
+    """
+    body = request.get_json(silent=True) or {}
+    kind = (body.get("kind") or "role").strip().lower()
+    if kind not in INTERVIEW_KINDS:
+        return jsonify({"error": "Unknown interview type."}), 400
+    question = (body.get("question") or "").strip()
+    answer = (body.get("answer") or "").strip()
+    if not question:
+        return jsonify({"error": "Pick a question to practise first."}), 400
+    if len(answer.split()) < _MIN_ANSWER_WORDS:
+        return jsonify({"error": f"Write at least {_MIN_ANSWER_WORDS} words so there is something to give feedback on."}), 400
+
+    spec = INTERVIEW_KINDS[kind]
+    parsed, err = _grounded_json_call(
+        INTERVIEW_SCORE_PROMPT.format(
+            kind_label=spec["label"], rubric="; ".join(spec["rubric"]),
+            question=question[:600], answer=answer[:6000],
+            job_description=(body.get("description") or "").strip()[:2500]),
+        1800, "Interview score")
+    if err:
+        return err
+
+    rubric, unverified = [], 0
+    for item in (parsed.get("rubric") or [])[:8]:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("item") or "").strip()[:80]
+        if not name:
+            continue
+        try:
+            score = int(round(float(item.get("score"))))
+        except (TypeError, ValueError):
+            continue
+        score = max(1, min(5, score))
+        quote = str(item.get("quote") or "").strip()[:300]
+        if quote and not _quote_in_answer(quote, answer):
+            unverified += 1
+            quote = ""
+        if not quote:
+            score = min(score, 2)
+        rubric.append({"item": name, "score": score, "quote": quote,
+                       "fix": str(item.get("fix") or "").strip()[:400]})
+    if not rubric:
+        return jsonify({"error": "The AI came back empty. Try again."}), 502
+
+    overall = round(sum(r["score"] for r in rubric) / len(rubric), 1)
+    return jsonify({
+        "kind": kind,
+        "overall": overall,
+        "out_of": 5,
+        "rubric": rubric,
+        "strengths": _clean_list(parsed.get("strengths"), 3),
+        "biggest_gap": str(parsed.get("biggest_gap") or "").strip()[:400],
+        "stronger_outline": _clean_list(parsed.get("stronger_outline"), 5),
+        "unverified_quotes_removed": unverified,
+        "words": len(answer.split()),
+    })
+
+
+@generate_bp.route("/api/career/roadmap", methods=["POST"])
+@login_required
+@rate_limit(limit=10, window_seconds=300)
+def career_roadmap():
+    """A phased plan, with a portfolio project per phase, toward one role.
+
+    Strengths must quote the resume; any strength whose evidence is not in the
+    resume is dropped server-side, the same rule the interview scorer applies
+    to quotes from an answer.
+    """
+    body = request.get_json(silent=True) or {}
+    target = (body.get("target_role") or "").strip()[:120]
+    if not target:
+        return jsonify({"error": "Enter the role you are aiming for."}), 400
+    try:
+        # `or 8` would turn an explicit 0 into the default instead of the floor.
+        raw_weeks, raw_hours = body.get("weeks"), body.get("hours_per_week")
+        weeks = max(2, min(26, int(8 if raw_weeks in (None, "") else raw_weeks)))
+        hours = max(2, min(40, int(8 if raw_hours in (None, "") else raw_hours)))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Weeks and hours must be numbers."}), 400
+
+    resume_text = _resume_text_for(body.get("analysis_id"))
+    if not resume_text:
+        return jsonify({
+            "error": "Analyze a resume first, so the roadmap starts from where you really are.",
+            "no_resume": True,
+        }), 400
+
+    parsed, err = _grounded_json_call(
+        ROADMAP_PROMPT.format(target_role=target, weeks=weeks, hours=hours,
+                              resume_text=resume_text[:9000]),
+        3000, "Roadmap")
+    if err:
+        return err
+
+    strengths, dropped = [], 0
+    for item in (parsed.get("strengths") or [])[:8]:
+        if not isinstance(item, dict):
+            continue
+        skill = str(item.get("skill") or "").strip()[:80]
+        evidence = str(item.get("evidence") or "").strip()[:300]
+        if not skill:
+            continue
+        if not _quote_in_answer(evidence, resume_text):
+            dropped += 1
+            continue
+        strengths.append({"skill": skill, "evidence": evidence})
+
+    phases = []
+    for item in (parsed.get("phases") or [])[:8]:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()[:120]
+        if not title:
+            continue
+        project = item.get("project") if isinstance(item.get("project"), dict) else {}
+        try:
+            phase_weeks = max(1, min(26, int(item.get("weeks") or 1)))
+        except (TypeError, ValueError):
+            phase_weeks = 1
+        phases.append({
+            "title": title,
+            "weeks": phase_weeks,
+            "skills": _clean_list(item.get("skills"), 6, 60),
+            "learn": _clean_list(item.get("learn"), 6, 160),
+            "project": {
+                "name": str(project.get("name") or "").strip()[:120],
+                "build": str(project.get("build") or "").strip()[:600],
+                "proves": _clean_list(project.get("proves"), 6, 60),
+                "resume_line": str(project.get("resume_line") or "").strip()[:300],
+            },
+            "done_when": str(item.get("done_when") or "").strip()[:300],
+        })
+    if not phases:
+        return jsonify({"error": "The AI came back empty. Try again."}), 502
+
+    return jsonify({
+        "target_role": target,
+        "weeks": weeks,
+        "hours_per_week": hours,
+        "planned_weeks": sum(p["weeks"] for p in phases),
+        "summary": str(parsed.get("summary") or "").strip()[:500],
+        "strengths": strengths,
+        "unverified_strengths_removed": dropped,
+        "phases": phases,
+        "interview_topics": _clean_list(parsed.get("interview_topics"), 6),
     })
 
 
@@ -195,14 +414,11 @@ def generate_improve():
     instructions = request.form.get("instructions", "").strip()
     job_description = request.form.get("job_description", "").strip()
 
-    if not file.filename.lower().endswith((".pdf", ".txt")):
-        return jsonify({"error": "Please upload a PDF or TXT file"}), 400
+    if not is_resume_filename(file.filename):
+        return jsonify({"error": "Please upload a PDF, DOCX or TXT file"}), 400
 
     try:
-        if file.filename.lower().endswith(".pdf"):
-            resume_text = extract_text_from_pdf(file)
-        else:
-            resume_text = file.read().decode("utf-8", errors="ignore")
+        resume_text = extract_resume_text(file)
 
         if not resume_text.strip():
             return jsonify({"error": "Couldn't extract text from this file"}), 400
@@ -241,12 +457,9 @@ def generate_improve_with_diff():
         raw_text_payload = request.form.get("resume_text") or (request.json.get("resume_text") if request.is_json else "") or ""
 
         if file and file.filename != "":
-            if not file.filename.lower().endswith((".pdf", ".txt")):
-                return jsonify({"error": "Please upload a PDF or TXT file"}), 400
-            if file.filename.lower().endswith(".pdf"):
-                resume_text = extract_text_from_pdf(file)
-            else:
-                resume_text = file.read().decode("utf-8", errors="ignore")
+            if not is_resume_filename(file.filename):
+                return jsonify({"error": "Please upload a PDF, DOCX or TXT file"}), 400
+            resume_text = extract_resume_text(file)
         elif raw_text_payload.strip():
             resume_text = raw_text_payload.strip()
 

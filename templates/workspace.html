@@ -49,6 +49,24 @@
     .goal-ai-summary { font-size:13px; color:var(--ws-text); margin:0 0 12px; line-height:1.55; }
     .goal-ai-steps { margin:0 0 12px 16px; padding:0; font-size:13px; line-height:1.6; color:var(--ws-text-secondary); }
     .goal-ai-label { font-size:12px; font-weight:600; color:var(--ws-text-secondary); margin-bottom:4px; }
+    .ip-practice { margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+    .rm-form { display:flex; flex-wrap:wrap; gap:12px; }
+    .rm-form .ws-input-group { margin:0; }
+    .rm-project { margin-top:8px; padding:10px 12px; border:1px solid var(--ws-border); border-radius:8px; background:var(--ws-bg-subtle, transparent); }
+    .sal-stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin:8px 0 16px; }
+    .sal-stat { border-top:1px solid var(--ws-border); padding-top:10px; }
+    .sal-stat-value { font-family:var(--ws-font-mono); font-size:22px; font-weight:600; color:var(--ws-text-primary); }
+    .sal-bar { position:relative; height:10px; border-radius:5px; background:var(--ws-border); margin:6px 0 4px; }
+    .sal-bar-fill { position:absolute; top:0; bottom:0; border-radius:5px; background:var(--ws-primary); opacity:.75; }
+    .sal-bar-mid { position:absolute; top:-3px; width:2px; height:16px; background:var(--ws-text-primary); }
+    .ip-score-head { display:flex; align-items:baseline; gap:10px; margin:6px 0 4px; }
+    .ip-score-num { font-family:var(--ws-font-mono); font-size:22px; font-weight:600; color:var(--ws-text-primary); }
+    .ip-rubric-row { display:grid; grid-template-columns:minmax(0,180px) 64px minmax(0,1fr); gap:10px; padding:8px 0; border-top:1px solid var(--ws-border); font-size:13px; }
+    .ip-dots { display:flex; gap:3px; padding-top:5px; }
+    .ip-dot { width:8px; height:8px; border-radius:50%; background:var(--ws-border); }
+    .ip-dot.on { background:var(--ws-primary); }
+    .ip-quote { color:var(--ws-text-secondary); font-style:italic; }
+    @media (max-width: 640px) { .ip-rubric-row { grid-template-columns:1fr auto; } .ip-rubric-row > :last-child { grid-column:1 / -1; } }
     .goal-ai-draft { white-space:pre-wrap; word-break:break-word; font-family:var(--ws-font-sans); font-size:13px; line-height:1.6;
                      margin:0 0 12px; padding:12px 16px; background:var(--ws-surface); border:1px solid var(--ws-border-light);
                      border-radius:var(--ws-radius-md); }
@@ -257,6 +275,14 @@
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/><path d="M9.5 8.5a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 1.9-2 3"/><line x1="12" y1="15" x2="12" y2="15"/></svg></span>
           <span class="ws-nav-label">Interview prep</span>
         </a>
+        <a class="ws-nav-item" data-section="career-roadmap" onclick="switchSection('career-roadmap')">
+          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3Z"/><path d="M9 3v15"/><path d="M15 6v15"/></svg></span>
+          <span class="ws-nav-label">Roadmap</span>
+        </a>
+        <a class="ws-nav-item" data-section="salaries" onclick="switchSection('salaries')">
+          <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          <span class="ws-nav-label">Salaries</span>
+        </a>
         <a class="ws-nav-item" data-section="workspace-insights" onclick="switchSection('workspace-insights')">
           <span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2Z"/></svg></span>
           <span class="ws-nav-label">Insights</span>
@@ -403,7 +429,7 @@
                 <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
               </div>
               <h2 style="font-family:var(--ws-font-serif);font-weight:400;font-size:27px;line-height:1.15;margin-bottom:10px;">Start with your resume.</h2>
-              <p style="font-size:14px;color:var(--ws-text-secondary);line-height:1.55;max-width:44ch;margin:0 auto;">Drop a PDF or TXT here, or click anywhere in this box. You'll get your ATS health score, a keyword read, and a prioritized fix list in about ten seconds. No score shows until you've uploaded — nothing here is faked.</p>
+              <p style="font-size:14px;color:var(--ws-text-secondary);line-height:1.55;max-width:44ch;margin:0 auto;">Drop a PDF, DOCX or TXT here, or click anywhere in this box. You'll get your ATS health score, a keyword read, and a prioritized fix list in about ten seconds. No score shows until you've uploaded — nothing here is faked.</p>
               <span style="margin-top:16px;font-family:var(--ws-font-mono);font-size:10.5px;color:var(--ws-text-tertiary);">PDF · TXT · max 10MB</span>
             </div>
           </div>
@@ -513,8 +539,8 @@
                   <div class="ws-upload-zone" id="dashboardUpload" onclick="document.getElementById('dashFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding: 22px 16px; border-style: dashed; border-radius: 8px;">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ws-text-tertiary);margin:0 auto 6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
                     <div class="ws-upload-title" style="font-size: 12.5px; font-weight: 600;">Drop or click to scan file</div>
-                    <div class="ws-upload-hint" style="font-size: 11px; color: var(--ws-text-tertiary);">PDF or TXT • Max 10MB</div>
-                    <input type="file" id="dashFileInput" accept=".pdf,.txt" style="display:none" onchange="handleFileSelect(this.files[0])" onclick="event.stopPropagation()">
+                    <div class="ws-upload-hint" style="font-size: 11px; color: var(--ws-text-tertiary);">PDF, DOCX or TXT • Max 10MB</div>
+                    <input type="file" id="dashFileInput" accept=".pdf,.docx,.txt" style="display:none" onchange="handleFileSelect(this.files[0])" onclick="event.stopPropagation()">
                   </div>
                 </div>
               </div>
@@ -745,8 +771,8 @@
                 <div class="ws-upload-zone" id="analysisUploadZone" onclick="document.getElementById('analysisFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:48px 24px; text-align:center; border:2px dashed var(--ws-border); border-radius:var(--ws-radius-lg); cursor:pointer;">
                   <div style="width:48px;height:48px;margin-bottom:16px;opacity:0.6;display:flex;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                   <div style="font-size:16px;font-weight:600;color:var(--ws-text);margin-bottom:4px;" id="analysisUploadTitle">Drag and drop your resume here, or click to browse</div>
-                  <div style="font-size:12px;color:var(--ws-text-muted);">Supports PDF or TXT formats (Max 10MB)</div>
-                  <input type="file" id="analysisFileInput" accept=".pdf,.txt" style="display:none" onchange="handleAnalysisFileSelect(this.files[0])" onclick="event.stopPropagation()">
+                  <div style="font-size:12px;color:var(--ws-text-muted);">Supports PDF, DOCX or TXT formats (Max 10MB)</div>
+                  <input type="file" id="analysisFileInput" accept=".pdf,.docx,.txt" style="display:none" onchange="handleAnalysisFileSelect(this.files[0])" onclick="event.stopPropagation()">
                 </div>
                 
                 <div class="ws-divider" style="margin:24px 0;"></div>
@@ -813,11 +839,16 @@
           <div class="ws-page-header">
             <div>
               <h1 class="ws-page-title">Interview prep</h1>
-              <p class="ws-page-subtitle">The questions this role is likely to ask, each paired with the evidence from your own resume to answer it. Where your resume has nothing to point at, it says so instead of inventing an example.</p>
+              <p class="ws-page-subtitle">Role, behavioural and system design questions for one job, each paired with the evidence from your own resume. Practise an answer and get rubric feedback that quotes what you actually wrote. Where your resume has nothing to point at, it says so instead of inventing an example.</p>
             </div>
           </div>
           <div class="ws-card ws-mb-md">
             <div class="ws-card-body">
+              <div class="ws-tabs" id="ipKindTabs" role="tablist" style="margin:0 0 16px;">
+                <button type="button" class="ws-tab active" data-kind="role" role="tab" aria-selected="true">Role questions</button>
+                <button type="button" class="ws-tab" data-kind="behavioral" role="tab" aria-selected="false">Behavioural (STAR)</button>
+                <button type="button" class="ws-tab" data-kind="system_design" role="tab" aria-selected="false">System design</button>
+              </div>
               <div class="ws-input-group">
                 <label class="ws-input-label" for="ipJobDesc">Job description</label>
                 <textarea class="ws-textarea" id="ipJobDesc" rows="8" placeholder="Paste the full job description here."></textarea>
@@ -833,6 +864,7 @@
               <div class="ws-card-title">What this interview tests</div>
               <p class="ws-card-subtitle" id="ipSummary" style="margin-bottom:16px;"></p>
               <div id="ipQuestions" class="goal-list"></div>
+              <p class="goal-detail" style="margin-top:10px;">Practice feedback is AI coaching on what you wrote &mdash; not a prediction of any hiring decision.</p>
               <div id="ipGapsWrap" style="display:none;margin-top:20px;">
                 <div class="goal-ai-label">Prepare these separately &mdash; your resume doesn't cover them</div>
                 <div id="ipGaps" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
@@ -842,6 +874,97 @@
                 <ul class="goal-ai-steps" id="ipAsk"></ul>
               </div>
             </div>
+          </div>
+        </section>
+
+        <!-- ── CAREER ROADMAP ── -->
+        <section id="section-career-roadmap" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Career roadmap</h1>
+              <p class="ws-page-subtitle">A week-by-week plan from your current resume to the role you want, sized to the hours you actually have. Every phase ends with a portfolio project that proves the new skill, so the roadmap turns into resume lines you can defend.</p>
+            </div>
+          </div>
+          <div class="ws-card ws-mb-md">
+            <div class="ws-card-body">
+              <div class="rm-form">
+                <div class="ws-input-group" style="flex:2 1 260px;">
+                  <label class="ws-input-label" for="rmTarget">Role you're aiming for</label>
+                  <input class="ws-input" id="rmTarget" maxlength="120" placeholder="e.g. Data Analyst, Backend Engineer, Product Designer">
+                </div>
+                <div class="ws-input-group" style="flex:1 1 120px;">
+                  <label class="ws-input-label" for="rmWeeks">Weeks</label>
+                  <input class="ws-input" id="rmWeeks" type="number" min="2" max="26" value="8">
+                </div>
+                <div class="ws-input-group" style="flex:1 1 120px;">
+                  <label class="ws-input-label" for="rmHours">Hours / week</label>
+                  <input class="ws-input" id="rmHours" type="number" min="2" max="40" value="8">
+                </div>
+              </div>
+              <div class="ws-flex-between" style="margin-top:12px;gap:12px;flex-wrap:wrap;">
+                <span class="goal-detail">Built from your most recently analyzed resume.</span>
+                <button type="button" class="ws-btn ws-btn-primary" id="rmGenerate">Build my roadmap</button>
+              </div>
+            </div>
+          </div>
+          <div class="ws-card" id="rmResultCard" style="display:none;">
+            <div class="ws-card-body">
+              <div class="ws-card-title" id="rmTitle"></div>
+              <p class="ws-card-subtitle" id="rmSummary" style="margin-bottom:16px;"></p>
+              <div id="rmStrengthsWrap" style="display:none;margin-bottom:18px;">
+                <div class="goal-ai-label">Already on your resume</div>
+                <div id="rmStrengths" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+              </div>
+              <div id="rmPhases" class="goal-list"></div>
+              <div id="rmTopicsWrap" style="display:none;margin-top:20px;">
+                <div class="goal-ai-label">What interviews will probe once you're done</div>
+                <ul class="goal-ai-steps" id="rmTopics"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SALARIES ── -->
+        <section id="section-salaries" class="ws-section" style="display:none;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Salaries</h1>
+              <p class="ws-page-subtitle">What employers are offering right now, taken only from pay ranges they published in their own live job postings. No surveys, no estimates &mdash; and every figure shows how many companies it comes from.</p>
+            </div>
+          </div>
+          <div class="ws-card ws-mb-md">
+            <div class="ws-card-body">
+              <div class="rm-form">
+                <div class="ws-input-group" style="flex:2 1 260px;">
+                  <label class="ws-input-label" for="salQuery">Job title</label>
+                  <input class="ws-input" id="salQuery" maxlength="120" placeholder="e.g. software engineer, product manager, data analyst">
+                </div>
+                <div class="ws-input-group" style="flex:1 1 180px;">
+                  <label class="ws-input-label" for="salCountry">Country</label>
+                  <select class="ws-select" id="salCountry">
+                    <option value="">Any country</option>
+                    <option value="us">United States</option>
+                    <option value="gb">United Kingdom</option>
+                    <option value="ca">Canada</option>
+                    <option value="ie">Ireland</option>
+                    <option value="de">Germany</option>
+                    <option value="fr">France</option>
+                    <option value="nl">Netherlands</option>
+                    <option value="es">Spain</option>
+                    <option value="in">India</option>
+                    <option value="sg">Singapore</option>
+                    <option value="au">Australia</option>
+                  </select>
+                </div>
+              </div>
+              <div class="ws-flex-between" style="margin-top:12px;gap:12px;flex-wrap:wrap;">
+                <span class="goal-detail">Matches postings whose title contains every word you type.</span>
+                <button type="button" class="ws-btn ws-btn-primary" id="salGenerate">Look up pay</button>
+              </div>
+            </div>
+          </div>
+          <div class="ws-card" id="salResultCard" style="display:none;">
+            <div class="ws-card-body" id="salResult"></div>
           </div>
         </section>
 
@@ -983,7 +1106,7 @@
                   <div onclick="selectResumeSource('new', this)" class="improve-source-card" style="border:1px solid var(--ws-border); background:var(--ws-surface); padding:16px; border-radius:12px; cursor:pointer;">
                     <div style="margin-bottom:4px;display:flex;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="11" rx="1.3"/><path d="M2 19h20"/></svg></div>
                     <div style="font-size:14px; font-weight:700; color:var(--ws-text);">Upload New File</div>
-                    <div style="font-size:12px; color:var(--ws-text-secondary); margin-top:2px;">Upload PDF or TXT from your computer</div>
+                    <div style="font-size:12px; color:var(--ws-text-secondary); margin-top:2px;">Upload PDF, DOCX or TXT from your computer</div>
                   </div>
                 </div>
 
@@ -999,7 +1122,7 @@
                 <div id="enhanceUploadWrap" style="display:none; margin-bottom:18px;">
                   <div class="ws-upload-zone" id="enhanceUploadZone" onclick="document.getElementById('enhanceFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:20px 16px; text-align:center; border:2px dashed var(--ws-border); border-radius:12px; cursor:pointer;">
                     <span id="enhanceUploadLabel" style="font-size:13px; color:var(--ws-text-secondary); font-weight:600;display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg> Click or drag new resume (PDF/TXT)</span>
-                    <input type="file" id="enhanceFileInput" accept=".pdf,.txt" style="display:none" onchange="handleEnhanceFileSelect(this.files[0])" onclick="event.stopPropagation()">
+                    <input type="file" id="enhanceFileInput" accept=".pdf,.docx,.txt" style="display:none" onchange="handleEnhanceFileSelect(this.files[0])" onclick="event.stopPropagation()">
                   </div>
                 </div>
 
@@ -2732,6 +2855,8 @@
         'workspace-goals': 'Goals',
         'cover-letter': 'Cover Letter',
         'interview-prep': 'Interview Prep',
+        'career-roadmap': 'Career Roadmap',
+        salaries: 'Salaries',
         jobsearch: 'Browse jobs',
         foryou: 'For You',
         pipeline: 'Pipeline',
@@ -2852,10 +2977,10 @@
     /* ── File Upload ── */
     function handleFileSelect(file) {
       if (!file) return;
-      const validTypes = ['.pdf', '.txt'];
+      const validTypes = ['.pdf', '.docx', '.txt'];
       const ext = '.' + file.name.split('.').pop().toLowerCase();
       if (!validTypes.includes(ext)) {
-        showToast('Please upload a PDF or TXT file', 'error');
+        showToast('Please upload a PDF, DOCX or TXT file', 'error');
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
@@ -6180,6 +6305,25 @@
        Every question carries either the resume line to answer it with, or an
        explicit "nothing on your resume covers this" -- which is the useful
        answer, and the only honest one. */
+    var ipState = { kind: 'role', jd: '', questions: [] };
+    var IP_KIND_BUTTON = { role: 'Prepare questions', behavioral: 'Prepare STAR questions', system_design: 'Prepare design questions' };
+    var IP_KIND_HINT = {
+      role: 'Answer with a specific example from your experience and what came of it.',
+      behavioral: 'Answer in STAR form: the Situation, your Task, the Action YOU took, and the Result.',
+      system_design: 'Walk through requirements, a high-level design, data storage, scaling, and the trade-offs you chose.'
+    };
+
+    function setInterviewKind(kind) {
+      ipState.kind = kind;
+      document.querySelectorAll('#ipKindTabs .ws-tab').forEach(function (b) {
+        var on = b.getAttribute('data-kind') === kind;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.getElementById('ipGenerate').textContent = IP_KIND_BUTTON[kind];
+      document.getElementById('ipResultCard').style.display = 'none';
+    }
+
     async function generateInterviewPrep() {
       var btn = document.getElementById('ipGenerate');
       var jd = (document.getElementById('ipJobDesc').value || '').trim();
@@ -6188,22 +6332,40 @@
       var label = btn.textContent;
       btn.textContent = 'Preparing…';
       try {
-        var d = await apiFetch('/api/interview/prep', { method: 'POST', body: { description: jd } });
+        var kind = ipState.kind;
+        var d = await apiFetch('/api/interview/prep', { method: 'POST', body: { description: jd, kind: kind } });
+        ipState.jd = jd;
+        ipState.questions = d.questions || [];
         document.getElementById('ipResultCard').style.display = 'block';
         document.getElementById('ipSummary').textContent = d.role_summary || '';
 
-        document.getElementById('ipQuestions').innerHTML = (d.questions || []).map(function (q, i) {
-          return '<div class="goal-row" style="grid-template-columns:auto minmax(0,1fr);">'
-            + '<span class="tnum" style="font-family:var(--ws-font-mono);font-size:12px;color:var(--ws-text-tertiary);padding-top:2px;">'
-            + String(i + 1).padStart(2, '0') + '</span>'
-            + '<div class="goal-text" style="cursor:default;">'
-            + '<span class="goal-title">' + esc(q.question) + '</span>'
-            + (q.why ? '<span class="goal-detail">' + esc(q.why) + '</span>' : '')
-            + (q.your_evidence
-                ? '<span class="goal-detail" style="color:var(--ws-text-secondary);"><b>From your resume:</b> ' + esc(q.your_evidence) + '</span>'
-                : '<span class="goal-detail" style="color:var(--ws-warn);">Nothing on your resume answers this yet &mdash; prepare an example.</span>')
-            + '</div></div>';
-        }).join('');
+        if (d.applicable === false) {
+          document.getElementById('ipQuestions').innerHTML =
+            '<div class="goal-row" style="grid-template-columns:minmax(0,1fr);"><div class="goal-text" style="cursor:default;">'
+            + '<span class="goal-title">No system design round expected for this role</span>'
+            + '<span class="goal-detail">Try the role or behavioural questions instead.</span></div></div>';
+        } else {
+          document.getElementById('ipQuestions').innerHTML = ipState.questions.map(function (q, i) {
+            return '<div class="goal-row" style="grid-template-columns:auto minmax(0,1fr);">'
+              + '<span class="tnum" style="font-family:var(--ws-font-mono);font-size:12px;color:var(--ws-text-tertiary);padding-top:2px;">'
+              + String(i + 1).padStart(2, '0') + '</span>'
+              + '<div class="goal-text" style="cursor:default;">'
+              + '<span class="goal-title">' + esc(q.question) + '</span>'
+              + (q.why ? '<span class="goal-detail">' + esc(q.why) + '</span>' : '')
+              + (q.your_evidence
+                  ? '<span class="goal-detail" style="color:var(--ws-text-secondary);"><b>From your resume:</b> ' + esc(q.your_evidence) + '</span>'
+                  : '<span class="goal-detail" style="color:var(--ws-warn);">Nothing on your resume answers this yet &mdash; prepare an example.</span>')
+              + '<div><button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" data-ip-practice="' + i + '" style="margin-top:8px;">Practise this answer</button></div>'
+              + '<div class="ip-practice" id="ipPractice' + i + '" style="display:none;">'
+              + '<textarea class="ws-textarea" id="ipAnswer' + i + '" rows="6" placeholder="' + esc(IP_KIND_HINT[kind]) + '"></textarea>'
+              + '<div class="ws-flex-between" style="gap:12px;flex-wrap:wrap;">'
+              + '<span class="goal-detail" id="ipWords' + i + '">0 words &middot; at least 25</span>'
+              + '<button type="button" class="ws-btn ws-btn-primary ws-btn-sm" data-ip-score="' + i + '">Score my answer</button></div>'
+              + '<div id="ipFeedback' + i + '"></div>'
+              + '</div>'
+              + '</div></div>';
+          }).join('');
+        }
 
         var gapsWrap = document.getElementById('ipGapsWrap');
         if ((d.gaps_to_prepare || []).length) {
@@ -6233,6 +6395,201 @@
       }
     }
 
+    function renderInterviewFeedback(d) {
+      var rows = (d.rubric || []).map(function (r) {
+        var dots = '';
+        for (var k = 1; k <= 5; k++) dots += '<span class="ip-dot' + (k <= r.score ? ' on' : '') + '"></span>';
+        return '<div class="ip-rubric-row">'
+          + '<div style="font-weight:600;">' + esc(r.item) + '</div>'
+          + '<div class="ip-dots" title="' + r.score + ' of 5">' + dots + '</div>'
+          + '<div>' + (r.quote
+              ? '<div class="ip-quote">&ldquo;' + esc(r.quote) + '&rdquo;</div>'
+              : '<div class="goal-detail" style="color:var(--ws-warn);">Nothing in your answer covered this.</div>')
+          + (r.fix ? '<div style="margin-top:2px;">' + esc(r.fix) + '</div>' : '') + '</div></div>';
+      }).join('');
+      var html = '<div class="ip-score-head"><span class="ip-score-num tnum">' + esc(String(d.overall)) + '</span>'
+        + '<span class="goal-detail">out of 5 &middot; average of the rubric below</span></div>';
+      if (d.biggest_gap) html += '<div class="goal-detail" style="margin-bottom:6px;"><b>Fix first:</b> ' + esc(d.biggest_gap) + '</div>';
+      html += rows;
+      if ((d.strengths || []).length) {
+        html += '<div class="goal-ai-label" style="margin-top:12px;">What works</div><ul class="goal-ai-steps">'
+          + d.strengths.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
+      }
+      if ((d.stronger_outline || []).length) {
+        html += '<div class="goal-ai-label">A stronger structure, from what you said</div><ol class="goal-ai-steps">'
+          + d.stronger_outline.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>';
+      }
+      if (d.unverified_quotes_removed) {
+        html += '<div class="goal-detail">' + d.unverified_quotes_removed
+          + ' piece(s) of feedback quoted words that are not in your answer, so they were removed and scored low.</div>';
+      }
+      return html;
+    }
+
+    async function scoreInterviewAnswer(i, btn) {
+      var q = ipState.questions[i];
+      var answer = (document.getElementById('ipAnswer' + i).value || '').trim();
+      if (!q) return;
+      if (answer.split(/\s+/).filter(Boolean).length < 25) {
+        showToast('Write at least 25 words first', 'warning');
+        return;
+      }
+      btn.disabled = true;
+      var label = btn.textContent;
+      btn.textContent = 'Scoring…';
+      try {
+        var d = await apiFetch('/api/interview/score', { method: 'POST',
+          body: { kind: ipState.kind, question: q.question, answer: answer, description: ipState.jd } });
+        document.getElementById('ipFeedback' + i).innerHTML = renderInterviewFeedback(d);
+      } catch (e) {
+        showToast((e && e.message) || 'Could not score that answer', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    }
+
+    /* ── Career roadmap ──
+       Strengths arrive only with a verbatim quote from the resume (checked
+       server-side); projects carry placeholder results, never invented ones. */
+    async function generateRoadmap() {
+      var btn = document.getElementById('rmGenerate');
+      var target = (document.getElementById('rmTarget').value || '').trim();
+      if (!target) { showToast('Enter the role you are aiming for', 'warning'); return; }
+      btn.disabled = true;
+      var label = btn.textContent;
+      btn.textContent = 'Building…';
+      try {
+        var d = await apiFetch('/api/career/roadmap', { method: 'POST', body: {
+          target_role: target,
+          weeks: parseInt(document.getElementById('rmWeeks').value, 10) || 8,
+          hours_per_week: parseInt(document.getElementById('rmHours').value, 10) || 8
+        } });
+        document.getElementById('rmResultCard').style.display = 'block';
+        document.getElementById('rmTitle').textContent = d.target_role + ' \u00b7 ' + d.weeks + ' weeks at ' + d.hours_per_week + ' h/week';
+        document.getElementById('rmSummary').textContent = d.summary || '';
+
+        var sw = document.getElementById('rmStrengthsWrap');
+        if ((d.strengths || []).length) {
+          sw.style.display = 'block';
+          document.getElementById('rmStrengths').innerHTML = d.strengths.map(function (x) {
+            return '<span class="ws-badge" title="' + esc(x.evidence) + '">' + esc(x.skill) + '</span>';
+          }).join('');
+        } else {
+          sw.style.display = 'none';
+        }
+
+        var week = 1;
+        document.getElementById('rmPhases').innerHTML = (d.phases || []).map(function (p, i) {
+          var span = p.weeks > 1 ? 'Weeks ' + week + '\u2013' + (week + p.weeks - 1) : 'Week ' + week;
+          week += p.weeks;
+          var pr = p.project || {};
+          return '<div class="goal-row" style="grid-template-columns:auto minmax(0,1fr);">'
+            + '<span class="tnum" style="font-family:var(--ws-font-mono);font-size:12px;color:var(--ws-text-tertiary);padding-top:2px;">' + String(i + 1).padStart(2, '0') + '</span>'
+            + '<div class="goal-text" style="cursor:default;">'
+            + '<span class="goal-title">' + esc(p.title) + '</span>'
+            + '<span class="goal-detail">' + esc(span) + ((p.skills || []).length ? ' \u00b7 ' + esc(p.skills.join(', ')) : '') + '</span>'
+            + ((p.learn || []).length ? '<ul class="goal-ai-steps" style="margin-top:6px;">' + p.learn.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '')
+            + (pr.name ? '<div class="rm-project"><div class="goal-ai-label">Project: ' + esc(pr.name) + '</div>'
+                + (pr.build ? '<div style="font-size:13px;">' + esc(pr.build) + '</div>' : '')
+                + (pr.resume_line ? '<div class="goal-detail" style="margin-top:6px;"><b>On your resume, once built:</b> ' + esc(pr.resume_line) + '</div>' : '')
+                + '</div>' : '')
+            + (p.done_when ? '<span class="goal-detail" style="margin-top:6px;"><b>Done when:</b> ' + esc(p.done_when) + '</span>' : '')
+            + '</div></div>';
+        }).join('');
+
+        var tw = document.getElementById('rmTopicsWrap');
+        if ((d.interview_topics || []).length) {
+          tw.style.display = 'block';
+          document.getElementById('rmTopics').innerHTML = d.interview_topics.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('');
+        } else {
+          tw.style.display = 'none';
+        }
+        document.getElementById('rmResultCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (e) {
+        showToast((e && e.message) || 'Could not build the roadmap', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    }
+
+    /* ── Salaries ──
+       Only employer-published ranges. Below five companies' worth of data the
+       server declines to summarise, and the page says so. */
+    var SAL_SYMBOL = { USD: '$', CAD: 'C$', AUD: 'A$', SGD: 'S$', NZD: 'NZ$', GBP: '\u00a3', EUR: '\u20ac', CHF: 'CHF ', INR: '\u20b9' };
+    function fmtPay(n, cur) {
+      if (n == null) return '\u2014';
+      if (cur === 'INR') return '\u20b9' + (n / 100000).toFixed(1).replace(/\.0$/, '') + ' LPA';
+      return (SAL_SYMBOL[cur] || (cur + ' ')) + Math.round(n).toLocaleString('en-US');
+    }
+
+    async function lookupSalaries() {
+      var btn = document.getElementById('salGenerate');
+      var q = (document.getElementById('salQuery').value || '').trim();
+      if (!q) { showToast('Enter a job title', 'warning'); return; }
+      var country = document.getElementById('salCountry').value;
+      btn.disabled = true;
+      var label = btn.textContent;
+      btn.textContent = 'Looking up…';
+      try {
+        var d = await apiFetch('/api/jobs/salaries?q=' + encodeURIComponent(q) + '&country=' + encodeURIComponent(country));
+        var card = document.getElementById('salResultCard');
+        var out = document.getElementById('salResult');
+        card.style.display = 'block';
+        var countryName = country ? document.getElementById('salCountry').selectedOptions[0].textContent : 'all countries';
+        if (!d.sample) {
+          out.innerHTML = '<div class="ws-card-title">No published pay found</div>'
+            + '<p class="ws-card-subtitle">None of the live postings titled &ldquo;' + esc(q) + '&rdquo; in ' + esc(countryName)
+            + ' state a pay range. Employers outside the US, UK and EU rarely publish one, so this is common &mdash; try a broader title or another country.</p>';
+          return;
+        }
+        var cur = d.currency;
+        var html = '<div class="ws-card-title">' + esc(q) + ' &middot; ' + esc(countryName) + '</div>';
+        if (!d.enough) {
+          html += '<p class="ws-card-subtitle">Only ' + d.sample + ' published range' + (d.sample === 1 ? '' : 's')
+            + ' so far &mdash; too few to summarise honestly. Here they are as posted:</p>';
+        } else {
+          var lo = d.typical_low, hi = d.typical_high, span = Math.max(1, hi - lo);
+          var left = Math.max(0, Math.min(100, (d.p25 - lo) / span * 100));
+          var right = Math.max(0, Math.min(100, (d.p75 - lo) / span * 100));
+          var mid = Math.max(0, Math.min(100, (d.median - lo) / span * 100));
+          html += '<p class="ws-card-subtitle">From ' + d.sample + ' published range' + (d.sample === 1 ? '' : 's') + ' at ' + d.companies
+            + ' compan' + (d.companies === 1 ? 'y' : 'ies') + ', in ' + esc(cur) + '. Each company&rsquo;s range counts once, at its midpoint.</p>'
+            + '<div class="sal-stats">'
+            + '<div class="sal-stat"><div class="goal-detail">Median</div><div class="sal-stat-value tnum">' + fmtPay(d.median, cur) + '</div></div>'
+            + '<div class="sal-stat"><div class="goal-detail">Middle half</div><div class="sal-stat-value tnum" style="font-size:16px;">' + fmtPay(d.p25, cur) + ' \u2013 ' + fmtPay(d.p75, cur) + '</div></div>'
+            + '<div class="sal-stat"><div class="goal-detail">Typical posted range</div><div class="sal-stat-value tnum" style="font-size:16px;">' + fmtPay(lo, cur) + ' \u2013 ' + fmtPay(hi, cur) + '</div></div>'
+            + '</div>'
+            + '<div class="sal-bar" aria-hidden="true"><div class="sal-bar-fill" style="left:' + left + '%;width:' + Math.max(1, right - left) + '%;"></div><div class="sal-bar-mid" style="left:' + mid + '%;"></div></div>';
+          if ((d.by_level || []).length) {
+            html += '<div class="goal-ai-label" style="margin-top:16px;">By level (3+ postings each)</div><ul class="goal-ai-steps">'
+              + d.by_level.map(function (l) { return '<li>' + esc(l.level.charAt(0).toUpperCase() + l.level.slice(1)) + ': ' + fmtPay(l.median, cur) + ' <span class="goal-detail">(' + l.sample + ')</span></li>'; }).join('')
+              + '</ul>';
+          }
+        }
+        var others = Object.keys(d.currencies || {}).filter(function (c) { return c !== cur; });
+        if (others.length) {
+          html += '<p class="goal-detail">Also found in other currencies, not mixed in: ' + others.map(function (c) { return esc(c) + ' (' + d.currencies[c] + ')'; }).join(', ') + '. Pick a country to see those.</p>';
+        }
+        html += '<div class="goal-ai-label" style="margin-top:16px;">Recent postings behind these numbers</div><div class="goal-list">'
+          + (d.postings || []).map(function (p) {
+            var link = /^https?:\/\//i.test(p.apply_url || '') ? p.apply_url : '';
+            return '<div class="goal-row" style="grid-template-columns:minmax(0,1fr) auto;"><div class="goal-text" style="cursor:default;">'
+              + '<span class="goal-title">' + esc(p.title) + '</span><span class="goal-detail">' + esc(p.company) + (p.location ? ' \u00b7 ' + esc(p.location) : '') + '</span></div>'
+              + '<div style="text-align:right;"><div class="tnum" style="font-size:13px;font-weight:600;">' + fmtPay(p.salary_min, cur) + ' \u2013 ' + fmtPay(p.salary_max, cur) + '</div>'
+              + (link ? '<a class="goal-detail" href="' + esc(link) + '" target="_blank" rel="noopener noreferrer">View posting</a>' : '') + '</div></div>';
+          }).join('') + '</div>'
+          + '<p class="goal-detail" style="margin-top:12px;">These are ranges employers advertise, not what people are actually paid. Companies that publish pay skew toward US and European tech firms, and where a posting lists several locations the first range stated is used.</p>';
+        out.innerHTML = html;
+      } catch (e) {
+        showToast((e && e.message) || 'Salary lookup failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    }
+
     /* ── Init ── */
     document.addEventListener('DOMContentLoaded', function() {
       // Create default radar chart
@@ -6249,6 +6606,37 @@
       if (clDl) clDl.addEventListener('click', downloadCoverLetter);
       var ipGen = document.getElementById('ipGenerate');
       if (ipGen) ipGen.addEventListener('click', generateInterviewPrep);
+      var rmGen = document.getElementById('rmGenerate');
+      if (rmGen) rmGen.addEventListener('click', generateRoadmap);
+      var salGen = document.getElementById('salGenerate');
+      if (salGen) salGen.addEventListener('click', lookupSalaries);
+      var salQ = document.getElementById('salQuery');
+      if (salQ) salQ.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') lookupSalaries(); });
+      var ipTabs = document.getElementById('ipKindTabs');
+      if (ipTabs) ipTabs.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-kind]');
+        if (b) setInterviewKind(b.getAttribute('data-kind'));
+      });
+      var ipList = document.getElementById('ipQuestions');
+      if (ipList) {
+        ipList.addEventListener('click', function (ev) {
+          var p = ev.target.closest('[data-ip-practice]');
+          if (p) {
+            var box = document.getElementById('ipPractice' + p.getAttribute('data-ip-practice'));
+            if (box) box.style.display = box.style.display === 'none' ? 'flex' : 'none';
+            return;
+          }
+          var sc = ev.target.closest('[data-ip-score]');
+          if (sc) scoreInterviewAnswer(parseInt(sc.getAttribute('data-ip-score'), 10), sc);
+        });
+        ipList.addEventListener('input', function (ev) {
+          var m = /^ipAnswer(\d+)$/.exec(ev.target.id || '');
+          if (!m) return;
+          var n = (ev.target.value || '').trim().split(/\s+/).filter(Boolean).length;
+          var w = document.getElementById('ipWords' + m[1]);
+          if (w) w.textContent = n + ' words' + (n < 25 ? ' \u00b7 at least 25' : '');
+        });
+      }
 
       // Deep-link: open a specific section on load (e.g. /app/jobs -> jobsearch).
       var initSec = "{{ initial_section|default('') }}";

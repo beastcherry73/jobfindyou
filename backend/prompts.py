@@ -240,6 +240,110 @@ CANDIDATE RESUME:
 {resume_text}
 """
 
+# Behavioural interview questions (STAR), grounded in the resume the same way.
+BEHAVIORAL_PREP_PROMPT = """You are preparing a candidate for the BEHAVIOURAL part of an interview for the role below, honestly.
+
+Produce behavioural questions ("Tell me about a time...") that this role's competencies call for, and for each, which real situation from THIS candidate's resume would make the best STAR story.
+
+HARD RULES
+- Ground every "your_evidence" in a situation actually written in the resume: name the role/project it comes from and what they did there.
+- If nothing in the resume fits a question, set "your_evidence" to "" and put the competency in gaps_to_prepare. Never invent a situation, conflict, team, result or number.
+- 6 to 8 questions, covering the competencies the job description stresses (ownership, conflict, ambiguity, failure, influence, delivery under pressure...).
+
+Return ONLY a valid JSON object:
+{{"role_summary": "one line on which competencies this interview is really probing",
+  "questions": [{{"question": "Tell me about a time...", "why": "the competency it tests", "your_evidence": "the resume situation to build the STAR answer on, or an empty string"}}],
+  "gaps_to_prepare": ["competencies the resume gives no story for"],
+  "questions_to_ask": ["two or three specific questions for the candidate to ask them"]}}
+
+JOB DESCRIPTION:
+{job_description}
+
+CANDIDATE RESUME:
+{resume_text}
+"""
+
+# System design prompts sized to the role. Non-technical roles are told so,
+# rather than handed design questions that will never be asked.
+SYSTEM_DESIGN_PREP_PROMPT = """You are preparing a candidate for the SYSTEM DESIGN part of an interview for the role below, honestly.
+
+First decide whether this role would realistically include a system design round (software, data, infrastructure, ML or similar engineering roles). If it would not, return {{"applicable": false, "role_summary": "one line saying why", "questions": [], "gaps_to_prepare": [], "questions_to_ask": []}}.
+
+Otherwise produce 4 to 6 design prompts pitched at the seniority the job description implies, drawn from the domain the job description describes. For each, point at anything in THIS candidate's resume that gives them real material (systems they built, scale they handled, tools they used).
+
+HARD RULES
+- Ground every "your_evidence" in something actually written in the resume. If nothing relevant is there, set it to "" and put the topic in gaps_to_prepare. Never invent systems, scale or numbers.
+- In "why", name the 2-3 concepts the prompt is really testing (e.g. idempotency, partitioning, caching, consistency trade-offs).
+
+Return ONLY a valid JSON object:
+{{"applicable": true,
+  "role_summary": "one line on what the design round will probe",
+  "questions": [{{"question": "Design ...", "why": "concepts it tests", "your_evidence": "resume material to draw on, or an empty string"}}],
+  "gaps_to_prepare": ["design topics the resume gives no material for"],
+  "questions_to_ask": ["two or three specific questions about their architecture to ask them"]}}
+
+JOB DESCRIPTION:
+{job_description}
+
+CANDIDATE RESUME:
+{resume_text}
+"""
+
+# Rubric feedback on a practice answer. Every judgement must quote the answer
+# itself; the server discards any quote that is not actually in the answer.
+INTERVIEW_SCORE_PROMPT = """You are an interview coach giving rubric feedback on ONE practice answer. Be specific and fair; do not flatter.
+
+QUESTION TYPE: {kind_label}
+RUBRIC (score each 1-5): {rubric}
+
+HARD RULES
+- Judge ONLY what the answer actually says. For each rubric item, "quote" must be copied VERBATIM from the answer (a short phrase, max 25 words), or "" if the answer has nothing for that item.
+- "fix" is one concrete improvement for that item. Never supply facts, numbers, employers or results the candidate did not give; where a number would help, say "add the number (e.g. [X%])".
+- 1 = missing, 2 = weak, 3 = adequate, 4 = strong, 5 = excellent. An item with an empty quote scores 1 or 2.
+- "stronger_outline" is a 3-5 step structure for a better answer built ONLY from what the candidate said plus bracketed placeholders for anything missing.
+
+Return ONLY a valid JSON object:
+{{"rubric": [{{"item": "rubric item name", "score": 1, "quote": "verbatim phrase or empty", "fix": "one concrete improvement"}}],
+  "strengths": ["what genuinely works, max 3"],
+  "biggest_gap": "the single most important thing to fix",
+  "stronger_outline": ["step 1", "step 2", "step 3"]}}
+
+QUESTION:
+{question}
+
+JOB CONTEXT (may be empty):
+{job_description}
+
+CANDIDATE'S ANSWER:
+{answer}
+"""
+
+# A learning roadmap toward one target role, from the candidate's real resume.
+# Projects exist to PROVE a missing skill; nothing claims results in advance.
+ROADMAP_PROMPT = """You are a practical career coach. Build a learning roadmap that takes THIS candidate from their current resume to being a credible applicant for the target role.
+
+TARGET ROLE: {target_role}
+TIME AVAILABLE: {weeks} weeks at about {hours} hours per week
+
+HARD RULES
+- "strengths" are skills the resume ALREADY shows. For each, "evidence" must be copied verbatim from the resume (a short phrase). Never list a strength the resume does not show.
+- Phases cover the GAPS between the resume and the target role, most important first. Their weeks must add up to {weeks}. Scope each phase to the hours available -- do not plan more than fits.
+- Every phase ends with ONE portfolio project that proves its skills: something concrete to build, sized to the phase.
+- "resume_line" is how the finished project could be described on a resume, with bracketed placeholders ([N users], [X ms]) for any result -- never a made-up number or outcome.
+- Name concepts and skills to learn, not specific courses, websites or URLs.
+
+Return ONLY a valid JSON object:
+{{"summary": "one or two sentences on the gap between this resume and the target role",
+  "strengths": [{{"skill": "...", "evidence": "verbatim phrase from the resume"}}],
+  "phases": [{{"title": "...", "weeks": 2, "skills": ["..."], "learn": ["concept or topic"],
+               "project": {{"name": "...", "build": "what to build, concretely", "proves": ["skill"], "resume_line": "..."}},
+               "done_when": "an observable checkpoint"}}],
+  "interview_topics": ["what interviews for this role will probe once the roadmap is done"]}}
+
+CANDIDATE RESUME:
+{resume_text}
+"""
+
 DIFF_PROMPT = """You are a professional resume editor. You have just rewritten a resume. Your task is to produce a JSON list of the specific improvements you made.
 
 Return ONLY a JSON array of strings. Each string should be one clear, specific improvement that was made.

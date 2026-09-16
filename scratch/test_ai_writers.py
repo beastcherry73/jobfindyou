@@ -173,6 +173,88 @@ with mock.patch.object(gen_mod, "call_groq", side_effect=gen_mod.GroqError("down
     r = client.post("/api/interview/prep", json={"description": JD})
 check("provider down -> 502", r.status_code == 502, r.status_code)
 
+# ── Interview modes + answer scoring ───────────────────────────────────────
+print("\n[2b] Behavioural / system design modes and answer scoring")
+for kind, prompt_name in [("behavioral", "BEHAVIORAL_PREP_PROMPT"), ("system_design", "SYSTEM_DESIGN_PREP_PROMPT")]:
+    seen = {}
+
+    def fake(prompt, **kw):
+        seen["prompt"] = prompt
+        return FAKE_PREP
+    with mock.patch.object(gen_mod, "call_groq", side_effect=fake):
+        r = client.post("/api/interview/prep", json={"description": JD, "kind": kind})
+        d = r.get_json() or {}
+    marker = "BEHAVIOURAL" if kind == "behavioral" else "SYSTEM DESIGN"
+    check(f"{kind}: routed to its own prompt", marker in seen.get("prompt", ""), prompt_name)
+    check(f"{kind}: same grounded response shape", r.status_code == 200 and d.get("kind") == kind
+          and d["questions"][1]["your_evidence"] == "", r.status_code)
+
+r = client.post("/api/interview/prep", json={"description": JD, "kind": "astrology"})
+check("unknown interview kind -> 400", r.status_code == 400, r.status_code)
+
+with mock.patch.object(gen_mod, "call_groq", return_value=json.dumps(
+        {"applicable": False, "role_summary": "A sales role has no design round."})):
+    r = client.post("/api/interview/prep", json={"description": "Account Executive, SMB", "kind": "system_design"})
+    d = r.get_json() or {}
+check("system design for a non-technical role says so instead of inventing questions",
+      r.status_code == 200 and d.get("applicable") is False and d.get("questions") == [], d)
+
+ANSWER = ("At my last internship the nightly report job kept timing out. I was asked to fix it before "
+          "the quarter close. I profiled the queries, found a missing index on the orders table, added it "
+          "and rewrote the join, and the job went from forty minutes to six minutes.")
+FAKE_SCORE = json.dumps({
+    "rubric": [
+        {"item": "Situation", "score": 4, "quote": "the nightly report job kept timing out", "fix": "Say what the report was for."},
+        {"item": "Action (what YOU did)", "score": 5, "quote": "I profiled the queries, found a missing index", "fix": "Mention how you verified it."},
+        {"item": "Result, ideally measured", "score": 5, "quote": "saved the company two million dollars", "fix": "Keep the number."},
+        {"item": "Reflection", "score": 4, "quote": "", "fix": "Add what you would do differently."},
+    ],
+    "strengths": ["Clear action"], "biggest_gap": "No reflection.",
+    "stronger_outline": ["Situation", "Task", "Action", "Result [X%]"],
+})
+
+r = client.post("/api/interview/score", json={"question": "Tell me about a time...", "answer": "Too short."})
+check("answer under 25 words -> 400", r.status_code == 400, r.status_code)
+r = client.post("/api/interview/score", json={"answer": ANSWER})
+check("no question -> 400", r.status_code == 400, r.status_code)
+
+with mock.patch.object(gen_mod, "call_groq", return_value=FAKE_SCORE):
+    r = client.post("/api/interview/score", json={"kind": "behavioral", "question": "Tell me about a time you fixed something slow.", "answer": ANSWER})
+    d = r.get_json() or {}
+rub = {x["item"]: x for x in d.get("rubric") or []}
+check("scores a real answer", r.status_code == 200 and len(rub) == 4, r.status_code)
+check("a genuine quote survives", rub.get("Situation", {}).get("quote") == "the nightly report job kept timing out")
+check("quote matching ignores case and punctuation",
+      gen_mod._quote_in_answer("I PROFILED the queries; found a missing index", ANSWER))
+check("a quote the candidate never said is REMOVED",
+      rub.get("Result, ideally measured", {}).get("quote") == "", rub.get("Result, ideally measured"))
+check("...and its score is capped at 2", rub.get("Result, ideally measured", {}).get("score") == 2)
+check("an item with no quote is capped at 2 too", rub.get("Reflection", {}).get("score") == 2)
+check("removed quotes are counted for the UI", d.get("unverified_quotes_removed") == 1, d.get("unverified_quotes_removed"))
+check("overall is the rubric mean, not a model-picked number",
+      d.get("overall") == round((4 + 5 + 2 + 2) / 4, 1), d.get("overall"))
+
+with mock.patch.object(gen_mod, "call_groq", return_value=json.dumps({"rubric": []})):
+    r = client.post("/api/interview/score", json={"question": "Q?", "answer": ANSWER})
+check("empty rubric -> 502", r.status_code == 502, r.status_code)
+with mock.patch.object(gen_mod, "call_groq", side_effect=gen_mod.GroqError("down")):
+    r = client.post("/api/interview/score", json={"question": "Q?", "answer": ANSWER})
+check("scoring provider down -> 502", r.status_code == 502, r.status_code)
+
+for name in ["BEHAVIORAL_PREP_PROMPT", "SYSTEM_DESIGN_PREP_PROMPT"]:
+    try:
+        getattr(gen_mod, name).format(job_description="x", resume_text="y")
+        ok = True
+    except Exception as e:
+        ok = e
+    check(f"{name} formats without brace errors", ok is True, ok)
+try:
+    gen_mod.INTERVIEW_SCORE_PROMPT.format(kind_label="a", rubric="b", question="c", answer="d", job_description="e")
+    ok = True
+except Exception as e:
+    ok = e
+check("INTERVIEW_SCORE_PROMPT formats without brace errors", ok is True, ok)
+
 # ── Wiring in the UI ────────────────────────────────────────────────────────
 print("\n[3] UI wiring")
 ws = open(os.path.join(ROOT, "templates", "workspace.html"), encoding="utf-8").read()
@@ -188,6 +270,12 @@ check("handlers are bound in JS, not inline attributes",
 check("placeholders surfaced to the user", "Fill these in before sending" in ws)
 check("uncovered questions are labelled honestly",
       "Nothing on your resume answers this yet" in ws)
+check("interview mode tabs exist for all three kinds",
+      all(f'data-kind="{k}"' in ws for k in ["role", "behavioral", "system_design"]))
+check("practice + scoring are bound by delegation, not inline handlers",
+      "data-ip-score" in ws and "scoreInterviewAnswer" in ws and 'onclick="scoreInterviewAnswer' not in ws)
+check("feedback is labelled as coaching, not a hiring prediction",
+      "not a prediction of any hiring decision" in ws)
 check("match evidence renders both hit and miss lists",
       "renderMatchEvidence" in js and "On your resume" in js and "Not found" in js)
 check("match evidence tells the user where it came from",
@@ -222,6 +310,21 @@ if "--live" in sys.argv:
         print("      Q:", safe(q["question"][:110]))
         print("         evidence:", safe((q["your_evidence"] or "(none - flagged as a gap)")[:110]))
     print("      gaps:", safe(d.get("gaps_to_prepare")))
+    t0 = time.time()
+    r = client.post("/api/interview/score", json={"kind": "behavioral", "question": "Tell me about a time you fixed something slow.", "answer": ANSWER, "description": JD})
+    d = r.get_json() or {}
+    check("real answer scoring returns 200", r.status_code == 200, f"{r.status_code} {time.time()-t0:.1f}s")
+    check("every surviving quote is really in the answer",
+          all(gen_mod._quote_in_answer(x["quote"], ANSWER) for x in d.get("rubric") or [] if x["quote"]))
+    print("      overall:", d.get("overall"), "| removed quotes:", d.get("unverified_quotes_removed"))
+    for x in (d.get("rubric") or [])[:5]:
+        print("      ", safe(x["item"]), x["score"], "|", safe(x["quote"][:60]))
+    t0 = time.time()
+    r = client.post("/api/interview/prep", json={"description": JD, "kind": "system_design"})
+    d = r.get_json() or {}
+    check("real system design prep returns 200", r.status_code == 200, f"{r.status_code} {time.time()-t0:.1f}s")
+    for q in (d.get("questions") or [])[:2]:
+        print("      Q:", safe(q["question"][:110]))
 
 print("\n" + "=" * 50)
 print(f"  RESULT: {PASSED} passed, {FAILED} failed")
