@@ -55,10 +55,57 @@ def test_resolvers():
         ("San Mateo, CA United States", "us"), ("Spain (Remote)", "es"),
         ("United States - Remote", "us"), ("Dubai", "ae"), ("TLV", "il"),
         ("New York City", "us"), ("Houston, TX", "us"), ("Vilnius", "lt"),
+        # Real production strings that had no country before 2026-09-13.
+        ("USA.VA.Reston", "us"), ("POL-Gdynia-3T Office Park, Tower C", "pl"),
+        ("HSINCHU", "tw"), ("TARRYTOWN (+1 more)", "us"), ("Almaty, Kazakhstan", "kz"),
+        ("Illinois Remote Work, More...", "us"), ("Telangana", "in"),
+        ("GBR - Remote", "gb"), ("Washington, D.C.", "us"), ("Malmö", "se"),
+        ("DLF CYBERCITY 12B", "in"), ("Remote - SF Bay Area", "us"),
+        ("Pune, IN", "in"), ("Chennai, TN", "in"), ("Cambridge, MA", "us"),
     ]:
         check("country %-30r -> %s" % (text, expect), rc(text) == expect, repr(rc(text)))
-    for text in ["Distributed", "Home based - Worldwide", "Europe", "Remote", ""]:
+    for text in ["Distributed", "Home based - Worldwide", "Europe", "Remote", "",
+                 "Hybrid", "Lincoln", "Durham", "Remote Nationwide", "EMEA Remote"]:
         check("country %-30r -> '' (honest unknown)" % text, rc(text) == "")
+
+    # Pay ranges read from description text. Every string is real production
+    # wording (2026-09-15); the None cases are the traps -- deal sizes,
+    # benefits, hourly and monthly figures, a typo'd number, a bare "$" in
+    # Canada, and "Remote" containing the letters o-t-e.
+    sf = ats.salary_from_text
+    for text, cc, expect in [
+        ("The reasonably estimated yearly salary for this role at Datadog is: $95,000 \u2014 $127,000 USD About", "us", (95000, 127000, "USD")),
+        ("Pay Range $212,000 \u2014 $265,000 USD Reasonable Accommodations", "", (212000, 265000, "USD")),
+        ("The annual base salary for this role is between $123,000 USD and $172,000 USD, plus", "", (123000, 172000, "USD")),
+        ("expected base pay range for this position in the Seattle area is $149,240 - $192,000/year.", "us", (149240, 192000, "USD")),
+        ("Our cash compensation range for this role is $177,000/yr to $218,000/yr in Denver", "us", (177000, 218000, "USD")),
+        ("Zone A $230,000 \u2014 $368,000 USD Zone B $200,000 \u2014 $320,000 USD", "us", (230000, 368000, "USD")),
+        ("The base salary range for this role in Canada is $186,000 - $236,000 CAD.", "ca", (186000, 236000, "CAD")),
+        ("London/UK Remote | \U0001F4B0\u00a359,500 - \u00a380,500 + Incentive", "gb", (59500, 80500, "GBP")),
+        ("Estimated annual salary is between \u20ac178,000 - \u20ac244,000. This role", "fr", (178000, 244000, "EUR")),
+        ("on target incentive pay) for this role is \u20ac155,000 - 165,000 per year.", "de", (155000, 165000, "EUR")),
+        ("Compensation: 12-18 LPA based on experience", "in", (1200000, 1800000, "INR")),
+        ("manage high-touch accounts ranging from $25k to $300k , serving", "us", None),
+        ("Fertility HRA (up to $10,000 per year) - Parental leave", "us", None),
+        ("customer base spending $50k to $200k annually", "us", None),
+        ("Remote position. Deals from $50k to $200k", "us", None),
+        ("Annual base salary range (excluding equity and bonus): $152,405 \u2014 $179,300,152 USD", "us", None),
+        ("CAN base pay range per year: $153,000 - $213,000 This posting", "ca", None),
+        ("Compensation: OTE \u00a37,000-\u00a310,000+/month Build a Business", "gb", None),
+        ("The salary range for this role is $25 - $35 per hour", "us", None),
+        ("Annualized Total Payment Value (TPV) of over INR 150 lakh crore", "in", None),
+    ]:
+        got = sf(text, cc)
+        check("pay %-44r -> %s" % (text[:44], expect), (got[:3] if got else None) == expect, repr(got))
+    check("pay display is formatted with its currency",
+          sf("Pay Range $212,000 \u2014 $265,000 USD", "us")[3] == "$212,000\u2013$265,000 USD")
+    job = ats.normalize_board("greenhouse", "x", "X", [{
+        "id": 1, "title": "Engineer", "absolute_url": "https://example.com/1",
+        "location": {"name": "Seattle, WA"},
+        "content": "&lt;p&gt;The salary range for this role is $140,000 - $190,000 USD per year.&lt;/p&gt;"}])[0]
+    check("normalize_board fills salary from the description when the API gives none",
+          (job["salary_min"], job["salary_max"], job["salary_currency"]) == (140000, 190000, "USD"),
+          (job["salary_min"], job["salary_max"], job["salary_currency"]))
 
     et = ats.normalize_employment_type
     for text, expect in [("Permanent, Full-Time", "Full-time"), ("On-Roll", "Full-time"),

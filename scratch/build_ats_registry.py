@@ -136,6 +136,12 @@ def sweep_company(item):
     session = requests.Session()
     hits = []
     for platform in PLATFORMS:
+        # Workday is discovered separately: its token is "tenant|pod|site",
+        # and the site name is chosen by the employer, so it cannot be
+        # derived from a company name the way the other platforms' slugs can.
+        # See scratch/discover_workday_tenants.py.
+        if platform == "workday":
+            continue
         for token in slugs_for(name, platform):
             got = test(platform, token, name, session)
             if got:

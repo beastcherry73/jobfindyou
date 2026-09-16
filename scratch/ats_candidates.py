@@ -425,6 +425,119 @@ CANDIDATES = {
         "Flapkap",
         "Sprints",
     ],
+
+    # ── Wave 3 (2026-09-12) ────────────────────────────────────────────────
+    # Added to push the registry toward ~1,000 confirmed boards, because the
+    # 3-day freshness target scales with the number of employer boards, not
+    # with anything clever in the sync. Candidates only: every one is tested
+    # against each platform's public endpoint and kept only if a live board
+    # answers, so a name that uses Workday, Naukri or nothing at all simply
+    # drops out here.
+    "in_wave3": [
+        "Jar", "Fi Money", "Navi", "Kissht", "MoneyTap", "KreditBee", "Axio",
+        "Fibe", "Indifi", "Lendingkart", "Aye Finance", "Vivriti Capital",
+        "Yubi", "Rupifi", "FlexiLoans", "Progcap", "Arya ag", "DeHaat",
+        "Ninjacart", "WayCool", "Absolute", "Stellapps", "Cropin", "Fasal",
+        "Jai Kisan", "Samunnati", "Captain Fresh", "Licious Foods", "FreshToHome",
+        "Zappfresh", "EatFit", "Rebel Foods", "Wow Momo", "Chaayos", "Third Wave Coffee",
+        "Blue Tokai", "Sleepy Owl", "Bira 91", "Paper Boat", "Wingreens",
+        "The Whole Truth", "Yoga Bar", "Open Secret", "SuperBottoms", "Bombay Shaving Company",
+        "Beardo", "The Man Company", "Plum Goodness", "Minimalist", "Dot and Key",
+        "Sugar Cosmetics", "Wow Skin Science", "mCaffeine", "Bewakoof", "Snitch",
+        "Souled Store", "Newme", "Libas", "Fabindia", "Chumbak", "Wakefit",
+        "Sleepy Cat", "Pepperfry", "HomeLane", "Livspace", "Interior Company",
+        "Nobroker", "Square Yards", "Housing com", "PropTiger", "Stanza Living",
+        "Colive", "Zolo Stays", "Isprava", "Smartworks", "Awfis", "Innov8",
+        "Simpl", "LazyPay", "Mobikwik", "Freecharge", "Payed", "Decentro",
+        "Karza", "IDfy", "Bureau ID", "HyperVerge", "Vernacular ai", "Skit ai",
+        "Haptik", "Verloop", "Locobuzz", "Konnect Insights", "Sprinklr India",
+        "Wittypen", "Pepper Content", "Animaker", "Rocketium", "Toch ai",
+        "Chalo", "Shuttl", "Vogo", "Bounce", "Yulu", "Ather Energy", "Ultraviolette",
+        "River Mobility", "Simple Energy", "Euler Motors", "Altigreen", "BluSmart",
+        "Zypp Electric", "Battery Smart", "Log9 Materials", "Ola Cell", "Exponent Energy",
+        "Agnikul", "Skyroot", "Pixxel", "Dhruva Space", "Bellatrix Aerospace",
+        "Digantara", "Astrogate", "TakeMe2Space", "GalaxEye", "SatSure",
+        "Wobot ai", "Detect Technologies", "Flytbase", "Ideaforge", "Garuda Aerospace",
+        "Aereo", "Asteria Aerospace", "Newspace Research", "Tonbo Imaging",
+        "Ather Labs", "Sarvam AI", "Krutrim", "CoRover", "Gnani ai", "Gan ai",
+        "Neysa", "E2E Networks", "Jarvislabs", "Nodeshift", "Tessell", "Hasura India",
+        "Atlan", "Devtron", "Facets cloud", "Qure ai", "SigTuple", "Niramai",
+        "Tricog", "Dozee", "Pristyn Care", "MediBuddy", "Practo", "Docsapp",
+        "HealthifyMe", "Cure Foods", "Truemeds", "PharmEasy", "Tata 1mg",
+        "Onsurity", "Plum Insurance", "Ditto Insurance", "Turtlemint", "RenewBuy",
+        "InsuranceDekho", "Acko", "Digit Insurance", "Kenko", "Even Healthcare",
+    ],
+    "saas_wave3": [
+        "Zluri", "Spendflo", "Nanonets", "Docsumo", "Infrrd", "Klippa",
+        "Rossum", "Instabase", "Hyperscience", "Eigen Technologies", "Sensible",
+        "Airbyte", "Fivetran", "Census", "Hightouch", "Rudderstack", "Segment",
+        "Amplitude", "Mixpanel", "Heap", "PostHog", "June so", "Statsig",
+        "LaunchDarkly", "Split io", "Optimizely", "Unleash", "Flagsmith",
+        "Temporal", "Inngest", "Trigger dev", "Zeplo", "Hookdeck", "Svix",
+        "Knock", "Courier", "Novu", "OneSignal", "Customer io", "Braze",
+        "Iterable", "Klaviyo", "Attentive", "Postscript", "Emotive",
+        "Vercel", "Netlify", "Render", "Railway", "Fly io", "Northflank",
+        "Porter Run", "Qovery", "Koyeb", "Zeabur", "Cyclic", "Deno",
+        "Bun", "Turso", "Neon", "PlanetScale", "Xata", "Supabase", "Nhost",
+        "Appwrite", "Convex", "InstantDB", "ElectricSQL", "PowerSync",
+        "Clerk", "WorkOS", "Stytch", "Descope", "Kinde", "SuperTokens",
+        "Ory", "FusionAuth", "Frontegg", "PropelAuth", "Corbado",
+        "Retool", "Appsmith", "Budibase", "ToolJet", "Superblocks", "Internal io",
+        "Baserow", "NocoDB", "Rowy", "Glide", "Softr", "Stacker", "Noloco",
+        "Linear", "Height", "Shortcut", "Teamwork", "Nifty", "Hive", "Wrike",
+        "Coda", "Almanac", "Slite", "Nuclino", "Tettra", "Guru", "Slab",
+        "Mem", "Reflect", "Tana", "Capacities", "Anytype", "Logseq",
+        "Grain", "Fathom Video", "Fireflies ai", "Otter ai", "Read ai", "Avoma",
+        "Gong", "Chorus ai", "Clari", "Outreach", "Salesloft", "Apollo io",
+        "Clay", "Instantly ai", "Smartlead", "Lemlist", "Reply io", "Woodpecker",
+        "Warmly", "Common Room", "Pocus", "Endgame", "Correlated",
+    ],
+    "global_wave3": [
+        "Stripe", "Plaid", "Modern Treasury", "Mercury", "Ramp", "Brex",
+        "Navan", "Rippling", "Deel", "Remote com", "Oyster HR", "Velocity Global",
+        "Papaya Global", "Multiplier", "Skuad", "Globalization Partners",
+        "Gusto", "Justworks", "TriNet", "Zenefits", "Lattice", "Culture Amp",
+        "15Five", "Leapsome", "Personio", "HiBob", "Factorial", "Charlie HR",
+        "Greenhouse Software", "Lever Inc", "Ashby HQ", "Gem com", "Dover",
+        "Findem", "Eightfold ai", "SeekOut", "hireEZ", "Paradox ai", "Sense HQ",
+        "Checkr", "Certn", "Vetty", "Veremark", "Zinc Work",
+        "Figma", "Canva", "Framer", "Webflow", "Spline", "Rive", "Lottie Files",
+        "Miro", "Mural", "FigJam", "Whimsical", "Excalidraw", "tldraw",
+        "Notion", "Airtable", "Monday com", "ClickUp", "Asana", "Basecamp",
+        "Zapier", "Make com", "Workato", "Tray io", "Pipedream", "n8n",
+        "Datadog", "Grafana Labs", "New Relic", "Honeycomb io", "Lightstep",
+        "Sentry", "Rollbar", "Bugsnag", "Better Stack", "Checkly", "Cronitor",
+        "HashiCorp", "Pulumi", "Spacelift", "env0", "Terrateam", "Digger",
+        "Snyk", "Semgrep", "Socket dev", "Chainguard", "Sysdig", "Aqua Security",
+        "Wiz io", "Orca Security", "Lacework", "Panther Labs", "Material Security",
+        "1Password", "Bitwarden", "Dashlane", "Keeper Security", "Tailscale",
+        "Cloudflare", "Fastly", "Bunny net", "Akamai", "Imperva",
+        "Anthropic", "OpenAI", "Cohere", "Mistral AI", "Hugging Face",
+        "Replicate", "Together AI", "Modal Labs", "Baseten", "Anyscale",
+        "Weights and Biases", "Comet ML", "Neptune ai", "LangChain", "LlamaIndex",
+        "Pinecone", "Weaviate", "Qdrant", "Chroma", "Milvus", "Vespa ai",
+        "Scale AI", "Labelbox", "Snorkel AI", "Surge AI", "Toloka",
+        "Perplexity AI", "You com", "Glean", "Dust tt", "Sana Labs",
+        "ElevenLabs", "AssemblyAI", "Deepgram", "Speechmatics", "Rev com",
+        "Runway ML", "Pika Labs", "Luma AI", "Synthesia", "HeyGen", "Descript",
+    ],
+    "eu_wave3": [
+        "Klarna", "Revolut", "Monzo", "Starling Bank", "N26", "Bunq", "Qonto",
+        "Pleo", "Spendesk", "Payhawk", "Moss", "Soldo", "Wise", "Remitly",
+        "SumUp", "Mollie", "Adyen", "Checkout com", "Rapyd", "Paddle",
+        "GoCardless", "TrueLayer", "Tink", "Yapily", "Salt Edge",
+        "Spotify", "SoundCloud", "Bolt", "FREE NOW", "Cabify", "Getir",
+        "Gorillas", "Flink", "Picnic", "HelloFresh", "Gousto", "Marley Spoon",
+        "Trade Republic", "Scalable Capital", "eToro", "Nutmeg", "Moneyfarm",
+        "Zalando", "About You", "Vinted", "Depop", "Back Market", "Wallapop",
+        "Contentful", "Storyblok", "Sanity io", "Strapi", "Prismic", "Hygraph",
+        "Algolia", "Meilisearch", "Typesense", "Elastic", "OpenSearch",
+        "Doctolib", "Alan", "Ada Health", "Kry", "Babylon Health", "Oura",
+        "Ledger", "Bitpanda", "Coinbase", "Kraken", "Gemini Trust",
+        "UiPath", "Celonis", "Signavio", "Camunda", "Kong Inc", "Tyk io",
+        "Sonar Source", "JetBrains", "Gitpod", "Coder com", "Sourcegraph",
+        "Grammarly", "DeepL", "Lokalise", "Phrase", "Crowdin", "Smartling",
+    ],
 }
 
 
@@ -432,7 +545,7 @@ def all_names():
     """[(display_name, region), ...] with duplicates removed, order preserved."""
     seen, out = set(), []
     for region, names in CANDIDATES.items():
-        region = region.replace('_expanded', '')
+        region = region.replace('_expanded', '').replace('_wave3', '')
         for n in names:
             k = n.lower()
             if k not in seen:

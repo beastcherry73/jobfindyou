@@ -155,6 +155,19 @@ _COUNTRY_ALIASES = {
     "lebanon": "lb", "peru": "pe", "uruguay": "uy", "costa rica": "cr",
     "panama": "pa", "china": "cn", "taiwan": "tw", "cambodia": "kh",
     "myanmar": "mm", "nepal": "np", "mauritius": "mu",
+    # Added 2026-09-13 from the production rows that still had no country.
+    "kazakhstan": "kz", "armenia": "am", "azerbaijan": "az", "albania": "al",
+    "north macedonia": "mk", "macedonia": "mk", "kosovo": "xk",
+    "senegal": "sn", "ivory coast": "ci", "macau": "mo", "macao": "mo",
+    "prc": "cn", "d.c.": "us",
+    # ISO3 codes, as whole tokens only. Codes that are also ordinary words or
+    # address abbreviations ("col", "bel", "ita", "esp", "arg") are left out
+    # on purpose.
+    "gbr": "gb", "pol": "pl", "mex": "mx", "bra": "br", "fra": "fr",
+    "nld": "nl", "chn": "cn", "jpn": "jp", "phl": "ph", "idn": "id",
+    "mys": "my", "tha": "th", "vnm": "vn", "sau": "sa", "cze": "cz",
+    "cyp": "cy", "swe": "se", "irl": "ie", "prt": "pt", "rou": "ro",
+    "hun": "hu", "zaf": "za", "kor": "kr", "twn": "tw", "hkg": "hk",
 }
 
 # Major hiring hubs in the regions this layer is weighted toward. Used only
@@ -228,12 +241,92 @@ _CITY_COUNTRY = {
     "pasig": "ph", "mandaluyong": "ph", "penang": "my", "johor": "my",
     "selangor": "my", "petaling jaya": "my", "yogyakarta": "id",
     "tangerang": "id", "medan": "id", "bekasi": "id", "chiang mai": "th",
+    # Added 2026-09-13 from the production rows that still had no country.
+    # Only names that are unambiguous in practice: "Lincoln", "Durham",
+    # "Kingston", "Waterford" and "Northampton" each exist in two hiring
+    # countries, so they stay unresolved rather than guessed.
+    "raleigh": "us", "tarrytown": "us", "sleepy hollow": "us",
+    "essex junction": "us", "parsippany": "us", "kalamazoo": "us",
+    "east hanover": "us", "rensselaer": "us", "indianapolis": "us",
+    "reston": "us", "dallas": "us", "frisco": "us", "boise": "us",
+    "jacksonville": "us", "lake mary": "us", "whippany": "us",
+    "cincinnati": "us", "culver city": "us", "louisville": "us",
+    "miami beach": "us", "miami": "us", "overland park": "us",
+    "kansas city": "us", "burbank": "us", "nashville": "us", "cary": "us",
+    "spokane": "us", "spokane valley": "us", "ashburn": "us",
+    "elk grove village": "us", "richardson": "us", "woodland hills": "us",
+    "las vegas": "us", "tysons": "us", "grand prairie": "us",
+    "sarasota": "us", "upper providence": "us", "philadelphia": "us",
+    "irvine": "us", "san bernardino": "us", "woodinville": "us",
+    "houston": "us", "phoenix": "us", "detroit": "us", "minneapolis": "us",
+    "charlotte": "us", "orlando": "us", "tampa": "us", "baltimore": "us",
+    "sacramento": "us", "milwaukee": "us", "waukesha": "us",
+    "bay area": "us", "sf bay area": "us",
+    "canary wharf": "gb", "knutsford": "gb", "leavesden": "gb",
+    "uxbridge": "gb", "slough": "gb", "weybridge": "gb",
+    "milton keynes": "gb",
+    "malmö": "se", "piracicaba": "br", "recife": "br",
+    "sao jose dos campos": "br", "barueri": "br", "varginha": "br",
+    "almaty": "kz", "astana": "kz", "shymkent": "kz",
+    "hsinchu": "tw", "zhubei": "tw", "kaohsiung": "tw",
+    "suresnes": "fr", "nantes": "fr", "gennevilliers": "fr",
+    "issy-les-moulineaux": "fr", "vitry-sur-seine": "fr", "gentilly": "fr",
+    "saint herblain": "fr", "yerevan": "am", "catania": "it", "roma": "it",
+    "milano": "it", "torre annunziata": "it", "campobasso": "it",
+    "florence": "it", "suzhou": "cn", "nanjing": "cn", "guangzhou": "cn",
+    "chengdu": "cn", "kronberg": "de", "hannover": "de", "dresden": "de",
+    "münster": "de", "osnabrück": "de", "gratkorn": "at", "schaftenau": "at",
+    "skopje": "mk", "pristina": "xk", "tirana": "al", "baku": "az",
+    "dakar": "sn", "abidjan": "ci", "ebene": "mu", "mengeš": "si",
+    "brussel": "be", "bruxelles": "be", "gent": "be", "puurs": "be",
+    "nijmegen": "nl", "burnaby": "ca", "kanata": "ca", "fort mcmurray": "ca",
+    "midrand": "za", "heredia": "cr", "apodaca": "mx", "huixquilucan": "mx",
+    "ocoyoacac": "mx", "cdmx": "mx", "ciudad del carmen": "mx",
+    "limerick": "ie", "lodz": "pl", "łódź": "pl", "warszawa": "pl",
+    "gdynia": "pl", "brno": "cz", "pilsen": "cz", "nagoya": "jp",
+    "yokohama": "jp", "bintulu": "my", "miri": "my", "binh duong": "vn",
+    "mapletree business city": "sg", "neuquen": "ar", "barrancabermeja": "co",
+    "dlf cybercity": "in", "agartala": "in", "bhiwandi": "in",
+    # Indian states: a listing that names only the state is still India.
+    "telangana": "in", "maharashtra": "in", "karnataka": "in",
+    "tamil nadu": "in", "kerala": "in", "west bengal": "in",
+    "madhya pradesh": "in", "uttar pradesh": "in", "bihar": "in",
+    "gujarat": "in", "rajasthan": "in", "haryana": "in", "odisha": "in",
+    "assam": "in", "andhra pradesh": "in",
 }
 
 # Longest-first so "united states" is tested before shorter fragments and
 # "san francisco bay area" before "san francisco".
 _ALIASES_BY_LENGTH = sorted(_COUNTRY_ALIASES, key=len, reverse=True)
 _CITIES_BY_LENGTH = sorted(_CITY_COUNTRY, key=len, reverse=True)
+
+
+def _names_re(names):
+    """One compiled whole-word alternation, longest names first.
+
+    These lookups used to run one re.search per name, building the pattern with
+    re.escape on every call: ~430,000 searches per 1,000 Workday jobs, which
+    profiled at 5 ms a job and most of a sync cycle's CPU (2026-09-15). One
+    alternation scans the string once.
+    """
+    return re.compile(r"\b(" + "|".join(re.escape(n) for n in names) + r")\b")
+
+
+def _longest_name(pattern, text):
+    """The longest name the pattern finds anywhere in text, or ''.
+
+    Same answer the per-name loop gave: it tried names longest-first and
+    returned the first one present, i.e. the longest one present.
+    """
+    best = ""
+    for m in pattern.finditer(text):
+        if len(m.group(1)) > len(best):
+            best = m.group(1)
+    return best
+
+
+_MULTIWORD_ALIAS_RE = _names_re([a for a in _ALIASES_BY_LENGTH if " " in a])
+_CITY_RE = _names_re(_CITIES_BY_LENGTH)
 
 _US_STATES = {
     "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga", "hi", "id",
@@ -277,12 +370,16 @@ def resolve_country(location, explicit=None):
     text = _WS_RE.sub(" ", text)
 
     # Multi-word country names, longest first ("united states" before "states").
-    for alias in _ALIASES_BY_LENGTH:
-        if " " in alias and re.search(r"\b" + re.escape(alias) + r"\b", text):
-            return _COUNTRY_ALIASES[alias]
+    alias = _longest_name(_MULTIWORD_ALIAS_RE, text)
+    if alias:
+        return _COUNTRY_ALIASES[alias]
 
     segments = [seg.strip() for seg in text.split(",") if seg.strip()]
     tokens = [t for seg in segments for t in re.findall(r"[a-z.]+", seg)]
+    # "USA.VA.Reston" arrives as one dotted token; its pieces are tokens too.
+    tokens += [piece for t in tokens
+               if t.count(".") >= 2 and not re.fullmatch(r"(?:[a-z]\.)+", t)
+               for piece in t.split(".") if piece]
 
     # Single-word country names and bare codes, as WHOLE tokens -- substring
     # matching here would read "us" out of "Houston".
@@ -326,7 +423,15 @@ def resolve_country(location, explicit=None):
             return "us"
 
     # Fall back to a known hiring hub ("Bengaluru", "New York City", "Dubai").
-    return city_code
+    if city_code:
+        return city_code
+
+    # A full US state name anywhere, as whole words: "Illinois Remote Work,
+    # More...". "georgia" is excluded (also a country), and the names list
+    # has no bare "washington" / "new york" (also streets and a city).
+    if _longest_name(_US_STATE_NAME_RE, text):
+        return "us"
+    return ""
 
 
 # Indian state / union-territory codes, for the tie-break above. India is the
@@ -353,14 +458,17 @@ _US_STATE_NAMES = {
 }
 
 
+# "georgia" is left out of the anywhere-in-the-string fallback: it is also a
+# country, and "Tbilisi, Georgia" must not become the US.
+_US_STATE_NAME_RE = _names_re(sorted(_US_STATE_NAMES - {"georgia"}, key=len, reverse=True))
+
+
 def _known_city_country(segments, text):
     for seg in segments:
         if seg in _CITY_COUNTRY:
             return _CITY_COUNTRY[seg]
-    for city in _CITIES_BY_LENGTH:
-        if re.search(r"\b" + re.escape(city) + r"\b", text):
-            return _CITY_COUNTRY[city]
-    return ""
+    city = _longest_name(_CITY_RE, text)
+    return _CITY_COUNTRY[city] if city else ""
 
 
 def resolve_work_mode(location, remote_flag=None, hybrid_flag=None, workplace=None):
@@ -484,6 +592,89 @@ def _money(value):
     except (ValueError, TypeError):
         return None
     return n if n > 0 else None
+
+
+# ── Pay ranges stated in the description ───────────────────────────────────
+# Only ~1% of rows carry a structured salary, but US pay-transparency laws put
+# a range in the TEXT of thousands of postings ("Annual Salary Range $212,000
+# — $265,000 USD"). That is the employer's own published figure, so it is
+# worth reading -- carefully, because the same descriptions are full of other
+# money: "accounts from $25k to $300k", "Fertility HRA up to $10,000",
+# "Annualized TPV of INR 150 lakh crore". The guards, in order:
+#   * a pay word must sit just before the range (salary, pay, compensation,
+#     OTE, base...), so deal sizes and benefits never match;
+#   * hourly / monthly / weekly figures are skipped, not annualised by guess;
+#   * both ends must be plausible annual pay and max >= min;
+#   * a bare "$" is USD only on a US listing -- Canadian postings write "$"
+#     too -- unless the text names the currency.
+# Where a posting lists several zones, the FIRST range is taken (usually the
+# highest-cost location). Measured against production text 2026-09-15.
+_PAY_WORD_RE = re.compile(
+    r"(salary|\bpay\b|compensation|\bbase (?:salary|pay|compensation)|\bwages?\b|\bote\b|"
+    r"on[- ]target|earnings|remuneration|\bctc\b|\bzone [a-z0-9]+|\U0001F4B0)", re.I)
+_AMOUNT = r"(\d{1,3}(?:,\d{3})+|\d{2,3}(?:\.\d+)?\s?[kK]|\d{5,7})"
+_RANGE_RE = re.compile(
+    r"(?P<sym>[$£€])\s?" + _AMOUNT + r"(?:\s?(?:/yr|/year|USD|CAD|AUD|SGD|GBP|EUR))?"
+    r"\s*(?:-|–|—|to|and)\s*(?P<sym2>[$£€])?\s?" + _AMOUNT.replace("(", "(?P<hi>", 1)
+    + r"(?P<tail>[^.;|\n]{0,24})")
+_LPA_RE = re.compile(r"(\d{1,2}(?:\.\d)?)\s*(?:-|–|to)\s*(\d{1,2}(?:\.\d)?)\s*(?:lpa|lakhs?(?: per annum)?)\b", re.I)
+_NOT_ANNUAL_RE = re.compile(r"(/\s?h(?:ou)?r|per hour|hourly|an hour|/\s?mo|per month|monthly|/\s?wk|per week|weekly|per day|daily)", re.I)
+_CURRENCY_CODE_RE = re.compile(r"\b(USD|CAD|AUD|SGD|NZD|GBP|EUR|CHF)\b")
+_SYMBOL = {"USD": "$", "CAD": "C$", "AUD": "A$", "SGD": "S$", "NZD": "NZ$", "GBP": "£",
+           "EUR": "€", "CHF": "CHF ", "INR": "₹"}
+_ANNUAL_BOUNDS = {"INR": (150_000, 50_000_000)}
+
+
+def _pay_amount(text):
+    t = text.replace(",", "").replace(" ", "")
+    if t[-1:] in "kK":
+        return int(float(t[:-1]) * 1000)
+    return int(float(t))
+
+
+def salary_from_text(text, country_code=""):
+    """(min, max, currency, display) from a posting's own words, or None."""
+    if not text:
+        return None
+    for m in _RANGE_RE.finditer(text):
+        before = text[max(0, m.start() - 110):m.start()]
+        if not _PAY_WORD_RE.search(before):
+            continue
+        tail = m.group("tail") or ""
+        if _NOT_ANNUAL_RE.search(text[m.start():m.end()] + tail):
+            continue
+        sym = m.group("sym")
+        try:
+            lo, hi = _pay_amount(m.group(2)), _pay_amount(m.group("hi"))
+        except (ValueError, TypeError):
+            continue
+        code_match = _CURRENCY_CODE_RE.search(text[m.start():m.end() + 6])
+        if sym == "£":
+            currency = "GBP"
+        elif sym == "€":
+            currency = "EUR"
+        elif code_match:
+            currency = code_match.group(1)
+        elif (country_code or "").lower() == "us":
+            currency = "USD"
+        else:
+            continue                  # a bare "$" outside the US is ambiguous
+        floor, ceiling = _ANNUAL_BOUNDS.get(currency, (15_000, 1_500_000))
+        if not (floor <= lo <= ceiling and floor <= hi <= ceiling and hi >= lo and hi <= lo * 4):
+            continue
+        return lo, hi, currency, _format_pay(lo, hi, currency)
+    for m in _LPA_RE.finditer(text):
+        lo, hi = int(float(m.group(1)) * 100_000), int(float(m.group(2)) * 100_000)
+        if 150_000 <= lo <= hi <= 50_000_000 and hi <= lo * 4:
+            return lo, hi, "INR", _format_pay(lo, hi, "INR")
+    return None
+
+
+def _format_pay(lo, hi, currency):
+    sym = _SYMBOL.get(currency, currency + " ")
+    if currency == "INR":
+        return f"₹{lo / 100_000:g}–{hi / 100_000:g} LPA"
+    return f"{sym}{lo:,}–{sym}{hi:,} {currency}".replace("CHF CHF", "CHF")
 
 
 # ── Platform adapters ──────────────────────────────────────────────────────
@@ -818,10 +1009,9 @@ def _wd_country(*texts):
     read as bare country codes. A known hiring-hub city is the stronger signal.
     """
     for t in texts:
-        low = (t or "").lower()
-        for city in _CITIES_BY_LENGTH:
-            if re.search(r"\b" + re.escape(city) + r"\b", low):
-                return _CITY_COUNTRY[city]
+        city = _longest_name(_CITY_RE, (t or "").lower())
+        if city:
+            return _CITY_COUNTRY[city]
     for t in texts:
         code = resolve_country(t)
         if code:
@@ -1057,6 +1247,10 @@ def normalize_board(platform, token, company, rows):
             continue
         if not job.get("title") or not job.get("apply_url"):
             continue
+        if not job.get("salary_min") and not job.get("salary_max"):
+            pay = salary_from_text(job.get("description") or "", job.get("country_code") or "")
+            if pay:
+                job["salary_min"], job["salary_max"], job["salary_currency"], job["salary_text"] = pay
         job["platform"] = platform
         job["company_token"] = token
         job["publisher"] = spec["label"]
@@ -1320,11 +1514,25 @@ def prune_unregistered():
 #
 # So the worst an anonymous caller can cause is roughly one full refresh every
 # few hours -- the schedule we want anyway. A correct CRON_SECRET bypasses it.
-SYNC_DEFAULT_BUDGET = 50.0
+#
+# The budget was 50s against a 60s function ceiling. Vercel Hobby functions
+# actually run up to 300s (vercel.json now asks for it), and a 50s slice of a
+# ~5 minute cycle meant a full refresh needed six cron runs -- which is why
+# production completed roughly ONE cycle a day and only ~120 postings carried
+# the last 24 hours' date.
+#
+# The ceiling on how often we refresh is not the function limit, it is the
+# Hobby plan's 4 active-CPU-hours a month. A full cycle costs ~153s of CPU
+# measured outside the database (fetch, JSON parse, normalise; the writes are
+# Postgres's work, not ours). Two cycles a day is ~2.5 CPU-hours a month and
+# leaves room for real traffic; three would not. _UNAUTH_CYCLE_REST is what
+# enforces that, so raise the budget and the rest together or the plan pauses
+# the site -- there is no card on file to absorb an overage.
+SYNC_DEFAULT_BUDGET = 240.0
 _SYNC_STARTED_KEY = "ats_sync_last_started"
 _SYNC_COMPLETED_KEY = "ats_sync_last_completed"
-_UNAUTH_MIN_GAP = 240
-_UNAUTH_CYCLE_REST = 3 * 3600
+_UNAUTH_MIN_GAP = 600
+_UNAUTH_CYCLE_REST = 12 * 3600
 
 
 def _meta_get(db, key):
@@ -1903,6 +2111,111 @@ def to_unified(row):
             (row.get("platform"), row.get("company_token")), ""),
         "company_logo": company_logo_url(_domain_index().get(
             (row.get("platform"), row.get("company_token")), "")),
+    }
+
+
+# ── Salary benchmarks ──────────────────────────────────────────────────────
+# Built ONLY from ranges employers published in their own live postings --
+# no survey, no licensed dataset, no model estimate. That makes the numbers
+# narrower than a salary site's, and honest about it: every response carries
+# its sample size, and below SALARY_MIN_SAMPLE postings it declines to
+# summarise at all rather than print a median of three.
+SALARY_MIN_SAMPLE = 5
+_SALARY_ROW_CAP = 3000
+
+
+def _percentile(sorted_values, q):
+    """Linear-interpolated percentile of an already-sorted list."""
+    if not sorted_values:
+        return None
+    pos = (len(sorted_values) - 1) * q
+    lo = int(pos)
+    hi = min(lo + 1, len(sorted_values) - 1)
+    return sorted_values[lo] + (sorted_values[hi] - sorted_values[lo]) * (pos - lo)
+
+
+def salary_benchmark(what, country=""):
+    """Pay published in live postings whose TITLE contains every word of `what`."""
+    from backend.database import get_db
+
+    terms = [t for t in _like_terms(what) if len(t) > 1][:6]
+    if not terms:
+        return {"error": "Enter a job title."}
+    where = ["salary_min IS NOT NULL", "salary_max IS NOT NULL"]
+    params = []
+    for t in terms:
+        for ch in ("\\", "%", "_"):
+            t = t.replace(ch, "\\" + ch)
+        where.append("LOWER(title) LIKE ? ESCAPE '\\'")
+        params.append(f"%{t}%")
+    country = (country or "").strip().lower()[:2]
+    if country:
+        where.append("country_code = ?")
+        params.append(country)
+    sql = ("SELECT title, company, location, country_code, experience_level, salary_min, "
+           "salary_max, salary_currency, apply_url, posted_at FROM ats_jobs WHERE "
+           + " AND ".join(where)
+           + " ORDER BY (posted_at IS NULL), posted_at DESC LIMIT " + str(_SALARY_ROW_CAP))
+    with get_db() as db:
+        rows = [dict(r) for r in db.execute(sql, params).fetchall()]
+
+    # Everything below runs with the shared connection lock released.
+    # One data point per company per distinct range, whatever the title. Keyed
+    # on title as well, a single employer skewed a whole market: Anthropic's
+    # five London "Enterprise Account Executive - <industry>" roles, all
+    # £280-330k, made the UK account-executive median £305,000 (2026-09-15).
+    seen, postings = set(), []
+    for r in rows:
+        key = (r["company"], r["salary_min"], r["salary_max"])
+        if key in seen:
+            continue
+        seen.add(key)
+        postings.append(r)
+
+    by_currency = {}
+    for r in postings:
+        by_currency.setdefault((r.get("salary_currency") or "").upper(), []).append(r)
+    by_currency.pop("", None)
+    if not by_currency:
+        return {"query": what, "country": country, "enough": False, "sample": 0,
+                "currencies": {}, "postings": []}
+    currency = max(by_currency, key=lambda c: len(by_currency[c]))
+    chosen = by_currency[currency]
+    mids = sorted((r["salary_min"] + r["salary_max"]) / 2 for r in chosen)
+    mins = sorted(r["salary_min"] for r in chosen)
+    maxs = sorted(r["salary_max"] for r in chosen)
+    enough = len(chosen) >= SALARY_MIN_SAMPLE
+
+    levels = []
+    for level in EXPERIENCE_LEVELS:
+        group = sorted((r["salary_min"] + r["salary_max"]) / 2
+                       for r in chosen if r.get("experience_level") == level)
+        if len(group) >= 3:
+            levels.append({"level": level, "sample": len(group),
+                           "median": int(round(_percentile(group, 0.5)))})
+
+    def _rnd(v):
+        return int(round(v)) if v is not None else None
+
+    return {
+        "query": what,
+        "country": country,
+        "currency": currency,
+        "enough": enough,
+        "sample": len(chosen),
+        "p25": _rnd(_percentile(mids, 0.25)) if enough else None,
+        "median": _rnd(_percentile(mids, 0.5)) if enough else None,
+        "p75": _rnd(_percentile(mids, 0.75)) if enough else None,
+        "typical_low": _rnd(_percentile(mins, 0.5)) if enough else None,
+        "typical_high": _rnd(_percentile(maxs, 0.5)) if enough else None,
+        "by_level": levels if enough else [],
+        "companies": len({r["company"] for r in chosen}),
+        "currencies": {c: len(v) for c, v in by_currency.items()},
+        "postings": [{
+            "title": r["title"], "company": r["company"], "location": r["location"],
+            "salary_min": r["salary_min"], "salary_max": r["salary_max"],
+            "apply_url": r["apply_url"],
+        } for r in chosen[:8]],
     }
 
 

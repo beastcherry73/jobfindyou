@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-08-26T09:52:46.133507+00:00",
+ "generated_at": "2026-09-13T12:55:21.974638+00:00",
  "note": "Every entry was verified live against the platform's public, keyless board endpoint by scratch/build_ats_registry.py.",
  "companies": [
   {
@@ -3374,8 +3374,1526 @@
    "region": "global",
    "domain": "sony.com",
    "sample_url": "https://sonyglobal.wd1.myworkdayjobs.com/en-US/SonyGlobalCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "unisys|wd5|External",
+   "company": "Unisys",
+   "candidate": "Unisys",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://unisys.wd5.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "cisco|wd5|Cisco_Careers",
+   "company": "Cisco",
+   "candidate": "Cisco",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://cisco.wd5.myworkdayjobs.com/en-US/Cisco_Careers"
+  },
+  {
+   "platform": "workday",
+   "token": "carrier|wd5|jobs",
+   "company": "Carrier",
+   "candidate": "Carrier",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://carrier.wd5.myworkdayjobs.com/en-US/jobs"
+  },
+  {
+   "platform": "workday",
+   "token": "cat|wd5|CaterpillarCareers",
+   "company": "Caterpillar",
+   "candidate": "Caterpillar",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://cat.wd5.myworkdayjobs.com/en-US/CaterpillarCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "santander|wd3|SantanderCareers",
+   "company": "Santander",
+   "candidate": "Santander",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://santander.wd3.myworkdayjobs.com/en-US/SantanderCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "bmo|wd3|External",
+   "company": "BMO",
+   "candidate": "BMO",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://bmo.wd3.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "aviva|wd1|External",
+   "company": "Aviva",
+   "candidate": "Aviva",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://aviva.wd1.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "prudential|wd3|prudential",
+   "company": "Prudential",
+   "candidate": "Prudential",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://prudential.wd3.myworkdayjobs.com/en-US/prudential"
+  },
+  {
+   "platform": "workday",
+   "token": "aig|wd1|aig",
+   "company": "AIG",
+   "candidate": "AIG",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://aig.wd1.myworkdayjobs.com/en-US/aig"
+  },
+  {
+   "platform": "workday",
+   "token": "blackstone|wd1|Blackstone_Careers",
+   "company": "Blackstone",
+   "candidate": "Blackstone",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://blackstone.wd1.myworkdayjobs.com/en-US/Blackstone_Careers"
+  },
+  {
+   "platform": "workday",
+   "token": "carlyle|wd1|carlyle",
+   "company": "Carlyle",
+   "candidate": "Carlyle",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://carlyle.wd1.myworkdayjobs.com/en-US/carlyle"
+  },
+  {
+   "platform": "workday",
+   "token": "brookfield|wd5|brookfield",
+   "company": "Brookfield",
+   "candidate": "Brookfield",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://brookfield.wd5.myworkdayjobs.com/en-US/brookfield"
+  },
+  {
+   "platform": "workday",
+   "token": "teleperformance|wd1|teleperformance",
+   "company": "Teleperformance",
+   "candidate": "Teleperformance",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://teleperformance.wd1.myworkdayjobs.com/en-US/teleperformance"
+  },
+  {
+   "platform": "workday",
+   "token": "chipotle|wd5|ChipotleCareers",
+   "company": "Chipotle",
+   "candidate": "Chipotle",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://chipotle.wd5.myworkdayjobs.com/en-US/ChipotleCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "mars|wd3|External",
+   "company": "Mars",
+   "candidate": "Mars",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://mars.wd3.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "baxter|wd1|baxter",
+   "company": "Baxter",
+   "candidate": "Baxter",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://baxter.wd1.myworkdayjobs.com/en-US/baxter"
+  },
+  {
+   "platform": "workday",
+   "token": "stryker|wd1|StrykerCareers",
+   "company": "Stryker",
+   "candidate": "Stryker",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://stryker.wd1.myworkdayjobs.com/en-US/StrykerCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "agilent|wd5|Agilent_Careers",
+   "company": "Agilent",
+   "candidate": "Agilent",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://agilent.wd5.myworkdayjobs.com/en-US/Agilent_Careers"
+  },
+  {
+   "platform": "workday",
+   "token": "dow|wd1|ExternalCareers",
+   "company": "Dow",
+   "candidate": "Dow",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://dow.wd1.myworkdayjobs.com/en-US/ExternalCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "dupont|wd5|jobs",
+   "company": "DuPont",
+   "candidate": "DuPont",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://dupont.wd5.myworkdayjobs.com/en-US/jobs"
+  },
+  {
+   "platform": "workday",
+   "token": "ppg|wd5|PPG_Careers",
+   "company": "PPG",
+   "candidate": "PPG",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://ppg.wd5.myworkdayjobs.com/en-US/PPG_Careers"
+  },
+  {
+   "platform": "workday",
+   "token": "albemarle|wd5|External",
+   "company": "Albemarle",
+   "candidate": "Albemarle",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://albemarle.wd5.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "alcoa|wd5|Careers",
+   "company": "Alcoa",
+   "candidate": "Alcoa",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://alcoa.wd5.myworkdayjobs.com/en-US/Careers"
+  },
+  {
+   "platform": "workday",
+   "token": "kantar|wd3|kantar",
+   "company": "Kantar",
+   "candidate": "Kantar",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://kantar.wd3.myworkdayjobs.com/en-US/kantar"
+  },
+  {
+   "platform": "workday",
+   "token": "thomsonreuters|wd5|External_Career_Site",
+   "company": "Thomson Reuters",
+   "candidate": "Thomson Reuters",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://thomsonreuters.wd5.myworkdayjobs.com/en-US/External_Career_Site"
+  },
+  {
+   "platform": "workday",
+   "token": "relx|wd3|relx",
+   "company": "RELX",
+   "candidate": "RELX",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://relx.wd3.myworkdayjobs.com/en-US/relx"
+  },
+  {
+   "platform": "workday",
+   "token": "marvell|wd1|MarvellCareers",
+   "company": "Marvell",
+   "candidate": "Marvell",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://marvell.wd1.myworkdayjobs.com/en-US/MarvellCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "visa|wd5|visa",
+   "company": "Visa",
+   "candidate": "Visa",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://visa.wd5.myworkdayjobs.com/en-US/visa"
+  },
+  {
+   "platform": "workday",
+   "token": "csl|wd1|CSL_External",
+   "company": "CSL",
+   "candidate": "CSL",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://csl.wd1.myworkdayjobs.com/en-US/CSL_External"
+  },
+  {
+   "platform": "workday",
+   "token": "edwards|wd5|edwardscareers",
+   "company": "Edwards Lifesciences",
+   "candidate": "Edwards Lifesciences",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://edwards.wd5.myworkdayjobs.com/en-US/edwardscareers"
+  },
+  {
+   "platform": "workday",
+   "token": "ecolab|wd1|Ecolab_External",
+   "company": "Ecolab",
+   "candidate": "Ecolab",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://ecolab.wd1.myworkdayjobs.com/en-US/Ecolab_External"
+  },
+  {
+   "platform": "workday",
+   "token": "equifax|wd5|External",
+   "company": "Equifax",
+   "candidate": "Equifax",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://equifax.wd5.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "transunion|wd5|transunion",
+   "company": "TransUnion",
+   "candidate": "TransUnion",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://transunion.wd5.myworkdayjobs.com/en-US/transunion"
+  },
+  {
+   "platform": "workday",
+   "token": "fico|wd1|External",
+   "company": "FICO",
+   "candidate": "FICO",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://fico.wd1.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "morningstar|wd5|morningstar",
+   "company": "Morningstar",
+   "candidate": "Morningstar",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://morningstar.wd5.myworkdayjobs.com/en-US/morningstar"
+  },
+  {
+   "platform": "workday",
+   "token": "smithnephew|wd5|External",
+   "company": "Smith and Nephew",
+   "candidate": "Smith and Nephew",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://smithnephew.wd5.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "conmed|wd5|conmed",
+   "company": "CONMED",
+   "candidate": "CONMED",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://conmed.wd5.myworkdayjobs.com/en-US/conmed"
+  },
+  {
+   "platform": "workday",
+   "token": "dexcom|wd1|dexcom",
+   "company": "Dexcom",
+   "candidate": "Dexcom",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://dexcom.wd1.myworkdayjobs.com/en-US/dexcom"
+  },
+  {
+   "platform": "workday",
+   "token": "insulet|wd5|InsuletCareers",
+   "company": "Insulet",
+   "candidate": "Insulet",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://insulet.wd5.myworkdayjobs.com/en-US/InsuletCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "catalent|wd1|External",
+   "company": "Catalent",
+   "candidate": "Catalent",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://catalent.wd1.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "iqvia|wd1|iqvia",
+   "company": "IQVIA",
+   "candidate": "IQVIA",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://iqvia.wd1.myworkdayjobs.com/en-US/iqvia"
+  },
+  {
+   "platform": "workday",
+   "token": "fortrea|wd1|fortrea",
+   "company": "Fortrea",
+   "candidate": "Fortrea",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://fortrea.wd1.myworkdayjobs.com/en-US/fortrea"
+  },
+  {
+   "platform": "workday",
+   "token": "labcorp|wd1|External",
+   "company": "Labcorp",
+   "candidate": "Labcorp",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://labcorp.wd1.myworkdayjobs.com/en-US/External"
+  },
+  {
+   "platform": "workday",
+   "token": "henryschein|wd1|External_Careers",
+   "company": "Henry Schein",
+   "candidate": "Henry Schein",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://henryschein.wd1.myworkdayjobs.com/en-US/External_Careers"
+  },
+  {
+   "platform": "workday",
+   "token": "centene|wd5|Centene_External",
+   "company": "Centene",
+   "candidate": "Centene",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://centene.wd5.myworkdayjobs.com/en-US/Centene_External"
+  },
+  {
+   "platform": "workday",
+   "token": "cigna|wd5|CignaCareers",
+   "company": "Cigna",
+   "candidate": "Cigna",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://cigna.wd5.myworkdayjobs.com/en-US/CignaCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "neogen|wd5|NeogenCareers",
+   "company": "Neogen",
+   "candidate": "Neogen",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://neogen.wd5.myworkdayjobs.com/en-US/NeogenCareers"
+  },
+  {
+   "platform": "workday",
+   "token": "corteva|wd5|corteva",
+   "company": "Corteva",
+   "candidate": "Corteva",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://corteva.wd5.myworkdayjobs.com/en-US/corteva"
+  },
+  {
+   "platform": "workday",
+   "token": "mosaic|wd5|mosaic",
+   "company": "Mosaic",
+   "candidate": "Mosaic",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://mosaic.wd5.myworkdayjobs.com/en-US/mosaic"
+  },
+  {
+   "platform": "workday",
+   "token": "kimberlyclark|wd1|Global",
+   "company": "Kimberly Clark",
+   "candidate": "Kimberly Clark",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://kimberlyclark.wd1.myworkdayjobs.com/en-US/Global"
+  },
+  {
+   "platform": "workday",
+   "token": "masco|wd1|masco",
+   "company": "Masco",
+   "candidate": "Masco",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://masco.wd1.myworkdayjobs.com/en-US/masco"
+  },
+  {
+   "platform": "workday",
+   "token": "vfc|wd5|vfc_careers",
+   "company": "VF Corporation",
+   "candidate": "VF Corporation",
+   "region": "global",
+   "domain": "",
+   "sample_url": "https://vfc.wd5.myworkdayjobs.com/en-US/vfc_careers"
+  },
+  {
+   "platform": "workable",
+   "token": "tiger-analytics",
+   "jobs": 223,
+   "owner_name": "Tiger Analytics Inc.",
+   "sample_url": "https://apply.workable.com/j/39D0D71D6D",
+   "company": "Tiger Analytics Inc.",
+   "region": "in",
+   "candidate": "Tiger Analytics"
+  },
+  {
+   "platform": "workable",
+   "token": "ajaib",
+   "jobs": 29,
+   "owner_name": "Ajaib",
+   "sample_url": "https://apply.workable.com/j/7BFBDAA8F2",
+   "company": "Ajaib",
+   "region": "sea",
+   "candidate": "Ajaib"
+  },
+  {
+   "platform": "workable",
+   "token": "salla",
+   "jobs": 29,
+   "owner_name": "Salla",
+   "sample_url": "https://apply.workable.com/j/B656D5F0F3",
+   "company": "Salla",
+   "region": "me",
+   "candidate": "Salla"
+  },
+  {
+   "platform": "lever",
+   "token": "fly",
+   "jobs": 1,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/fly/b2916342-3e0d-4838-8e6e-40c1ca832f78",
+   "company": "Fly",
+   "region": "remote",
+   "candidate": "Fly"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "payoneer",
+   "jobs": 122,
+   "owner_name": "Payoneer",
+   "sample_url": "https://www.payoneer.com/careers/position/8000355/?gh_jid=8000355",
+   "company": "Payoneer",
+   "region": "global",
+   "candidate": "Payoneer"
+  },
+  {
+   "platform": "recruitee",
+   "token": "illa",
+   "jobs": 4,
+   "owner_name": "ILLA",
+   "sample_url": "https://careers.illa.com.eg/o/business-development-executive/c/new",
+   "company": "ILLA",
+   "region": "me",
+   "candidate": "Illa"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "CaptainFresh",
+   "jobs": 4,
+   "owner_name": "Captain Fresh",
+   "sample_url": "https://jobs.smartrecruiters.com/CaptainFresh/743999748402544",
+   "company": "Captain Fresh",
+   "region": "in",
+   "candidate": "Captain Fresh"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Nobroker",
+   "jobs": 1,
+   "owner_name": "NoBroker",
+   "sample_url": "https://jobs.smartrecruiters.com/Nobroker/743999795886254",
+   "company": "NoBroker",
+   "region": "in",
+   "candidate": "Nobroker"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "SquareYards2",
+   "jobs": 1,
+   "owner_name": "square yards",
+   "sample_url": "https://jobs.smartrecruiters.com/SquareYards2/743999793691381",
+   "company": "square yards",
+   "region": "in",
+   "candidate": "Square Yards"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Freecharge",
+   "jobs": 1,
+   "owner_name": "Freecharge",
+   "sample_url": "https://jobs.smartrecruiters.com/Freecharge/743999677062274",
+   "company": "Freecharge",
+   "region": "in",
+   "candidate": "Freecharge"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "VernacularAi",
+   "jobs": 3,
+   "owner_name": "Vernacular.ai",
+   "sample_url": "https://jobs.smartrecruiters.com/VernacularAi/743999896686578",
+   "company": "Vernacular.ai",
+   "region": "in",
+   "candidate": "Vernacular ai"
+  },
+  {
+   "platform": "lever",
+   "token": "vogo",
+   "jobs": 3,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/vogo/27101be3-4122-4390-8e85-05b6d4a75ada",
+   "company": "Vogo",
+   "region": "in",
+   "candidate": "Vogo"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Kenko1",
+   "jobs": 1,
+   "owner_name": "kenko",
+   "sample_url": "https://jobs.smartrecruiters.com/Kenko1/743999807378684",
+   "company": "kenko",
+   "region": "in",
+   "candidate": "Kenko"
+  },
+  {
+   "platform": "lever",
+   "token": "docsumo",
+   "jobs": 7,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/docsumo/b168e984-eddb-47c4-b94f-69083939e769",
+   "company": "Docsumo",
+   "region": "saas",
+   "candidate": "Docsumo"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "instabase",
+   "jobs": 4,
+   "owner_name": "Instabase",
+   "sample_url": "https://job-boards.greenhouse.io/instabase/jobs/8731142002",
+   "company": "Instabase",
+   "region": "saas",
+   "candidate": "Instabase"
+  },
+  {
+   "platform": "ashby",
+   "token": "hyperscience",
+   "jobs": 1,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/hyperscience/a4a1e8fe-4ae5-4d3e-a2d1-ef4496fad5e4",
+   "company": "Hyperscience",
+   "region": "saas",
+   "candidate": "Hyperscience"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "launchdarkly",
+   "jobs": 54,
+   "owner_name": "LaunchDarkly",
+   "sample_url": "https://job-boards.greenhouse.io/launchdarkly/jobs/7989233003",
+   "company": "LaunchDarkly",
+   "region": "saas",
+   "candidate": "LaunchDarkly"
+  },
+  {
+   "platform": "ashby",
+   "token": "inngest",
+   "jobs": 1,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/inngest/ae72d036-b98b-4abb-8454-a687870cf0ca",
+   "company": "Inngest",
+   "region": "saas",
+   "candidate": "Inngest"
+  },
+  {
+   "platform": "ashby",
+   "token": "triggerdev",
+   "jobs": 1,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/triggerdev/13151df0-d386-4121-8231-543e31439407",
+   "company": "Trigger dev",
+   "region": "saas",
+   "candidate": "Trigger dev"
+  },
+  {
+   "platform": "ashby",
+   "token": "svix",
+   "jobs": 3,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/svix/84e99bc9-5cd6-4af0-af84-17d63a7494b5",
+   "company": "Svix",
+   "region": "saas",
+   "candidate": "Svix"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "knock",
+   "jobs": 2,
+   "owner_name": "Knock",
+   "sample_url": "https://job-boards.greenhouse.io/knock/jobs/6174396004",
+   "company": "Knock",
+   "region": "saas",
+   "candidate": "Knock"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "klaviyo",
+   "jobs": 137,
+   "owner_name": "Klaviyo",
+   "sample_url": "https://www.klaviyo.com/careers/jobs/7981630003?gh_jid=7981630003",
+   "company": "Klaviyo",
+   "region": "saas",
+   "candidate": "Klaviyo"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "attentive",
+   "jobs": 34,
+   "owner_name": "Attentive",
+   "sample_url": "https://job-boards.greenhouse.io/attentive/jobs/4188022009",
+   "company": "Attentive",
+   "region": "saas",
+   "candidate": "Attentive"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "postscript",
+   "jobs": 5,
+   "owner_name": "Postscript",
+   "sample_url": "https://job-boards.greenhouse.io/postscript/jobs/8610790002",
+   "company": "Postscript",
+   "region": "saas",
+   "candidate": "Postscript"
+  },
+  {
+   "platform": "lever",
+   "token": "neon",
+   "jobs": 11,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/neon/026b745f-bc2a-4661-8d4e-a711987c2f0b",
+   "company": "Neon",
+   "region": "saas",
+   "candidate": "Neon"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "planetscale",
+   "jobs": 13,
+   "owner_name": "PlanetScale",
+   "sample_url": "https://job-boards.greenhouse.io/planetscale/jobs/4396843009",
+   "company": "PlanetScale",
+   "region": "saas",
+   "candidate": "PlanetScale"
+  },
+  {
+   "platform": "ashby",
+   "token": "clerk",
+   "jobs": 1,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/clerk/22d74851-1657-4dc6-9a44-b81900131486",
+   "company": "Clerk",
+   "region": "saas",
+   "candidate": "Clerk"
+  },
+  {
+   "platform": "ashby",
+   "token": "workos",
+   "jobs": 28,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/workos/cff5a16f-fd1c-4b64-9b66-8a8321122375",
+   "company": "WorkOS",
+   "region": "saas",
+   "candidate": "WorkOS"
+  },
+  {
+   "platform": "ashby",
+   "token": "stytch",
+   "jobs": 5,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/stytch/da3bf988-95dd-4061-9554-7ef939bac074",
+   "company": "Stytch",
+   "region": "saas",
+   "candidate": "Stytch"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "descope",
+   "jobs": 7,
+   "owner_name": "Descope",
+   "sample_url": "https://job-boards.greenhouse.io/descope/jobs/4399414009",
+   "company": "Descope",
+   "region": "saas",
+   "candidate": "Descope"
+  },
+  {
+   "platform": "ashby",
+   "token": "stacker",
+   "jobs": 3,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/stacker/72cd427b-f958-4ef4-a90b-9c7527a309b7",
+   "company": "Stacker",
+   "region": "saas",
+   "candidate": "Stacker"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "hive",
+   "jobs": 11,
+   "owner_name": "Hive",
+   "sample_url": "https://job-boards.eu.greenhouse.io/hive/jobs/4940573101",
+   "company": "Hive",
+   "region": "saas",
+   "candidate": "Hive"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "wrike",
+   "jobs": 56,
+   "owner_name": "Wrike",
+   "sample_url": "https://job-boards.greenhouse.io/wrike/jobs/4664056005",
+   "company": "Wrike",
+   "region": "saas",
+   "candidate": "Wrike"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "otterai",
+   "jobs": 20,
+   "owner_name": "Otter.ai",
+   "sample_url": "https://otter.ai/careers?gh_jid=7856415003",
+   "company": "Otter.ai",
+   "region": "saas",
+   "candidate": "Otter ai"
+  },
+  {
+   "platform": "ashby",
+   "token": "read-ai",
+   "jobs": 14,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/read-ai/8e779fd6-c0f7-43bc-9a55-82dd5ff06597",
+   "company": "Read ai",
+   "region": "saas",
+   "candidate": "Read ai"
+  },
+  {
+   "platform": "lever",
+   "token": "outreach",
+   "jobs": 30,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/outreach/5becd4e1-3474-4f36-b5dd-4b2cd0eb1179",
+   "company": "Outreach",
+   "region": "saas",
+   "candidate": "Outreach"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "salesloft",
+   "jobs": 31,
+   "owner_name": "Salesloft",
+   "sample_url": "https://www.salesloft.com/company/careers?gh_jid=8003853",
+   "company": "Salesloft",
+   "region": "saas",
+   "candidate": "Salesloft"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "apolloio",
+   "jobs": 47,
+   "owner_name": "Apollo.io",
+   "sample_url": "https://job-boards.greenhouse.io/apolloio/jobs/6146432004",
+   "company": "Apollo.io",
+   "region": "saas",
+   "candidate": "Apollo io"
+  },
+  {
+   "platform": "ashby",
+   "token": "lemlist",
+   "jobs": 11,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/lemlist/a2a219b4-85de-47bc-8cbe-6f551f66e65c",
+   "company": "Lemlist",
+   "region": "saas",
+   "candidate": "Lemlist"
+  },
+  {
+   "platform": "ashby",
+   "token": "endgame",
+   "jobs": 4,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/endgame/295da6d5-bd4f-46dc-a028-ac8feee67343",
+   "company": "Endgame",
+   "region": "saas",
+   "candidate": "Endgame"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "remotecom",
+   "jobs": 175,
+   "owner_name": "Remote",
+   "sample_url": "https://job-boards.greenhouse.io/remotecom/jobs/5922893003",
+   "company": "Remote",
+   "region": "global",
+   "candidate": "Remote com"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "justworks",
+   "jobs": 95,
+   "owner_name": "Justworks",
+   "sample_url": "https://boards.greenhouse.io/justworks/jobs/7966605?gh_jid=7966605",
+   "company": "Justworks",
+   "region": "global",
+   "candidate": "Justworks"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Zenefits",
+   "jobs": 3,
+   "owner_name": "Zenefits",
+   "sample_url": "https://jobs.smartrecruiters.com/Zenefits/83178631",
+   "company": "Zenefits",
+   "region": "global",
+   "candidate": "Zenefits"
+  },
+  {
+   "platform": "ashby",
+   "token": "leapsome",
+   "jobs": 17,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/leapsome/91a05a55-6fed-4580-a7da-84afd19e6eee",
+   "company": "Leapsome",
+   "region": "global",
+   "candidate": "Leapsome"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "HiBob",
+   "jobs": 1,
+   "owner_name": "Hibob",
+   "sample_url": "https://jobs.smartrecruiters.com/HiBob/743999705178749",
+   "company": "Hibob",
+   "region": "global",
+   "candidate": "HiBob"
+  },
+  {
+   "platform": "lever",
+   "token": "findem",
+   "jobs": 4,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/findem/ae77d4a7-f6dc-4efc-a4c3-1a059ecece35",
+   "company": "Findem",
+   "region": "global",
+   "candidate": "Findem"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "SeekOut",
+   "jobs": 10,
+   "owner_name": "SeekOut",
+   "sample_url": "https://jobs.smartrecruiters.com/SeekOut/744000091702805",
+   "company": "SeekOut",
+   "region": "global",
+   "candidate": "SeekOut"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "checkr",
+   "jobs": 49,
+   "owner_name": "Checkr",
+   "sample_url": "https://job-boards.greenhouse.io/checkr/jobs/8132600",
+   "company": "Checkr",
+   "region": "global",
+   "candidate": "Checkr"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Veremark",
+   "jobs": 4,
+   "owner_name": "Veremark",
+   "sample_url": "https://jobs.smartrecruiters.com/Veremark/744000144226239",
+   "company": "Veremark",
+   "region": "global",
+   "candidate": "Veremark"
+  },
+  {
+   "platform": "ashby",
+   "token": "mural",
+   "jobs": 10,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/mural/8acfcdcc-6798-4030-be20-531dde30bdf1",
+   "company": "Mural",
+   "region": "global",
+   "candidate": "Mural"
+  },
+  {
+   "platform": "ashby",
+   "token": "tldraw",
+   "jobs": 3,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/tldraw/f3461852-ee7f-4dcc-a114-06960c812650",
+   "company": "tldraw",
+   "region": "global",
+   "candidate": "tldraw"
+  },
+  {
+   "platform": "ashby",
+   "token": "clickup",
+   "jobs": 62,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/clickup/abcd8589-5341-4890-99bb-3dcfc93246a9",
+   "company": "ClickUp",
+   "region": "global",
+   "candidate": "ClickUp"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "asana",
+   "jobs": 103,
+   "owner_name": "Asana",
+   "sample_url": "https://www.asana.com/jobs/apply/8092044?gh_jid=8092044",
+   "company": "Asana",
+   "region": "global",
+   "candidate": "Asana"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "newrelic",
+   "jobs": 54,
+   "owner_name": "New Relic",
+   "sample_url": "https://job-boards.greenhouse.io/newrelic/jobs/5121001008",
+   "company": "New Relic",
+   "region": "global",
+   "candidate": "New Relic"
+  },
+  {
+   "platform": "ashby",
+   "token": "checkly",
+   "jobs": 4,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/checkly/21acd589-f6eb-42cd-8c75-3eac4e3fb1e7",
+   "company": "Checkly",
+   "region": "global",
+   "candidate": "Checkly"
+  },
+  {
+   "platform": "ashby",
+   "token": "semgrep",
+   "jobs": 10,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/semgrep/92b21a3a-fba8-4d71-9f4d-217850689f5f",
+   "company": "Semgrep",
+   "region": "global",
+   "candidate": "Semgrep"
+  },
+  {
+   "platform": "lever",
+   "token": "sysdig",
+   "jobs": 23,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/sysdig/af80a880-4fec-4744-b26d-ec73c8692b55",
+   "company": "Sysdig",
+   "region": "global",
+   "candidate": "Sysdig"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "orcasecurity",
+   "jobs": 9,
+   "owner_name": "Orca Security",
+   "sample_url": "https://orca.security/about/careers/6135948004?gh_jid=6135948004",
+   "company": "Orca Security",
+   "region": "global",
+   "candidate": "Orca Security"
+  },
+  {
+   "platform": "ashby",
+   "token": "materialsecurity",
+   "jobs": 5,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/materialsecurity/4e71b808-f2ec-435d-af43-d7176dd1bce0",
+   "company": "Material Security",
+   "region": "global",
+   "candidate": "Material Security"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "dashlane",
+   "jobs": 15,
+   "owner_name": "Dashlane",
+   "sample_url": "https://job-boards.greenhouse.io/dashlane/jobs/7988501",
+   "company": "Dashlane",
+   "region": "global",
+   "candidate": "Dashlane"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "keepersecurity",
+   "jobs": 70,
+   "owner_name": "Keeper Security",
+   "sample_url": "https://job-boards.greenhouse.io/keepersecurity/jobs/4210568009",
+   "company": "Keeper Security",
+   "region": "global",
+   "candidate": "Keeper Security"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "fastly",
+   "jobs": 45,
+   "owner_name": "Fastly",
+   "sample_url": "https://www.fastly.com/about/jobs/apply?gh_jid=8105433",
+   "company": "Fastly",
+   "region": "global",
+   "candidate": "Fastly"
+  },
+  {
+   "platform": "ashby",
+   "token": "baseten",
+   "jobs": 94,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/baseten/fc6e5f2e-eb2d-4a6c-8a51-8422e8662bde",
+   "company": "Baseten",
+   "region": "global",
+   "candidate": "Baseten"
+  },
+  {
+   "platform": "ashby",
+   "token": "anyscale",
+   "jobs": 20,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/anyscale/02698dc0-9416-425f-a13d-0938ffd229a8",
+   "company": "Anyscale",
+   "region": "global",
+   "candidate": "Anyscale"
+  },
+  {
+   "platform": "ashby",
+   "token": "langchain",
+   "jobs": 108,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/langchain/74e5f9f4-e44a-4594-ba26-abdf71bf287d",
+   "company": "LangChain",
+   "region": "global",
+   "candidate": "LangChain"
+  },
+  {
+   "platform": "ashby",
+   "token": "llamaindex",
+   "jobs": 11,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/llamaindex/e8168e8a-451e-41bb-9c13-8f24b4b84e50",
+   "company": "LlamaIndex",
+   "region": "global",
+   "candidate": "LlamaIndex"
+  },
+  {
+   "platform": "ashby",
+   "token": "pinecone",
+   "jobs": 7,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/pinecone/4ef4269b-94c4-4c7c-93ee-15a882caa767",
+   "company": "Pinecone",
+   "region": "global",
+   "candidate": "Pinecone"
+  },
+  {
+   "platform": "ashby",
+   "token": "weaviate",
+   "jobs": 2,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/weaviate/676139ff-9b72-4ee4-9e40-2bb52c6e96bd",
+   "company": "Weaviate",
+   "region": "global",
+   "candidate": "Weaviate"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "labelbox",
+   "jobs": 10,
+   "owner_name": "Labelbox",
+   "sample_url": "https://job-boards.greenhouse.io/labelbox/jobs/5225688007",
+   "company": "Labelbox",
+   "region": "global",
+   "candidate": "Labelbox"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "snorkelai",
+   "jobs": 39,
+   "owner_name": "Snorkel AI",
+   "sample_url": "https://job-boards.greenhouse.io/snorkelai/jobs/6135754004",
+   "company": "Snorkel AI",
+   "region": "global",
+   "candidate": "Snorkel AI"
+  },
+  {
+   "platform": "ashby",
+   "token": "surge-ai",
+   "jobs": 27,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/surge-ai/e5d74eb9-9487-427b-9df7-a9b6c453485d",
+   "company": "Surge AI",
+   "region": "global",
+   "candidate": "Surge AI"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "toloka",
+   "jobs": 20,
+   "owner_name": "Toloka",
+   "sample_url": "https://toloka.ai/careers/info?jid=4953859101&gh_jid=4953859101",
+   "company": "Toloka",
+   "region": "global",
+   "candidate": "Toloka"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "youcom",
+   "jobs": 6,
+   "owner_name": "You.com",
+   "sample_url": "https://job-boards.greenhouse.io/youcom/jobs/5422400008",
+   "company": "You.com",
+   "region": "global",
+   "candidate": "You com"
+  },
+  {
+   "platform": "ashby",
+   "token": "elevenlabs",
+   "jobs": 246,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/elevenlabs/a571b8e4-8176-4e31-aab6-2287ee810236",
+   "company": "ElevenLabs",
+   "region": "global",
+   "candidate": "ElevenLabs"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "assemblyai",
+   "jobs": 18,
+   "owner_name": "AssemblyAI",
+   "sample_url": "https://job-boards.greenhouse.io/assemblyai/jobs/4728544005",
+   "company": "AssemblyAI",
+   "region": "global",
+   "candidate": "AssemblyAI"
+  },
+  {
+   "platform": "ashby",
+   "token": "deepgram",
+   "jobs": 92,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/deepgram/1395ef4d-883a-4006-85a1-4e7d44623431",
+   "company": "Deepgram",
+   "region": "global",
+   "candidate": "Deepgram"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "speechmatics",
+   "jobs": 8,
+   "owner_name": "Speechmatics",
+   "sample_url": "https://job-boards.eu.greenhouse.io/speechmatics/jobs/4063763101",
+   "company": "Speechmatics",
+   "region": "global",
+   "candidate": "Speechmatics"
+  },
+  {
+   "platform": "ashby",
+   "token": "runway-ml",
+   "jobs": 40,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/runway-ml/28e151ac-cb29-4695-9041-a9e352624111",
+   "company": "Runway ML",
+   "region": "global",
+   "candidate": "Runway ML"
+  },
+  {
+   "platform": "ashby",
+   "token": "lumaai",
+   "jobs": 44,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/lumaai/278788c5-a288-41d8-92ca-f07a82310173",
+   "company": "Luma AI",
+   "region": "global",
+   "candidate": "Luma AI"
+  },
+  {
+   "platform": "ashby",
+   "token": "synthesia",
+   "jobs": 56,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/synthesia/c3c79cb1-3ead-46ac-abf2-04502e4655bd",
+   "company": "Synthesia",
+   "region": "global",
+   "candidate": "Synthesia"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "heygen",
+   "jobs": 17,
+   "owner_name": "HeyGen",
+   "sample_url": "https://job-boards.greenhouse.io/heygen/jobs/4172070007",
+   "company": "HeyGen",
+   "region": "global",
+   "candidate": "HeyGen"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "descript",
+   "jobs": 11,
+   "owner_name": "Descript",
+   "sample_url": "https://boards.greenhouse.io/descript/jobs/7809984003?gh_jid=7809984003",
+   "company": "Descript",
+   "region": "global",
+   "candidate": "Descript"
+  },
+  {
+   "platform": "recruitee",
+   "token": "bunq",
+   "jobs": 14,
+   "owner_name": "bunq",
+   "sample_url": "https://careers.bunq.com/o/copywriting-intern-1/c/new",
+   "company": "bunq",
+   "region": "eu",
+   "candidate": "Bunq"
+  },
+  {
+   "platform": "ashby",
+   "token": "pleo",
+   "jobs": 24,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/pleo/4b5086c6-b2d6-4fd5-85c0-5012c66e6f6f",
+   "company": "Pleo",
+   "region": "eu",
+   "candidate": "Pleo"
+  },
+  {
+   "platform": "ashby",
+   "token": "moss",
+   "jobs": 35,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/moss/08752b8d-993a-408c-9843-350d10b97706",
+   "company": "Moss",
+   "region": "eu",
+   "candidate": "Moss"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "gocardless",
+   "jobs": 24,
+   "owner_name": "GoCardless",
+   "sample_url": "https://job-boards.greenhouse.io/gocardless/jobs/8141651",
+   "company": "GoCardless",
+   "region": "eu",
+   "candidate": "GoCardless"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "truelayer",
+   "jobs": 2,
+   "owner_name": "TrueLayer",
+   "sample_url": "https://job-boards.eu.greenhouse.io/truelayer/jobs/4906393101",
+   "company": "TrueLayer",
+   "region": "eu",
+   "candidate": "TrueLayer"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "freenow",
+   "jobs": 48,
+   "owner_name": "Freenow by Lyft",
+   "sample_url": "https://job-boards.greenhouse.io/freenow/jobs/8098634",
+   "company": "Freenow by Lyft",
+   "region": "eu",
+   "candidate": "FREE NOW"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "cabify",
+   "jobs": 68,
+   "owner_name": "Cabify",
+   "sample_url": "https://job-boards.greenhouse.io/cabify/jobs/8642423002",
+   "company": "Cabify",
+   "region": "eu",
+   "candidate": "Cabify"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Picnic",
+   "jobs": 2,
+   "owner_name": "Picnic",
+   "sample_url": "https://jobs.smartrecruiters.com/Picnic/743999933299493",
+   "company": "Picnic",
+   "region": "eu",
+   "candidate": "Picnic"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "hellofresh",
+   "jobs": 466,
+   "owner_name": "HelloFresh",
+   "sample_url": "https://careers.hellofresh.com/global/en/job/8185165?gh_jid=8185165",
+   "company": "HelloFresh",
+   "region": "eu",
+   "candidate": "HelloFresh"
+  },
+  {
+   "platform": "smartrecruiters",
+   "token": "Gousto",
+   "jobs": 7,
+   "owner_name": "Gousto",
+   "sample_url": "https://jobs.smartrecruiters.com/Gousto/743999825777632",
+   "company": "Gousto",
+   "region": "eu",
+   "candidate": "Gousto"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "wallapop",
+   "jobs": 7,
+   "owner_name": "Wallapop",
+   "sample_url": "https://job-boards.eu.greenhouse.io/wallapop/jobs/4928727101",
+   "company": "Wallapop",
+   "region": "eu",
+   "candidate": "Wallapop"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "storyblok",
+   "jobs": 18,
+   "owner_name": "Storyblok",
+   "sample_url": "https://www.storyblok.com/job?gh_jid=4966384101",
+   "company": "Storyblok",
+   "region": "eu",
+   "candidate": "Storyblok"
+  },
+  {
+   "platform": "lever",
+   "token": "prismic",
+   "jobs": 6,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/prismic/3387202d-22e3-4d9b-9f36-c3e7d2d00d4b",
+   "company": "Prismic",
+   "region": "eu",
+   "candidate": "Prismic"
+  },
+  {
+   "platform": "recruitee",
+   "token": "hygraph",
+   "jobs": 2,
+   "owner_name": "Hygraph",
+   "sample_url": "https://jobs.hygraph.com/o/partner-development-representative-fmd-berlin-germany/c/new",
+   "company": "Hygraph",
+   "region": "eu",
+   "candidate": "Hygraph"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "oura",
+   "jobs": 97,
+   "owner_name": "Ōura",
+   "sample_url": "https://job-boards.greenhouse.io/oura/jobs/4385825009",
+   "company": "Ōura",
+   "region": "eu",
+   "candidate": "Oura"
+  },
+  {
+   "platform": "ashby",
+   "token": "uipath",
+   "jobs": 109,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/uipath/cb9803bf-6b0c-464a-8bf2-d4a340b4e3cd",
+   "company": "UiPath",
+   "region": "eu",
+   "candidate": "UiPath"
+  },
+  {
+   "platform": "ashby",
+   "token": "camunda",
+   "jobs": 31,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/camunda/89fb70ec-afbe-475b-a5d8-c2268ee4d7fd",
+   "company": "Camunda",
+   "region": "eu",
+   "candidate": "Camunda"
+  },
+  {
+   "platform": "lever",
+   "token": "sonarsource",
+   "jobs": 134,
+   "owner_name": "",
+   "sample_url": "https://jobs.lever.co/sonarsource/54743786-1ad7-4be7-bcbe-67f660e9c381",
+   "company": "Sonar Source",
+   "region": "eu",
+   "candidate": "Sonar Source"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "jetbrains",
+   "jobs": 70,
+   "owner_name": "JetBrains",
+   "sample_url": "https://job-boards.eu.greenhouse.io/jetbrains/jobs/4881348101",
+   "company": "JetBrains",
+   "region": "eu",
+   "candidate": "JetBrains"
+  },
+  {
+   "platform": "ashby",
+   "token": "deepl",
+   "jobs": 60,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/deepl/29382ac7-1bbd-4485-824e-4e4577acbf98",
+   "company": "DeepL",
+   "region": "eu",
+   "candidate": "DeepL"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "lokalise",
+   "jobs": 5,
+   "owner_name": "Lokalise",
+   "sample_url": "https://lokalise.com/job?gh_jid=6608961003",
+   "company": "Lokalise",
+   "region": "eu",
+   "candidate": "Lokalise"
+  },
+  {
+   "platform": "ashby",
+   "token": "phrase",
+   "jobs": 7,
+   "owner_name": "",
+   "sample_url": "https://jobs.ashbyhq.com/phrase/8fa41c79-97c0-46a4-addf-27318f4210bc",
+   "company": "Phrase",
+   "region": "eu",
+   "candidate": "Phrase"
+  },
+  {
+   "platform": "greenhouse",
+   "token": "smartling",
+   "jobs": 7,
+   "owner_name": "Smartling",
+   "sample_url": "https://job-boards.greenhouse.io/smartling/jobs/8069795",
+   "company": "Smartling",
+   "region": "eu",
+   "candidate": "Smartling"
   }
  ],
  "dropped_note": "Companies whose apply URLs no longer resolve are removed by scratch/verify_ats_registry.py --audit --prune.",
- "workday_added_at": "2026-09-11T17:22:26.269227+00:00"
+ "workday_added_at": "2026-09-13T12:47:34.512487+00:00"
 }

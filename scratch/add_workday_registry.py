@@ -8,6 +8,11 @@ because their boards are overwhelmingly store-floor, driver and retail roles
 resume-optimisation product's users are searching for, and at 18k / 12k open
 roles they would drown every other employer on the board.
 
+The same rule applies to discovered tenants (EXCLUDED_TENANTS): TJX answered
+with 10.8k postings that were all "Retail Associate" / "Loss Prevention
+Officer", and Sysco's first page was mostly "Warehouse Order Selector" and
+"CDL A Local Delivery Truck Driver" (sampled 2026-09-13).
+
 Idempotent: existing workday entries are replaced, nothing else is touched.
 
     python scratch/add_workday_registry.py
@@ -92,11 +97,55 @@ WORKDAY = [
 ]
 
 
+# Discovered tenants deliberately kept off the board; see the module docstring.
+EXCLUDED_TENANTS = {"tjx", "sysco"}
+
+DISCOVERED = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "workday_discovered.json")
+
+
+def discovered_entries(seen_tenants):
+    """Tenants found empirically by scratch/discover_workday_tenants.py.
+
+    No domain is guessed for these: the logo falls back to a lettermark,
+    which the card already handles, and inventing "<tenant>.com" would put a
+    wrong logo on a real employer.
+    """
+    if not os.path.exists(DISCOVERED):
+        return []
+    try:
+        with open(DISCOVERED, encoding="utf-8") as f:
+            rows = json.load(f)
+    except (OSError, ValueError):
+        return []
+    out = []
+    for row in rows:
+        tenant = (row.get("tenant") or "").strip()
+        site = (row.get("site") or "").strip()
+        pod = (row.get("pod") or "").strip()
+        if (not (tenant and site and pod) or tenant in seen_tenants
+                or tenant.lower() in EXCLUDED_TENANTS):
+            continue
+        seen_tenants.add(tenant)
+        out.append({
+            "platform": "workday",
+            "token": f"{tenant}|{pod}|{site}",
+            "company": row.get("company") or tenant,
+            "candidate": row.get("company") or tenant,
+            "region": "global",
+            "domain": "",
+            "sample_url": f"https://{tenant}.{pod}.myworkdayjobs.com/en-US/{site}",
+        })
+    return out
+
+
 def main():
     with open(REGISTRY, encoding="utf-8") as f:
         data = json.load(f)
     companies = [c for c in data.get("companies", []) if c.get("platform") != "workday"]
+    seen_tenants = set()
     for company, tenant, pod, site, domain in WORKDAY:
+        seen_tenants.add(tenant)
         companies.append({
             "platform": "workday",
             "token": f"{tenant}|{pod}|{site}",
@@ -106,6 +155,9 @@ def main():
             "domain": domain,
             "sample_url": f"https://{tenant}.{pod}.myworkdayjobs.com/en-US/{site}",
         })
+    extra = discovered_entries(seen_tenants)
+    companies.extend(extra)
+    print(f"curated workday: {len(WORKDAY)} | discovered added: {len(extra)}")
     data["companies"] = companies
     data["workday_added_at"] = datetime.now(timezone.utc).isoformat()
     with open(REGISTRY, "w", encoding="utf-8") as f:

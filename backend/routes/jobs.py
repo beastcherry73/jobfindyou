@@ -95,6 +95,24 @@ def api_jobs_search():
         return jsonify({"error": str(e)}), 502
 
 
+@jobs_bp.route("/api/jobs/salaries", methods=["GET"])
+@login_required
+@rate_limit(limit=60, window_seconds=300)
+def api_job_salaries():
+    """Pay ranges employers published in live postings for a job title."""
+    what = (request.args.get("q") or "").strip()[:120]
+    if not what:
+        return jsonify({"error": "Enter a job title."}), 400
+    try:
+        result = ats.salary_benchmark(what, request.args.get("country", ""))
+    except Exception as e:
+        logger.error(f"Salary benchmark failed: {e}")
+        return jsonify({"error": "Salary lookup failed. Try again."}), 500
+    if result.get("error"):
+        return jsonify(result), 400
+    return jsonify(result)
+
+
 @jobs_bp.route("/api/jobs/countries", methods=["GET"])
 @login_required
 def api_jobs_countries():

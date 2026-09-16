@@ -1,10 +1,15 @@
 {
   "version": 2,
-  "regions": ["sin1"],
+  "regions": [
+    "sin1"
+  ],
   "builds": [
     {
       "src": "api/index.py",
-      "use": "@vercel/python"
+      "use": "@vercel/python",
+      "config": {
+        "maxDuration": 300
+      }
     }
   ],
   "routes": [
@@ -14,11 +19,53 @@
     }
   ],
   "crons": [
-    { "path": "/api/jobs/ats/sync", "schedule": "30 0 * * *" },
-    { "path": "/api/jobs/ats/sync", "schedule": "30 4 * * *" },
-    { "path": "/api/jobs/ats/sync", "schedule": "30 8 * * *" },
-    { "path": "/api/jobs/ats/sync", "schedule": "30 12 * * *" },
-    { "path": "/api/jobs/ats/sync", "schedule": "30 16 * * *" },
-    { "path": "/api/jobs/ats/sync", "schedule": "30 20 * * *" }
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "7 2 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "14 4 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "21 6 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "28 8 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "35 10 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "42 12 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "49 14 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "56 16 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "3 18 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "10 20 * * *"
+    },
+    {
+      "path": "/api/jobs/ats/sync",
+      "schedule": "17 22 * * *"
+    }
   ]
 }
