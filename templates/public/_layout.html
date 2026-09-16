@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} — JobSpike</title>
+  <meta name="description" content="{{ page_description }}">
+  <link rel="canonical" href="{{ canonical }}">
+  <meta property="og:title" content="{{ page_title }} — JobSpike">
+  <meta property="og:description" content="{{ page_description }}">
+  <meta property="og:url" content="{{ canonical }}">
+  <meta property="og:type" content="article">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="icon" type="image/svg+xml" href="/static/img/jobspike-icon.svg">
+  <link rel="icon" href="/static/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+  {% block head_extra %}{% endblock %}
+  <style>
+    :root {
+      --bg: #F7F5F0; --card: #FFFFFF; --border: #E5E2DB; --text: #16171B;
+      --muted: #6B6F76; --soft: #45484F; --primary: #2457E6; --accent-bg: rgba(36,87,230,0.07);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #141310; --card: #1B1A16; --border: #2B2925; --text: #ECEAE4;
+        --muted: #8A8D93; --soft: #B7BAC1; --primary: #5680F2; --accent-bg: rgba(86,128,242,0.12);
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+           font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+           font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+    a { color: var(--primary); }
+    /* The logo is loaded through <img>, which cannot see the page's colour or
+       theme, so dark surfaces need the second file rather than currentColor.
+       The height and display MUST live here, not in a style attribute: an
+       inline style beats a media query, so an inline display:block on the
+       light logo renders BOTH marks stacked in dark mode. That shipped once
+       already; the screenshot caught it the second time. */
+    .logo-light, .logo-dark { height: 24px; width: auto; }
+    .logo-light { display: block; }
+    .logo-dark { display: none; }
+    @media (prefers-color-scheme: dark) {
+      .logo-light { display: none; }
+      .logo-dark { display: block; }
+    }
+    header.site { border-bottom: 1px solid var(--border); background: var(--card); }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+    header.site .wrap { display: flex; align-items: center; justify-content: space-between; height: 62px; }
+    .cta { display: inline-flex; align-items: center; gap: 6px; background: var(--primary); color: #fff;
+           text-decoration: none; padding: 9px 16px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+    main { padding: 40px 0 72px; }
+    h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 12px; }
+    h2 { font-size: 21px; line-height: 1.3; margin: 36px 0 10px; }
+    p { margin: 0 0 14px; color: var(--soft); }
+    ul { margin: 0 0 16px; padding-left: 20px; color: var(--soft); }
+    li { margin-bottom: 7px; }
+    .lede { font-size: 18px; color: var(--soft); }
+    .meta { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+            padding: 20px 22px; margin-bottom: 14px; }
+    .card a.title { font-size: 18px; font-weight: 600; color: var(--text); text-decoration: none; display: block; }
+    .card p { margin: 6px 0 0; font-size: 15px; }
+    .sources { font-size: 13px; color: var(--muted); border-top: 1px solid var(--border);
+               margin-top: 32px; padding-top: 14px; }
+    .sources li { margin-bottom: 4px; }
+    .endcta { background: var(--accent-bg); border: 1px solid var(--border); border-radius: 14px;
+              padding: 20px 22px; margin-top: 36px; }
+    .endcta p { margin: 0 0 12px; color: var(--text); }
+    .tablewrap { overflow-x: auto; margin: 18px 0 8px; }
+    table { border-collapse: collapse; width: 100%; font-size: 14.5px; min-width: 560px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+    td.rowlabel { font-weight: 600; color: var(--text); }
+    footer.site { border-top: 1px solid var(--border); padding: 22px 0 40px; font-size: 13px; color: var(--muted); }
+    footer.site a { color: var(--muted); margin-right: 16px; }
+    @media (max-width: 600px) { h1 { font-size: 27px; } main { padding: 28px 0 56px; } }
+  </style>
+</head>
+<body>
+  <header class="site">
+    <div class="wrap">
+      <a href="/" aria-label="JobSpike home">
+        <img class="logo-light" src="/static/img/jobspike-logo.svg" alt="JobSpike">
+        <img class="logo-dark" src="/static/img/jobspike-logo-on-dark.svg" alt="JobSpike">
+      </a>
+      <a class="cta" href="/">Analyze my resume</a>
+    </div>
+  </header>
+  <main>
+    <div class="wrap">
+      {% block content %}{% endblock %}
+      <div class="endcta">
+        <p><strong>{{ end_cta or 'Check your own resume against a real job description.' }}</strong> Free, no account needed to run the first analysis.</p>
+        <a class="cta" href="/">Analyze my resume</a>
+      </div>
+    </div>
+  </main>
+  <footer class="site">
+    <div class="wrap">
+      <a href="/">Home</a><a href="/guides">Guides</a><a href="/compare/resumax">JobSpike vs ResuMax</a>
+      <div style="margin-top:10px;">© 2026 JobSpike</div>
+    </div>
+  </footer>
+</body>
+</html>

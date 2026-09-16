@@ -1,0 +1,23 @@
+{% extends "public/_layout.html" %}
+{% block head_extra %}
+<script type="application/ld+json">{{ schema|safe }}</script>
+{% endblock %}
+{% block content %}
+<p style="font-size:13px;margin-bottom:10px;"><a href="/guides">← All guides</a></p>
+<h1>{{ guide.title }}</h1>
+<p class="lede">{{ guide.description }}</p>
+<div class="meta">{{ guide.minutes }} min read · updated {{ guide.updated }}</div>
+{% for s in guide.sections %}
+  <h2>{{ s.h }}</h2>
+  {% for para in s.get('p', []) %}<p>{{ para }}</p>{% endfor %}
+  {% if s.get('bullets') %}
+  <ul>{% for b in s.bullets %}<li>{{ b }}</li>{% endfor %}</ul>
+  {% endif %}
+{% endfor %}
+{% if guide.sources %}
+<div class="sources">
+  <strong>Sources</strong>
+  <ul>{% for src in guide.sources %}<li><a href="{{ src.url }}" rel="nofollow noopener" target="_blank">{{ src.label }}</a></li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% endblock %}

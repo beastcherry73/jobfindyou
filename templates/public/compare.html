@@ -1,0 +1,44 @@
+{% extends "public/_layout.html" %}
+{% block content %}
+<h1>JobSpike vs ResuMax</h1>
+<p class="lede">An honest side-by-side, including the parts where the other tool is ahead. ResuMax's details were read from their own public pages on {{ competitor_checked }}; check them yourself before deciding, because pricing pages change.</p>
+
+<h2>At a glance</h2>
+<div class="tablewrap">
+  <table>
+    <thead><tr><th>&nbsp;</th><th>JobSpike</th><th>ResuMax</th></tr></thead>
+    <tbody>
+      <tr><td class="rowlabel">Price</td><td>Free. No monthly caps on analyses, cover letters or interview practice (there are per-minute rate limits to stop abuse).</td><td>Free tier, then $29/month Pro and $49/month Premium ($12 and $17 a month billed annually).</td></tr>
+      <tr><td class="rowlabel">Free tier limits</td><td>None published.</td><td>5 resume scores, 3 tailoring previews and 1 cover letter a month; no clean exports.</td></tr>
+      <tr><td class="rowlabel">Job board</td><td>{{ jobs_total }} live roles from {{ boards }} employer career boards, every link going to the employer's own application page.</td><td>12,662 roles from "11 source families" — direct employer boards plus other feeds.</td></tr>
+      <tr><td class="rowlabel">Who it is built for</td><td>Any role or country; weighted toward India, South-East Asia and remote work.</td><td>Tech roles — software, PM, design, ML.</td></tr>
+      <tr><td class="rowlabel">Resume analysis</td><td>Dimension scores, missing sections, ATS issues and a prioritised fix list.</td><td>Recruiter-panel style review scored out of 100.</td></tr>
+      <tr><td class="rowlabel">Tailoring to a job</td><td>Match percentage plus the role terms found and missing on your resume, and a rewrite you can diff.</td><td>Tailoring workflows, capped per month by plan.</td></tr>
+      <tr><td class="rowlabel">Cover letters</td><td>Unlimited, with every claim tied to your resume and placeholders where a number is missing.</td><td>1 a month free, 30 on Pro, 150 on Premium.</td></tr>
+      <tr><td class="rowlabel">Interview practice</td><td>Role, behavioural and system-design questions, plus answer scoring against a rubric that quotes your own words.</td><td>Interview hub on Premium: 30 system-design sessions and 200 behavioural scorings a month.</td></tr>
+      <tr><td class="rowlabel">Salary data</td><td>Medians built only from pay ranges employers published in live postings, counting each company once, and withheld below five companies.</td><td>Offer and negotiation preparation.</td></tr>
+      <tr><td class="rowlabel">Learning roadmap</td><td>A week-by-week plan with a portfolio project per phase, generated from your resume.</td><td>A curated library of 81 projects (22 free).</td></tr>
+      <tr><td class="rowlabel">Use from ChatGPT or Claude</td><td>No.</td><td>Yes, through their MCP integration.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2>Where ResuMax is ahead</h2>
+<ul>
+  <li>A curated project library, reviewed by them, rather than projects generated for your gaps.</li>
+  <li>An MCP integration, so their agent can be used from ChatGPT or Claude.</li>
+  <li>Depth in tech hiring specifically — it is built for software, PM, design and ML roles and nothing else.</li>
+  <li>A longer track record: they launched in October 2025 and publish usage numbers; JobSpike is newer and smaller.</li>
+</ul>
+
+<h2>Where JobSpike is ahead</h2>
+<ul>
+  <li>Price: the features above are free, with no monthly caps.</li>
+  <li>Every listing comes from an employer's own careers page, so applying never routes through an aggregator repost.</li>
+  <li>Salary figures come from published ranges in live postings, with the sample size shown and no estimate when the sample is too small.</li>
+  <li>Answer scoring quotes your own words back, and discards any feedback that quotes something you did not write.</li>
+</ul>
+
+<h2>How we keep this fair</h2>
+<p>Everything in the ResuMax column comes from their public pricing and home pages, read on {{ competitor_checked }}: <a href="https://resumax.ai/pricing" rel="nofollow noopener" target="_blank">resumax.ai/pricing</a>. Nothing here is a review of their output quality, because we have not tested it under controlled conditions; where we could not verify something, it is left out rather than guessed at. The JobSpike job counts on this page are read live from our own database when it loads.</p>
+{% endblock %}

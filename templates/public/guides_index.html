@@ -1,0 +1,14 @@
+{% extends "public/_layout.html" %}
+{% block content %}
+<h1>Guides</h1>
+<p class="lede">Practical writing about resumes, applications and interviews. Every figure names its source, and where a popular statistic turns out to have none, these pages say so instead of repeating it.</p>
+<div style="margin-top:28px;">
+  {% for g in guides %}
+  <div class="card">
+    <a class="title" href="/guides/{{ g.slug }}">{{ g.title }}</a>
+    <p>{{ g.description }}</p>
+    <p style="color:var(--muted);font-size:13px;">{{ g.minutes }} min read · updated {{ g.updated }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

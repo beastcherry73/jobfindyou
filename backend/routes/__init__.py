@@ -6,6 +6,7 @@ from .generate import generate_bp
 from .export import export_bp
 from .meta import meta_bp
 from .jobs import jobs_bp
+from .content import content_bp
 
 
 def register_blueprints(app):
@@ -17,3 +18,4 @@ def register_blueprints(app):
     app.register_blueprint(export_bp)
     app.register_blueprint(meta_bp)
     app.register_blueprint(jobs_bp)
+    app.register_blueprint(content_bp)

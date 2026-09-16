@@ -3,6 +3,7 @@ import logging
 from flask import Blueprint, render_template, Response, session, redirect
 
 from backend.database import get_db
+from backend.guides import GUIDES
 
 static_bp = Blueprint("static_routes", __name__)
 logger = logging.getLogger(__name__)
@@ -41,26 +42,26 @@ def robots():
     return Response(content, mimetype="text/plain")
 
 
+def _sitemap_url(path, changefreq, priority, lastmod=""):
+    mod = f"\n    <lastmod>{lastmod}</lastmod>" if lastmod else ""
+    return (f"  <url>\n    <loc>https://www.jobspike.in{path}</loc>{mod}\n"
+            f"    <changefreq>{changefreq}</changefreq>\n"
+            f"    <priority>{priority}</priority>\n  </url>")
+
+
 @static_bp.route("/sitemap.xml")
 def sitemap():
-    xml = """<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://www.jobspike.in/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://www.jobspike.in/login</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.jobspike.in/register</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-</urlset>"""
+    urls = [
+        _sitemap_url("/", "daily", "1.0"),
+        _sitemap_url("/guides", "weekly", "0.9"),
+        _sitemap_url("/compare/resumax", "monthly", "0.7"),
+        _sitemap_url("/login", "monthly", "0.8"),
+        _sitemap_url("/register", "monthly", "0.8"),
+    ]
+    urls += [_sitemap_url(f"/guides/{g['slug']}", "monthly", "0.8", g["updated"]) for g in GUIDES]
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+           + "\n".join(urls) + "\n</urlset>")
     return Response(xml, mimetype="application/xml")
 
 
