@@ -662,6 +662,21 @@ ul, ol { list-style: none; }
   max-width: 100%;
 }
 
+/* Wide screens: the content used to run edge to edge with 28px of breathing
+   room on the right, so a six-tile stat row stretched across 1,660px and
+   paragraphs ran to ~180 characters. Capped and centred instead -- measured
+   at 1280 / 1440 / 1920 with real screenshots; below 1500px nothing changes. */
+@media (min-width: 1500px) {
+  .ws-content {
+    padding: 28px 40px;
+  }
+  .ws-section {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    COMPONENTS
    ═══════════════════════════════════════════════════════════════════ */
