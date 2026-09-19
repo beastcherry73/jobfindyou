@@ -157,80 +157,95 @@ def handle_resumes():
     user_id = session["user_id"]
     with get_db() as db:
         if request.method == "GET":
-            try:
-                # Auto-sync analyses to resumes safely across SQLite and PostgreSQL
-                existing_rows = db.execute("SELECT filename, title FROM resumes WHERE user_id = ?", (user_id,)).fetchall()
-                existing_names = set()
-                for er in existing_rows:
-                    if er["filename"]: existing_names.add(er["filename"])
-                    if er["title"]: existing_names.add(er["title"])
+            # Lite mode: return only metadata for the versions list (no full JSON)
+            lite = request.args.get("lite", "").lower() in ("1", "true", "yes")
 
-                # Only analyses with no resume row yet need their full JSON.
-                # This used to SELECT * across every analysis on EVERY
-                # versions/history load - shipping each full report over the
-                # wire just to discover the (almost always zero) unmapped ones.
-                id_rows = db.execute(
-                    "SELECT id, filename FROM analyses WHERE user_id = ?", (user_id,)
-                ).fetchall()
-                missing_ids = [r["id"] for r in id_rows
-                               if r["filename"] and r["filename"] not in existing_names]
-                unmapped_analyses = []
-                if missing_ids:
-                    marks = ", ".join(["?"] * len(missing_ids))
-                    unmapped_analyses = db.execute(
-                        f"SELECT * FROM analyses WHERE user_id = ? AND id IN ({marks})",
-                        [user_id] + missing_ids,
+            # Auto-sync analyses to resumes - but only when NOT in lite mode
+            # (lite mode is for the versions list which needs fast response)
+            if not lite:
+                try:
+                    # Auto-sync analyses to resumes safely across SQLite and PostgreSQL
+                    existing_rows = db.execute("SELECT filename, title FROM resumes WHERE user_id = ?", (user_id,)).fetchall()
+                    existing_names = set()
+                    for er in existing_rows:
+                        if er["filename"]: existing_names.add(er["filename"])
+                        if er["title"]: existing_names.add(er["title"])
+
+                    # Only analyses with no resume row yet need their full JSON.
+                    # This used to SELECT * across every analysis on EVERY
+                    # versions/history load - shipping each full report over the
+                    # wire just to discover the (almost always zero) unmapped ones.
+                    id_rows = db.execute(
+                        "SELECT id, filename FROM analyses WHERE user_id = ?", (user_id,)
                     ).fetchall()
-                for a in unmapped_analyses:
-                    fname = a["filename"]
-                    if fname and fname not in existing_names:
-                        a_dict = {
-                            "id": a["id"],
-                            "filename": fname,
-                            "overall_score": a["overall_score"],
-                            "summary": a["summary"],
-                            "job_description": a["job_description"],
-                            "created_at": a["created_at"]
-                        }
-                        clean_name = fname.rsplit('.', 1)[0] if '.' in fname else fname
-                        full_json = {}
-                        try:
-                            full_json = json.loads(a["full_json"]) if a.get("full_json") else {}
-                        except Exception:
+                    missing_ids = [r["id"] for r in id_rows
+                                   if r["filename"] and r["filename"] not in existing_names]
+                    unmapped_analyses = []
+                    if missing_ids:
+                        marks = ", ".join(["?"] * len(missing_ids))
+                        unmapped_analyses = db.execute(
+                            f"SELECT * FROM analyses WHERE user_id = ? AND id IN ({marks})",
+                            [user_id] + missing_ids,
+                        ).fetchall()
+                    for a in unmapped_analyses:
+                        fname = a["filename"]
+                        if fname and fname not in existing_names:
+                            a_dict = {
+                                "id": a["id"],
+                                "filename": fname,
+                                "overall_score": a["overall_score"],
+                                "summary": a["summary"],
+                                "job_description": a["job_description"],
+                                "created_at": a["created_at"]
+                            }
+                            clean_name = fname.rsplit('.', 1)[0] if '.' in fname else fname
                             full_json = {}
-                        data_payload = json.dumps({
-                            "fullName": clean_name,
-                            "summary": full_json.get("summary") or a["summary"],
-                            "skills": full_json.get("skills") or ", ".join(full_json.get("suggested_keywords", [])),
-                            "experience": full_json.get("experience", []),
-                            "education": full_json.get("education", []),
-                            "projects": full_json.get("projects", []),
-                            "certifications": full_json.get("certifications", []),
-                            "rawText": ""
-                        })
-                        db.execute(
-                            """INSERT INTO resumes (user_id, title, filename, template, overall_score, analysis_json, data_json)
-                               VALUES (?, ?, ?, 'modern', ?, ?, ?)""",
-                            (user_id, fname, fname, a["overall_score"], json.dumps(a_dict), data_payload)
-                        )
-                        existing_names.add(fname)
-                db.commit()
-            except Exception as sync_err:
-                import logging
-                logging.getLogger(__name__).warning(f"Resumes auto-sync error: {sync_err}")
+                            try:
+                                full_json = json.loads(a["full_json"]) if a.get("full_json") else {}
+                            except Exception:
+                                full_json = {}
+                            data_payload = json.dumps({
+                                "fullName": clean_name,
+                                "summary": full_json.get("summary") or a["summary"],
+                                "skills": full_json.get("skills") or ", ".join(full_json.get("suggested_keywords", [])),
+                                "experience": full_json.get("experience", []),
+                                "education": full_json.get("education", []),
+                                "projects": full_json.get("projects", []),
+                                "certifications": full_json.get("certifications", []),
+                                "rawText": ""
+                            })
+                            db.execute(
+                                """INSERT INTO resumes (user_id, title, filename, template, overall_score, analysis_json, data_json)
+                                   VALUES (?, ?, ?, 'modern', ?, ?, ?)""",
+                                (user_id, fname, fname, a["overall_score"], json.dumps(a_dict), data_payload)
+                            )
+                            existing_names.add(fname)
+                    db.commit()
+                except Exception as sync_err:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Resumes auto-sync error: {sync_err}")
 
-            rows = db.execute(
-                "SELECT id, title, filename, template, overall_score, analysis_json, data_json, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
-                (user_id,)
-            ).fetchall()
-            results = []
-            for r in rows:
-                item = dict(r)
-                item["data"] = json.loads(item["data_json"]) if item.get("data_json") else {}
-                item["analysis"] = json.loads(item["analysis_json"]) if item.get("analysis_json") else None
-                if "data_json" in item: del item["data_json"]
-                if "analysis_json" in item: del item["analysis_json"]
-                results.append(item)
+            if lite:
+                # Lite: only essential columns for fast list rendering
+                rows = db.execute(
+                    "SELECT id, title, filename, template, overall_score, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
+                    (user_id,)
+                ).fetchall()
+                results = [dict(r) for r in rows]
+            else:
+                # Full: include data_json and analysis_json for the builder
+                rows = db.execute(
+                    "SELECT id, title, filename, template, overall_score, analysis_json, data_json, created_at, updated_at FROM resumes WHERE user_id = ? ORDER BY updated_at DESC",
+                    (user_id,)
+                ).fetchall()
+                results = []
+                for r in rows:
+                    item = dict(r)
+                    item["data"] = json.loads(item["data_json"]) if item.get("data_json") else {}
+                    item["analysis"] = json.loads(item["analysis_json"]) if item.get("analysis_json") else None
+                    if "data_json" in item: del item["data_json"]
+                    if "analysis_json" in item: del item["analysis_json"]
+                    results.append(item)
             return jsonify(results)
         else:
             data = request.get_json() or {}

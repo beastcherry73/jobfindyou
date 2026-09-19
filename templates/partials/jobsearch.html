@@ -61,6 +61,14 @@
     .jp-span2 { grid-column:auto; }
   }
   .jp-attribution { font-size:11px; color:var(--ws-text-tertiary); margin-bottom:14px; }
+
+  /* Market Desks */
+  .jp-desks { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 8px; padding:0 4px; }
+  .jp-desk { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:500; }
+  .jp-desk.active { background:var(--ws-primary) !important; color:#fff !important; border-color:var(--ws-primary) !important; }
+  .jp-desk.active svg { stroke:#fff; }
+  @media (max-width:720px) { .jp-desk { font-size:12px; padding:6px 10px; } }
+
   /* Split pane: list left, detail right. Collapses to a single column below
      980px, where the detail panel is shown in place of the list instead of
      being squeezed beside it. */
@@ -309,8 +317,34 @@
     </div>
   </form>
 
-  <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
-  <div class="jp-attribution">Every listing comes straight from the employer&#39;s own careers site (Workday, Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), so &ldquo;Apply&rdquo; takes you to the real application &mdash; not a job-board repost. Roles the employer takes down are removed on the next refresh.</div>
+<div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
+  <div class="jp-attribution">Every listing comes straight from the employer's own careers site (Workday, Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), so &ldquo;Apply&rdquo; takes you to the real application &mdash; not a job-board repost. Roles the employer takes down are removed on the next refresh.</div>
+
+  <!-- Market Desks: curated starting points (like ResumeAX) -->
+  <div class="jp-desks" id="jpDesks" style="display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 8px; padding:0 4px;">
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="just-posted" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Just posted
+    </button>
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="past-week" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Past week
+    </button>
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="ai-ml" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/><circle cx="12" cy="12" r="2.2"/></svg> AI + ML
+    </button>
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="builders" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Builders & researchers
+    </button>
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="remote" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Remote
+    </button>
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="early-career" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Early career
+    </button>
+    <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="staff-plus" onclick="loadDesk(this)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Staff+
+    </button>
+  </div>
+
   <div class="jp-split" id="jpSplit">
     <div class="jp-list" id="jpResults"></div>
     <aside class="jp-detail ws-card" id="jpDetail">
@@ -494,6 +528,7 @@
       var el = document.getElementById(id);
       if (el) el.value = '';
     });
+    clearDeskSelection();
     refreshChips();
   }
 
@@ -511,6 +546,8 @@
 
   async function doSearch(e, append) {
     if (e && e.preventDefault) e.preventDefault();
+    // Manual search (form submit) clears any active desk selection
+    if (e && e.type === 'submit') clearDeskSelection();
     var status = document.getElementById('jpStatus');
     var results = document.getElementById('jpResults');
     var country = val('jpCountry') || 'in';
@@ -1007,6 +1044,61 @@
     });
     document.addEventListener('visibilitychange', maybeShowConfirm);
     window.addEventListener('focus', maybeShowConfirm);
+  }
+
+  // Market Desks: curated starting points that run a targeted search
+  var DESK_SPECS = {
+    'just-posted': { what: '', max_days_old: '1', sort_by: 'date' },
+    'past-week': { what: '', max_days_old: '7', sort_by: 'date' },
+    'ai-ml': { what: 'machine learning OR artificial intelligence OR deep learning OR llm OR nlp OR computer vision', max_days_old: '30', sort_by: 'relevance' },
+    'builders': { what: 'engineer OR developer OR software OR backend OR frontend OR fullstack OR infrastructure OR platform OR devops OR sre', max_days_old: '14', sort_by: 'relevance' },
+    'remote': { what: '', work_mode: 'remote', max_days_old: '14', sort_by: 'date' },
+    'early-career': { what: '', experience_level: 'entry', max_days_old: '30', sort_by: 'relevance' },
+    'staff-plus': { what: '', experience_level: 'lead', max_days_old: '30', sort_by: 'relevance' }
+  };
+
+  var activeDesk = null;
+
+  function loadDesk(btn) {
+    var deskId = btn.getAttribute('data-desk');
+    var spec = DESK_SPECS[deskId];
+    if (!spec) return;
+
+    // Visual feedback
+    document.querySelectorAll('.jp-desk').forEach(function(b){ b.classList.remove('active'); b.classList.add('ws-btn-secondary'); b.classList.remove('ws-btn-primary'); });
+    btn.classList.remove('ws-btn-secondary');
+    btn.classList.add('ws-btn-primary', 'active');
+
+    activeDesk = deskId;
+
+    // Apply desk params to form (but don't overwrite user's country)
+    var country = val('jpCountry') || 'in';
+    var params = new URLSearchParams();
+    params.set('country', country);
+    Object.entries(spec).forEach(function(_ref) {
+      var k = _ref[0], v = _ref[1];
+      if (v) params.set(k, v);
+    });
+
+    // Update form fields to reflect desk selection
+    if (spec.what) document.getElementById('jpWhat').value = spec.what;
+    if (spec.where) document.getElementById('jpWhere').value = spec.where;
+    if (spec.work_mode) document.getElementById('jpWorkMode').value = spec.work_mode;
+    if (spec.experience_level) document.getElementById('jpExperience').value = spec.experience_level;
+    if (spec.max_days_old) document.getElementById('jpMaxDays').value = spec.max_days_old;
+    if (spec.sort_by) document.getElementById('jpSortBy').value = spec.sort_by;
+
+    refreshChips();
+
+    // Execute search
+    currentPage = 1;
+    lastParams = params;
+    doSearch(null, false);
+  }
+
+  function clearDeskSelection() {
+    activeDesk = null;
+    document.querySelectorAll('.jp-desk').forEach(function(b){ b.classList.remove('active', 'ws-btn-primary'); b.classList.add('ws-btn-secondary'); });
   }
 
   // Called by switchSection('jobsearch'); safe to call repeatedly.

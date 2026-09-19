@@ -3547,6 +3547,12 @@
         if (!Array.isArray(state.resumes)) state.resumes = [];
         if (emptyEl) emptyEl.style.display = 'none';
         renderHistory();
+      } else if (window.__BOOT__ && Array.isArray(window.__BOOT__.analyses) && window.__BOOT__.analyses.length) {
+        // Use boot data on first load to avoid flash + refetch
+        state.analyses = window.__BOOT__.analyses;
+        state.bootUsed = true;
+        if (emptyEl) emptyEl.style.display = 'none';
+        renderHistory();
       } else {
         if (countEl) countEl.textContent = 'Loading…';
         if (emptyEl) emptyEl.style.display = 'none';
@@ -3568,7 +3574,7 @@
 
       const [analysesOut, resumesOut] = await Promise.allSettled([
         apiFetch('/api/analyses'),
-        apiFetch('/api/resumes'),
+        apiFetch('/api/resumes?lite=1'),
       ]);
 
       if (analysesOut.status === 'fulfilled') {
@@ -4132,7 +4138,7 @@
         // Populate saved analyses table in Profile
         const [analyses, resumes] = await Promise.all([
           apiFetch('/api/analyses').catch(function() { return []; }),
-          apiFetch('/api/resumes').catch(function() { return []; })
+          apiFetch('/api/resumes?lite=1').catch(function() { return []; })
         ]);
         state.analyses = analyses || [];
         state.resumes = resumes || [];
@@ -4173,7 +4179,7 @@
       try {
         const [analyses, resumes] = await Promise.all([
           apiFetch('/api/analyses').catch(function() { return []; }),
-          apiFetch('/api/resumes').catch(function() { return []; })
+          apiFetch('/api/resumes?lite=1').catch(function() { return []; })
         ]);
         state.analyses = analyses || [];
         state.resumes = resumes || [];
@@ -4882,6 +4888,7 @@
       renderTemplatesPreview();
       if (!Array.isArray(state.resumes) || !state.resumes.length) {
         try {
+          // Need full data for template preview (uses .data field from data_json)
           var list = await apiFetch('/api/resumes');
           if (Array.isArray(list)) state.resumes = list;
         } catch (e) {}
@@ -5178,7 +5185,8 @@
           const sig = function (rows) {
             return JSON.stringify((rows || []).map(function (r) { return [r.id, r.updated_at, r.title, r.template]; }));
           };
-          apiFetch('/api/resumes').then(function (fresh) {
+          // Use lite mode for fast revalidation
+          apiFetch('/api/resumes?lite=1').then(function (fresh) {
             if (Array.isArray(fresh) && sig(fresh) !== sig(cached)) {
               state.resumes = fresh;
               loadBuilderVersions();
@@ -5186,7 +5194,8 @@
           }).catch(function () {});
         } else {
           body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--ws-text-tertiary);padding:24px;">Loading your saved versions…</td></tr>';
-          list = await apiFetch('/api/resumes');
+          // Lite mode for fast initial load - only metadata, no full JSON
+          list = await apiFetch('/api/resumes?lite=1');
         }
         state.resumes = list;
         body.innerHTML = '';
@@ -5353,7 +5362,7 @@
         try {
           const [analyses, resumes] = await Promise.all([
             apiFetch('/api/analyses').catch(function() { return []; }),
-            apiFetch('/api/resumes').catch(function() { return []; })
+            apiFetch('/api/resumes?lite=1').catch(function() { return []; })
           ]);
           state.analyses = analyses || [];
           state.resumes = resumes || [];
@@ -5700,8 +5709,8 @@
         };
         const res = await apiFetch('/api/resumes', { method: 'POST', body: payload });
         
-        // Refresh local resumes array
-        const updatedResumes = await apiFetch('/api/resumes').catch(function() { return []; });
+        // Refresh local resumes array (lite mode for fast list)
+        const updatedResumes = await apiFetch('/api/resumes?lite=1').catch(function() { return []; });
         state.resumes = updatedResumes || [];
         populateEnhanceSavedResumes();
 
