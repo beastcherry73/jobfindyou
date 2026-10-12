@@ -240,7 +240,7 @@ def _merge_rank_dedupe(groups):
 
 
 def unified_search(what="", where="", country="in", page=1, per_page=20,
-                   **adzuna_filters):
+                   user_id=None, **adzuna_filters):
     """Return {count, results, country, currency, source_used, sources_used}.
 
     ATS-ONLY as of 2026-08-29. Every result now comes from our synced copy of
@@ -300,6 +300,7 @@ def unified_search(what="", where="", country="in", page=1, per_page=20,
         max_days_old=adzuna_filters.get("max_days_old"),
         sort_by=(adzuna_filters.get("sort_by") or "relevance"),
         guest_apply_only=guest_apply_only,
+        user_id=user_id,
     )
     results = (res or {}).get("results") or []
 

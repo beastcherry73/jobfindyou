@@ -532,7 +532,7 @@ def normalize_employment_type(value):
     return ""
 
 
-EXPERIENCE_LEVELS = ["internship", "entry", "mid", "senior", "lead", "executive"]
+EXPERIENCE_LEVELS = ["internship", "entry", "mid", "senior", "lead", "executive", "no_experience"]
 
 _EXPERIENCE_MAP = {
     "internship": "internship", "intern": "internship", "student": "internship",
@@ -1842,8 +1842,12 @@ def account_required_platforms():
 def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
            work_mode="", experience_level="", employment_type="",
            salary_min=None, salary_max=None, salary_include_unknown=True,
-           max_days_old=None, sort_by="relevance", guest_apply_only=False):
-    """Query the synced ATS corpus. Returns {count, results} in the unified schema."""
+           max_days_old=None, sort_by="relevance", guest_apply_only=False,
+           user_id=None):
+    """Query the synced ATS corpus. Returns {count, results} in the unified schema.
+
+    If user_id is provided, jobs the user has dismissed are excluded.
+    """
     from backend.database import get_db
 
     try:
@@ -1884,7 +1888,12 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
     if work_mode in ("remote", "hybrid", "onsite"):
         where_sql.append("work_mode = ?")
         params.append(work_mode)
-    if experience_level in EXPERIENCE_LEVELS:
+    if experience_level == "no_experience":
+        # Jobs explicitly mentioning no experience needed / fresher / 0 years.
+        # Search in description and search_text (title + company + location).
+        where_sql.append("(LOWER(description) LIKE ? OR LOWER(search_text) LIKE ? OR LOWER(description) LIKE ? OR LOWER(search_text) LIKE ? OR LOWER(description) LIKE ? OR LOWER(search_text) LIKE ?)")
+        params.extend(["%no experience%", "%no experience%", "%fresher%", "%fresher%", "%0 year%", "%0 year%"])
+    elif experience_level in EXPERIENCE_LEVELS:
         where_sql.append("experience_level = ?")
         params.append(experience_level)
     if employment_type in EMPLOYMENT_TYPES:
@@ -1901,6 +1910,11 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
             marks = ", ".join(["?"] * len(gated))
             where_sql.append(f"platform NOT IN ({marks})")
             params.extend(gated)
+
+    # Exclude jobs the user has dismissed (Hide/Not interested).
+    if user_id is not None:
+        where_sql.append("fingerprint NOT IN (SELECT job_fingerprint FROM dismissed_jobs WHERE user_id = ?)")
+        params.append(user_id)
 
     smin = _money(salary_min)
     smax = _money(salary_max)

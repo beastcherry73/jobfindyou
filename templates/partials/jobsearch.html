@@ -125,6 +125,12 @@
                      margin-bottom:8px; }
   .jp-back { display:none; }
   @media (max-width: 980px) { .jp-split.jp-showing-detail .jp-back { display:inline-flex; } }
+  @media (max-width: 520px) {
+    /* Applying is the mobile task; make its touch target obvious and keep the
+       secondary actions comfortably tappable without changing desktop. */
+    .jp-detail-actions .ws-btn { min-height:40px; }
+    .jp-detail-actions #jpView { flex:1 1 100%; justify-content:center; }
+  }
 
   /* Selected card gets an accent rail, matching the rest of the workspace. */
   .jp-card { padding:16px 18px; margin-bottom:10px; cursor:pointer;
@@ -232,11 +238,12 @@
             <label for="jpExperience">Experience level</label>
             <select class="ws-select" id="jpExperience">
               <option value="">Any level</option>
+              <option value="no_experience">No experience required</option>
               <option value="internship">Internship</option>
-              <option value="entry">Entry</option>
-              <option value="mid">Mid</option>
-              <option value="senior">Senior</option>
-              <option value="lead">Lead / Principal</option>
+              <option value="entry">Entry (0-2 yrs)</option>
+              <option value="mid">Mid (2-5 yrs)</option>
+              <option value="senior">Senior (5-8 yrs)</option>
+              <option value="lead">Lead / Principal (8+ yrs)</option>
               <option value="executive">Executive</option>
             </select>
           </div>
@@ -397,17 +404,21 @@
   // Calendar-day wording on purpose. Workday reports only "Posted Today /
   // 3 Days Ago", so an hours-level "posted 2h ago" would be invented
   // precision for those listings.
-  function fmtAgo(iso) {
+  function fmtRelativeDay(iso) {
     if (!iso) return '';
     var d = new Date(iso);
     if (isNaN(d)) return '';
     var today = new Date(); today.setHours(0, 0, 0, 0);
     var day = new Date(d.getTime()); day.setHours(0, 0, 0, 0);
     var days = Math.round((today - day) / 864e5);
-    if (days <= 0) return 'Posted today';
-    if (days === 1) return 'Posted yesterday';
-    if (days < 30) return 'Posted ' + days + ' days ago';
-    return 'Posted ' + fmtDate(iso);
+    if (days <= 0) return 'today';
+    if (days === 1) return 'yesterday';
+    if (days < 30) return days + ' days ago';
+    return fmtDate(iso);
+  }
+  function fmtAgo(iso) {
+    var relative = fmtRelativeDay(iso);
+    return relative ? 'Posted ' + relative : '';
   }
   function isNew(iso) {
     var d = new Date(iso);
@@ -672,6 +683,12 @@
       if (job.work_mode && job.work_mode !== 'onsite') {
         sub.push('<span>' + esc(job.work_mode.charAt(0).toUpperCase() + job.work_mode.slice(1)) + '</span>');
       }
+      // Experience level — critical for early-career candidates to scan quickly.
+      if (job.experience_level) {
+        var expLabel = job.experience_level === 'no_experience' ? 'No experience required'
+          : job.experience_level.charAt(0).toUpperCase() + job.experience_level.slice(1);
+        sub.push('<span class="ws-badge ws-badge-good">' + esc(expLabel) + '</span>');
+      }
       // Set expectations before the click: SmartRecruiters is the one source
       // whose apply flow needs an account, where the rest allow a guest apply.
       if (job.requires_account) {
@@ -683,7 +700,7 @@
       // exact job appeared on the employer-hosted board. It is intentionally
       // described as a check, not as a promise that every apply flow is still
       // available at this instant.
-      if (job.last_checked_at) sub.push('<span title="Last successful employer-board fetch">Checked ' + esc(fmtAgo(job.last_checked_at)) + '</span>');
+      if (job.last_checked_at) sub.push('<span title="Last successful employer-board fetch">Checked ' + esc(fmtRelativeDay(job.last_checked_at)) + '</span>');
       // Be honest about provenance: name the true publisher when the source
       // gives us one, and say plainly when the link only reaches the aggregator.
       if (job.apply_is_direct) {
@@ -754,6 +771,13 @@
       function (c, i) { c.classList.toggle('jp-selected', i === idx); });
     document.getElementById('jpSplit').classList.add('jp-showing-detail');
     renderDetail(job);
+    // On a narrow screen the list is hidden and the detail becomes the active
+    // view. Move it to the viewport instead of leaving a reader at the old
+    // list scroll position after choosing a low card.
+    if (window.matchMedia && window.matchMedia('(max-width: 980px)').matches) {
+      var detail = document.getElementById('jpDetail');
+      if (detail) detail.scrollIntoView({ block: 'start' });
+    }
   }
 
   function renderDetail(job) {
@@ -766,8 +790,13 @@
       ? '<span class="jp-logo" ' + logoBox + '><img src="' + esc(job.company_logo) + '" alt=""></span>'
       : '<span class="jp-logo" ' + logoBox + '><span class="jp-letter">' + initial + '</span></span>';
 
-    var bits = [];
+var bits = [];
     if (job.location) bits.push(esc(job.location));
+    if (job.experience_level) {
+      var expLabel = job.experience_level === 'no_experience' ? 'No experience required'
+        : job.experience_level.charAt(0).toUpperCase() + job.experience_level.slice(1);
+      bits.push('<span class="ws-badge ws-badge-good">' + esc(expLabel) + '</span>');
+    }
     if (job.created) bits.push('Posted ' + esc(fmtDate(job.created)));
     if (job.last_checked_at) bits.push('Employer board checked ' + esc(fmtDate(job.last_checked_at)));
     var salary = job.salary_text ? job.salary_text
@@ -791,11 +820,12 @@
           (bits.length ? '<div class="jp-sub" style="margin-top:8px;"><span>' + bits.join('</span><span>') + '</span></div>' : '') +
         '</div>' +
       '</div>' +
-      '<div class="jp-detail-actions">' +
-        '<button class="ws-btn ws-btn-primary ws-btn-sm" id="jpTailor">Tailor for this</button>' +
-        '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="jpSave">Save</button>' +
-        '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpView">' + esc(viewLabel) +
+'<div class="jp-detail-actions">' +
+        '<button class="ws-btn ws-btn-primary ws-btn-sm" id="jpView">' + esc(viewLabel) +
           ' <span aria-hidden="true" style="opacity:.7;">&#8599;</span></button>' +
+        '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="jpSave">Save</button>' +
+        '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpHide">Hide</button>' +
+        '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpTailor">Tailor for this</button>' +
         '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="jpMatch">Check match</button>' +
       '</div>' + acctWarn +
       '<div class="jp-detail-label">About this role</div>' +
@@ -811,6 +841,7 @@
     document.getElementById('jpSave').addEventListener('click', function (e) { saveJob(job, e.currentTarget); });
     document.getElementById('jpView').addEventListener('click', function (e) { applyJob(job, null, e.currentTarget); });
     document.getElementById('jpMatch').addEventListener('click', function (e) { checkMatch(job, e.currentTarget); });
+    document.getElementById('jpHide').addEventListener('click', function (e) { dismissJob(job, e.currentTarget); });
   }
 
   // -- Description ---------------------------------------------------------
@@ -889,6 +920,34 @@
       if (res.ok) { btn.textContent = 'Saved'; toast('Saved to your pipeline.'); }
       else { btn.disabled = false; toast('Could not save this role.'); }
     } catch (e) { btn.disabled = false; toast('Could not save this role.'); }
+  }
+
+  // Hide/Not interested — dismiss this job so it doesn't appear again.
+  async function dismissJob(job, btn) {
+    if (!job.fingerprint) { toast('Cannot dismiss this listing.'); return; }
+    btn.disabled = true; btn.textContent = 'Hiding…';
+    try {
+      var res = await fetch('/api/jobs/dismiss', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fingerprint: job.fingerprint })
+      });
+      if (res.ok) {
+        // Remove from current list and UI
+        var idx = currentList.indexOf(job);
+        if (idx !== -1) currentList.splice(idx, 1);
+        var cards = document.querySelectorAll('#jpResults .jp-card');
+        if (cards[idx]) cards[idx].remove();
+        // If this was the selected job, clear the detail panel
+        if (selectedIdx === idx) {
+          document.getElementById('jpSplit').classList.remove('jp-showing-detail');
+          document.getElementById('jpDetail').innerHTML = '<div class="jp-detail-empty">Select a role to see the full description.</div>';
+          selectedIdx = -1;
+        } else if (selectedIdx > idx) {
+          selectedIdx -= 1;
+        }
+        toast('Hidden — this job won\'t appear again.');
+      } else { btn.disabled = false; btn.textContent = 'Hide'; toast('Could not hide this role.'); }
+    } catch (e) { btn.disabled = false; btn.textContent = 'Hide'; toast('Could not hide this role.'); }
   }
 
   async function checkMatch(job, btn) {

@@ -498,6 +498,24 @@ def _create_tables_and_migrations(db):
     # status rather than treating its insert-time placeholder as an apply time.)
     add_col_safe("jobs_tracker", "viewed_date TIMESTAMPTZ")
 
+    # Dismissed jobs — per-user "not interested" so they don't reappear in search/For You.
+    db.execute("""CREATE TABLE IF NOT EXISTS dismissed_jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        job_fingerprint TEXT NOT NULL,
+        dismissed_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(user_id, job_fingerprint)
+    )""")
+    for _idx in (
+        "CREATE INDEX IF NOT EXISTS idx_dismissed_user ON dismissed_jobs (user_id)",
+    ):
+        try:
+            db.execute(_idx)
+        except Exception as e:
+            if current_app:
+                current_app.logger.warning(f"Migration error (dismissed_jobs index): {e}")
+
     # Keyless ATS job layer: jobs synced from employers' own public job boards
     # (Greenhouse/Lever/Ashby/SmartRecruiters/Workable/Recruitee/Breezy). This is
     # OUR copy of the data, which is why the Job Search filters can be exact and
