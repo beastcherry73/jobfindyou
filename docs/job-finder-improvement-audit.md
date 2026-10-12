@@ -2,6 +2,8 @@
 
 Date: 2026-10-12
 
+Implementation commit: `8b91373` on `codex/job-finder-trust`.
+
 ## Scope and baseline
 
 JobSpike is a Flask application with server-rendered templates and vanilla

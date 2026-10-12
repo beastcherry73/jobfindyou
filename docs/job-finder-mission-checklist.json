@@ -2,6 +2,7 @@
   "mission": "JobSpike job finder improvement",
   "updated_at": "2026-10-12",
   "branch": "codex/job-finder-trust",
+  "implementation_commit": "8b91373",
   "status": "implementation_complete_pending_commit",
   "tasks": [
     {"id": "audit", "status": "complete", "artifact": "docs/job-finder-improvement-audit.md"},
