@@ -482,13 +482,15 @@ def _recall_probe(needle):
     return probe
 
 
-def recall(db, needles, max_days_old=DEFAULT_MAX_DAYS_OLD, country="", cap=_RECALL_CAP):
+def recall(db, needles, max_days_old=DEFAULT_MAX_DAYS_OLD, country="", cap=_RECALL_CAP, user_id=None):
     """Cheap SQL narrowing of the corpus to rows that MIGHT match. Lock held.
 
     Over-matches by design; `score_rows` applies the real word-boundary test.
     Ordered title-matches-first so hitting `cap` can only drop the weakest
     tier: ordering purely by recency instead measured a real fidelity loss
     (12/15 against the batch path, a 6-point role displaced by a 5).
+
+    If user_id is provided, jobs the user has dismissed are excluded.
     """
     probes = [p for p in (_recall_probe(n) for n in needles) if p]
     if not probes:
@@ -509,6 +511,11 @@ def recall(db, needles, max_days_old=DEFAULT_MAX_DAYS_OLD, country="", cap=_RECA
         where.append("(country_code = ? OR (work_mode = 'remote' "
                      "AND COALESCE(country_code, '') = ''))")
         params.append(country.strip().lower())
+
+    # Exclude jobs the user has dismissed (Hide/Not interested).
+    if user_id is not None:
+        where.append("fingerprint NOT IN (SELECT job_fingerprint FROM dismissed_jobs WHERE user_id = ?)")
+        params.append(user_id)
 
     title_sql = " OR ".join([r"LOWER(title) LIKE ? ESCAPE '\'"] * len(probes))
     match_sql = " OR ".join(

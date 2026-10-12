@@ -23,6 +23,12 @@ jobs_bp = Blueprint("jobs", __name__)
 
 
 # ── Pages ──────────────────────────────────────────────────────────────
+@jobs_bp.route("/jobs")
+def public_jobs_page():
+    """Public job search page — no authentication required."""
+    return render_template("public_jobsearch.html")
+
+
 @jobs_bp.route("/app/jobs")
 @login_required
 def jobs_page():
@@ -53,7 +59,6 @@ def tracker_page():
 
 # ── Job search (Adzuna proxy) ──────────────────────────────────────────
 @jobs_bp.route("/api/jobs/search", methods=["GET"])
-@login_required
 @rate_limit(limit=30, window_seconds=300)
 def api_jobs_search():
     if not any_source_configured():
@@ -61,6 +66,7 @@ def api_jobs_search():
 
     args = request.args
     job_type = (args.get("job_type") or "").strip().lower() or None
+    user_id = session.get("user_id")
     try:
         # unified_search routes by country: Adzuna (full filters) where it
         # serves that country, else the global aggregators. Adzuna-specific
@@ -85,6 +91,9 @@ def api_jobs_search():
             experience_level=(args.get("experience_level") or "").strip().lower(),
             guest_apply_only=(args.get("guest_apply") or "").strip().lower()
             in ("1", "true", "yes", "guest"),
+            visa_sponsorship=(args.get("visa_sponsorship") or "").strip().lower()
+            in ("1", "true", "yes", "visa"),
+            user_id=user_id,
         )
         return jsonify(data)
     except AdzunaValidationError as e:
@@ -96,7 +105,6 @@ def api_jobs_search():
 
 
 @jobs_bp.route("/api/jobs/salaries", methods=["GET"])
-@login_required
 @rate_limit(limit=60, window_seconds=300)
 def api_job_salaries():
     """Pay ranges employers published in live postings for a job title."""
@@ -114,7 +122,6 @@ def api_job_salaries():
 
 
 @jobs_bp.route("/api/jobs/countries", methods=["GET"])
-@login_required
 def api_jobs_countries():
     # Static list (no upstream call) — the UI populates its country dropdown and
     # learns which countries are Adzuna markets (so it only shows category
@@ -123,7 +130,6 @@ def api_jobs_countries():
 
 
 @jobs_bp.route("/api/jobs/categories", methods=["GET"])
-@login_required
 @rate_limit(limit=60, window_seconds=300)
 def api_jobs_categories():
     if not adzuna_configured():
@@ -293,6 +299,7 @@ def api_digest():
             rows = digest.recall(
                 db, [n for _, n in keywords],
                 max_days_old=max_days_old, country=country,
+                user_id=session["user_id"],
             ) if keywords else []
     except Exception as e:
         logger.warning(f"Digest query failed: {e}")
@@ -323,7 +330,6 @@ def api_digest():
 # tracker). JobSpike never inspects the opened tab or the third-party site.
 
 @jobs_bp.route("/api/jobs/description", methods=["GET"])
-@login_required
 @rate_limit(limit=90, window_seconds=300)
 def api_job_description():
     """Full description for one stored job, fetched live when we lack it.
@@ -387,6 +393,59 @@ def api_jobs_track():
     except Exception as e:
         logger.error(f"Tracker insert failed: {e}")
         return jsonify({"error": "Could not save this listing."}), 500
+
+
+# ── Dismiss job (Hide/Not interested) ────────────────────────────────────
+@jobs_bp.route("/api/jobs/dismiss", methods=["POST"])
+@login_required
+def api_jobs_dismiss():
+    body = request.get_json(silent=True) or {}
+    fingerprint = (body.get("fingerprint") or "").strip()
+    if not fingerprint:
+        return jsonify({"error": "Missing job fingerprint."}), 400
+    try:
+        with get_db() as db:
+            db.execute(
+                """INSERT INTO dismissed_jobs (user_id, job_fingerprint)
+                   VALUES (?, ?)
+                   ON CONFLICT(user_id, job_fingerprint) DO NOTHING""",
+                (session["user_id"], fingerprint),
+            )
+        return jsonify({"dismissed": True})
+    except Exception as e:
+        logger.error(f"Dismiss job failed: {e}")
+        return jsonify({"error": "Could not dismiss this job."}), 500
+
+
+# ── Analytics (minimal, privacy-conscious) ────────────────────────────────
+# Records: page_view, search, job_view, apply_click, save_click, hide_click
+# No resume content, no secrets, no PII beyond user_id (NULL for anonymous).
+@jobs_bp.route("/api/analytics/event", methods=["POST"])
+@rate_limit(limit=200, window_seconds=300)
+def api_analytics_event():
+    body = request.get_json(silent=True) or {}
+    event_type = (body.get("event_type") or "").strip()
+    if not event_type:
+        return jsonify({"error": "Missing event_type."}), 400
+    allowed = {"page_view", "search", "job_view", "apply_click", "save_click", "hide_click"}
+    if event_type not in allowed:
+        return jsonify({"error": "Invalid event_type."}), 400
+    event_data = body.get("event_data") or {}
+    # Sanitize: only allow known keys, strip unknown
+    allowed_keys = {"country", "what", "where", "job_fingerprint", "source", "platform", "work_mode", "experience_level"}
+    clean_data = {k: v for k, v in event_data.items() if k in allowed_keys}
+    user_id = session.get("user_id")
+    try:
+        with get_db() as db:
+            db.execute(
+                """INSERT INTO analytics_events (user_id, event_type, event_data)
+                   VALUES (?, ?, ?)""",
+                (user_id, event_type, json.dumps(clean_data)),
+            )
+        return jsonify({"recorded": True})
+    except Exception as e:
+        logger.error(f"Analytics event failed: {e}")
+        return jsonify({"error": "Could not record event."}), 500
 
 
 # ── Tracker list + status update ───────────────────────────────────────

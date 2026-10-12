@@ -169,8 +169,16 @@
     var bits = [];
     if (job.company) bits.push(esc(job.company));
     if (job.location) bits.push(esc(job.location));
+    if (job.experience_level) {
+      var expLabel = job.experience_level === 'no_experience' ? 'No experience required'
+        : job.experience_level.charAt(0).toUpperCase() + job.experience_level.slice(1);
+      bits.push('<span class="ws-badge ws-badge-good">' + esc(expLabel) + '</span>');
+    }
     if (job.work_mode) bits.push(esc(job.work_mode));
     if (job.employment_type) bits.push(esc(job.employment_type));
+    if (job.visa_sponsorship) {
+      bits.push('<span class="ws-badge ws-badge-good" title="Employer mentions visa sponsorship / work permit support.">Visa sponsorship</span>');
+    }
 
     // Say WHY the role surfaced. A bare score the user cannot interrogate is
     // indistinguishable from a broken one.
@@ -193,6 +201,7 @@
     var saveBtn = job._saved
       ? '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave' + i + '" disabled>Saved</button>'
       : '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave' + i + '">Save</button>';
+    var hideBtn = '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyHide' + i + '">Hide</button>';
     var side = job._match != null
       ? '<div class="fy-pct ' + toneClass(job._match) + '">' + job._match + '%</div>' +
         '<div class="fy-pct-label">match</div>'
@@ -203,7 +212,7 @@
         '<div class="fy-title">' + esc(job.title || 'Untitled role') + '</div>' +
         '<div class="fy-meta">' + bits.join(' &middot; ') + '</div>' +
         (why ? '<div class="fy-why">' + why + '</div>' : '') + acct +
-        '<div class="fy-actions">' + viewBtn + saveBtn +
+        '<div class="fy-actions">' + viewBtn + saveBtn + hideBtn +
           '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor' + i + '">Tailor for this</button>' +
         '</div>' +
       '</div>' +
@@ -231,6 +240,7 @@
     byId('fySave' + i, function (b) { b.addEventListener('click', function () { saveJob(i, b); }); });
     byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
     byId('fyTailor' + i, function (b) { b.addEventListener('click', function () { tailorFor(i); }); });
+    byId('fyHide' + i, function (b) { b.addEventListener('click', function () { dismissJob(i, b); }); });
   }
 
   function byId(id, fn) { var el = document.getElementById(id); if (el) fn(el); }
@@ -360,6 +370,25 @@
       if (box) { box.value = jd; box.dispatchEvent(new Event('input', { bubbles: true })); }
       toast('Job description loaded — pick your resume to tailor it.');
     } catch (e) { toast('Could not open the tailoring step.'); }
+  }
+
+  // Hide/Not interested — dismiss this job so it doesn't appear again.
+  async function dismissJob(i, btn) {
+    var job = jobs[i];
+    if (!job.fingerprint) { toast('Cannot dismiss this listing.'); return; }
+    btn.disabled = true; btn.textContent = 'Hiding…';
+    try {
+      var res = await fetch('/api/jobs/dismiss', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fingerprint: job.fingerprint })
+      });
+      if (res.ok) {
+        // Remove from jobs array and re-render
+        jobs.splice(i, 1);
+        render();
+        toast('Hidden — this job won\'t appear again.');
+      } else { btn.disabled = false; btn.textContent = 'Hide'; toast('Could not hide this role.'); }
+    } catch (e) { btn.disabled = false; btn.textContent = 'Hide'; toast('Could not hide this role.'); }
   }
 })();
 </script>

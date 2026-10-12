@@ -532,7 +532,7 @@ def normalize_employment_type(value):
     return ""
 
 
-EXPERIENCE_LEVELS = ["internship", "entry", "mid", "senior", "lead", "executive"]
+EXPERIENCE_LEVELS = ["internship", "entry", "mid", "senior", "lead", "executive", "no_experience"]
 
 _EXPERIENCE_MAP = {
     "internship": "internship", "intern": "internship", "student": "internship",
@@ -620,6 +620,13 @@ _RANGE_RE = re.compile(
 _LPA_RE = re.compile(r"(\d{1,2}(?:\.\d)?)\s*(?:-|–|to)\s*(\d{1,2}(?:\.\d)?)\s*(?:lpa|lakhs?(?: per annum)?)\b", re.I)
 _NOT_ANNUAL_RE = re.compile(r"(/\s?h(?:ou)?r|per hour|hourly|an hour|/\s?mo|per month|monthly|/\s?wk|per week|weekly|per day|daily)", re.I)
 _CURRENCY_CODE_RE = re.compile(r"\b(USD|CAD|AUD|SGD|NZD|GBP|EUR|CHF)\b")
+# Visa sponsorship detection — keywords that indicate employer sponsors work visas.
+_VISA_SPONSOR_RE = re.compile(
+    r"\b(visa sponsorship|sponsor(?:s|ed)? (?:work )?visa|h-?1b|h1b|work permit|"
+    r"employment authorization|eligible for (?:work )?visa|"
+    r"will sponsor|sponsorship (?:available|provided)|"
+    r"immigration sponsorship|global mobility)\b", re.I)
+
 _SYMBOL = {"USD": "$", "CAD": "C$", "AUD": "A$", "SGD": "S$", "NZD": "NZ$", "GBP": "£",
            "EUR": "€", "CHF": "CHF ", "INR": "₹"}
 _ANNUAL_BOUNDS = {"INR": (150_000, 50_000_000)}
@@ -670,6 +677,13 @@ def salary_from_text(text, country_code=""):
     return None
 
 
+def _visa_sponsorship(text):
+    """Return True if job description mentions visa sponsorship / work permit support."""
+    if not text:
+        return False
+    return bool(_VISA_SPONSOR_RE.search(text))
+
+
 def _format_pay(lo, hi, currency):
     sym = _SYMBOL.get(currency, currency + " ")
     if currency == "INR":
@@ -688,6 +702,7 @@ def _gh_normalize(j, token, company):
     if isinstance(j.get("location"), dict):
         location = j["location"].get("name") or ""
     title = j.get("title") or ""
+    desc = _text(j.get("content"))
     return {
         "source_id": str(j.get("id") or ""),
         "title": title,
@@ -701,7 +716,8 @@ def _gh_normalize(j, token, company):
         "salary_text": "",
         "posted_at": _iso(j.get("first_published") or j.get("updated_at")),
         "apply_url": j.get("absolute_url") or "",
-        "description": _text(j.get("content")),
+        "description": desc,
+        "visa_sponsorship": _visa_sponsorship(desc),
     }
 
 
@@ -713,6 +729,7 @@ def _lever_normalize(j, token, company):
         location = ", ".join(str(x) for x in all_locs[:3] if x)
     title = j.get("text") or ""
     salary = j.get("salaryRange") if isinstance(j.get("salaryRange"), dict) else {}
+    desc = _text(j.get("descriptionPlain") or j.get("description"))
     return {
         "source_id": str(j.get("id") or ""),
         "title": title,
@@ -730,7 +747,8 @@ def _lever_normalize(j, token, company):
         # hostedUrl is the employer's own Lever board page (the apply form is
         # one click on from there); applyUrl jumps straight into the form.
         "apply_url": j.get("hostedUrl") or j.get("applyUrl") or "",
-        "description": _text(j.get("descriptionPlain") or j.get("description")),
+        "description": desc,
+        "visa_sponsorship": _visa_sponsorship(desc),
     }
 
 
@@ -750,6 +768,7 @@ def _ashby_normalize(j, token, company):
             country = postal.get("addressCountry") or ""
     comp = j.get("compensation") if isinstance(j.get("compensation"), dict) else {}
     title = j.get("title") or ""
+    desc = _text(j.get("descriptionPlain") or j.get("descriptionHtml"))
     return {
         "source_id": str(j.get("id") or ""),
         "title": title,
@@ -765,7 +784,8 @@ def _ashby_normalize(j, token, company):
                              or comp.get("compensationTierSummary"), 120),
         "posted_at": _iso(j.get("publishedAt")),
         "apply_url": j.get("jobUrl") or j.get("applyUrl") or "",
-        "description": _text(j.get("descriptionPlain") or j.get("descriptionHtml")),
+        "description": desc,
+        "visa_sponsorship": _visa_sponsorship(desc),
     }
 
 
@@ -777,6 +797,8 @@ def _sr_normalize(j, token, company):
     exp = j.get("experienceLevel") if isinstance(j.get("experienceLevel"), dict) else {}
     comp = j.get("company") if isinstance(j.get("company"), dict) else {}
     title = j.get("name") or ""
+    # SmartRecruiters doesn't return description in list; fetched on demand.
+    # visa_sponsorship will be False initially, updated when description fetched.
     return {
         "source_id": str(j.get("id") or j.get("uuid") or ""),
         "title": title,
@@ -792,7 +814,8 @@ def _sr_normalize(j, token, company):
         "salary_text": "",
         "posted_at": _iso(j.get("releasedDate")),
         "apply_url": f"https://jobs.smartrecruiters.com/{token}/{j.get('id')}",
-        "description": "",   # not in the list response; detail needs 1 call/job
+        "description": "",
+        "visa_sponsorship": False,
     }
 
 
@@ -803,6 +826,7 @@ def _workable_normalize(j, token, company):
     if isinstance(locs, list) and locs and isinstance(locs[0], dict):
         country = locs[0].get("countryCode") or ""
     title = j.get("title") or ""
+    desc = _text(j.get("description"))
     return {
         "source_id": str(j.get("shortcode") or ""),
         "title": title,
@@ -816,7 +840,8 @@ def _workable_normalize(j, token, company):
         "salary_text": "",
         "posted_at": _iso(j.get("published_on") or j.get("created_at")),
         "apply_url": j.get("url") or j.get("application_url") or j.get("shortlink") or "",
-        "description": _text(j.get("description")),
+        "description": desc,
+        "visa_sponsorship": _visa_sponsorship(desc),
     }
 
 
@@ -825,6 +850,7 @@ def _recruitee_normalize(j, token, company):
         x for x in [j.get("city"), j.get("country")] if x)
     salary = j.get("salary") if isinstance(j.get("salary"), dict) else {}
     title = j.get("title") or ""
+    desc = _text(j.get("description"))
     return {
         "source_id": str(j.get("id") or j.get("slug") or ""),
         "title": title,
@@ -841,7 +867,8 @@ def _recruitee_normalize(j, token, company):
         "salary_text": "",
         "posted_at": _iso(j.get("published_at") or j.get("created_at")),
         "apply_url": j.get("careers_apply_url") or j.get("careers_url") or "",
-        "description": _text(j.get("description")),
+        "description": desc,
+        "visa_sponsorship": _visa_sponsorship(desc),
     }
 
 
@@ -854,6 +881,7 @@ def _breezy_normalize(j, token, company):
         x for x in [loc.get("city"), country] if x)
     etype = j.get("type") if isinstance(j.get("type"), dict) else {}
     title = j.get("name") or ""
+    desc = _text(j.get("description"))
     return {
         "source_id": str(j.get("id") or ""),
         "title": title,
@@ -867,7 +895,8 @@ def _breezy_normalize(j, token, company):
         "salary_text": "",
         "posted_at": _iso(j.get("published_date")),
         "apply_url": j.get("url") or "",
-        "description": _text(j.get("description")),
+        "description": desc,
+        "visa_sponsorship": _visa_sponsorship(desc),
     }
 
 
@@ -1037,6 +1066,8 @@ def _wd_normalize(j, token, company):
     else:
         location = loc_text
     title = j.get("title") or ""
+    # Workday doesn't return description in list; fetched on demand.
+    # visa_sponsorship will be False initially, updated when description fetched.
     return {
         "source_id": path,
         "title": title,
@@ -1055,6 +1086,7 @@ def _wd_normalize(j, token, company):
         "apply_url": (f"https://{tenant}.{pod}.myworkdayjobs.com/en-US/{site}{path}"
                       if path else ""),
         "description": "",
+        "visa_sponsorship": False,
     }
 
 
@@ -1842,8 +1874,13 @@ def account_required_platforms():
 def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
            work_mode="", experience_level="", employment_type="",
            salary_min=None, salary_max=None, salary_include_unknown=True,
-           max_days_old=None, sort_by="relevance", guest_apply_only=False):
-    """Query the synced ATS corpus. Returns {count, results} in the unified schema."""
+           max_days_old=None, sort_by="relevance", guest_apply_only=False,
+           user_id=None, visa_sponsorship=False):
+    """Query the synced ATS corpus. Returns {count, results} in the unified schema.
+
+    If user_id is provided, jobs the user has dismissed are excluded.
+    If visa_sponsorship is True, only jobs mentioning visa sponsorship are returned.
+    """
     from backend.database import get_db
 
     try:
@@ -1884,12 +1921,19 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
     if work_mode in ("remote", "hybrid", "onsite"):
         where_sql.append("work_mode = ?")
         params.append(work_mode)
-    if experience_level in EXPERIENCE_LEVELS:
+    if experience_level == "no_experience":
+        # Jobs explicitly mentioning no experience needed / fresher / 0 years.
+        # Search in description and search_text (title + company + location).
+        where_sql.append("(LOWER(description) LIKE ? OR LOWER(search_text) LIKE ? OR LOWER(description) LIKE ? OR LOWER(search_text) LIKE ? OR LOWER(description) LIKE ? OR LOWER(search_text) LIKE ?)")
+        params.extend(["%no experience%", "%no experience%", "%fresher%", "%fresher%", "%0 year%", "%0 year%"])
+    elif experience_level in EXPERIENCE_LEVELS:
         where_sql.append("experience_level = ?")
         params.append(experience_level)
     if employment_type in EMPLOYMENT_TYPES:
         where_sql.append("employment_type = ?")
         params.append(employment_type)
+    if visa_sponsorship:
+        where_sql.append("visa_sponsorship = 1")
     if guest_apply_only:
         # Roughly a third of the board (SmartRecruiters, Workday) asks the
         # candidate to create an account on the employer's ATS before they
@@ -1901,6 +1945,11 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
             marks = ", ".join(["?"] * len(gated))
             where_sql.append(f"platform NOT IN ({marks})")
             params.extend(gated)
+
+    # Exclude jobs the user has dismissed (Hide/Not interested).
+    if user_id is not None:
+        where_sql.append("fingerprint NOT IN (SELECT job_fingerprint FROM dismissed_jobs WHERE user_id = ?)")
+        params.append(user_id)
 
     smin = _money(salary_min)
     smax = _money(salary_max)
@@ -1945,7 +1994,7 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
     cols = ("id, fingerprint, platform, company_token, title, company, location, "
             "country_code, work_mode, employment_type, experience_level, "
             "salary_min, salary_max, salary_currency, salary_text, posted_at, "
-            "apply_url, SUBSTR(description, 1, 1500) AS description")
+            "last_seen_at, apply_url, SUBSTR(description, 1, 1500) AS description")
     narrow = "id, company_token, title, company, posted_at, salary_max"
     base = (f"SELECT {narrow}, "
             "ROW_NUMBER() OVER (PARTITION BY LOWER(title), LOWER(company) "
@@ -2073,6 +2122,14 @@ def to_unified(row):
     posted = row.get("posted_at") or ""
     if not isinstance(posted, str):
         posted = getattr(posted, "isoformat", lambda: str(posted))()
+    # This is deliberately not called "verified" or "active". It is the
+    # timestamp of the last successful fetch in which this exact posting was
+    # returned by its employer-hosted board. That is a useful, defensible
+    # freshness signal; it does not prove that an applicant can complete every
+    # subsequent step of the employer's application flow.
+    last_checked = row.get("last_seen_at") or ""
+    if not isinstance(last_checked, str):
+        last_checked = getattr(last_checked, "isoformat", lambda: str(last_checked))()
     return {
         "id": str(row.get("id") or ""),
         "title": row.get("title") or "",
@@ -2085,6 +2142,7 @@ def to_unified(row):
         "employment_type": row.get("employment_type") or "",
         "posted_at": posted,
         "created": posted,                 # alias (existing UI date formatting)
+        "last_checked_at": last_checked,
         "publisher": label,
         "apply_url": row.get("apply_url") or "",
         "redirect_url": row.get("apply_url") or "",   # alias (Apply/tracker flow)
