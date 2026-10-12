@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://www.jobspike.in/static/css/workspace.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head><body>
+<div class="ws-layout">
+<aside class="ws-sidebar" id="sidebar">
+      <div class="ws-sidebar-header">
+        <a href="/" class="ws-sidebar-brand">
+          <span class="ws-sidebar-mark brand">
+            <img src="https://www.jobspike.in/static/img/jobspike-icon.svg" alt="" width="17" height="17">
+          </span>
+          <span class="ws-sidebar-name">
+            <img class="ws-brand-light" src="https://www.jobspike.in/static/img/jobspike-wordmark.svg" alt="JobSpike" height="17">
+            <img class="ws-brand-dark" src="https://www.jobspike.in/static/img/jobspike-wordmark-on-dark.svg" alt="" aria-hidden="true" height="17">
+          </span>
+        </a>
+      </div>
+      <nav class="ws-sidebar-nav">
+        <a class="ws-nav-item" data-section="dashboard"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg></span><span class="ws-nav-label">Dashboard</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Jobs</div>
+        <a class="ws-nav-item " data-section="jobsearch"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span><span class="ws-nav-label">Browse</span></a>
+        <a class="ws-nav-item " data-section="foryou"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5.4 5.6.6-4.2 3.9 1.2 5.6L12 15.8 6.9 18.5l1.2-5.6L4 9l5.6-.6z"></path></svg></span><span class="ws-nav-label">For You</span></a>
+        <a class="ws-nav-item" data-section="pipeline"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.4"></rect><rect x="10" y="4" width="5" height="11" rx="1.4"></rect><rect x="17" y="4" width="4" height="7" rx="1.4"></rect></svg></span><span class="ws-nav-label">Pipeline</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Analysis</div>
+        <a class="ws-nav-item active" data-section="analysis-upload"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></span><span class="ws-nav-label">Upload Resume</span></a>
+        <a class="ws-nav-item" data-section="history"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path></svg></span><span class="ws-nav-label">Previous Analyses</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Improve Resume</div>
+        <a class="ws-nav-item " data-section="improve"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"></path><path d="M17 7h4v4"></path></svg></span><span class="ws-nav-label">Improve Resume</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Builder</div>
+        <a class="ws-nav-item" data-section="builder"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></span><span class="ws-nav-label">Build</span></a>
+      </nav>
+      <div id="persistentHealthBadge" style="margin: 12px 14px; padding: 12px 14px; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ws-text-tertiary);">Resume Health</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--ws-primary);">94 <span style="font-size: 0.7rem; font-weight: 700; color: #16A34A; background: rgba(34,197,94,0.15); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">Excellent</span></div>
+        </div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--ws-primary);">Improve &rarr;</div>
+      </div>
+      <div class="ws-sidebar-footer">
+        <div class="ws-sidebar-user">
+          <div class="ws-sidebar-avatar">A</div>
+          <div class="ws-sidebar-user-info">
+            <div class="ws-sidebar-user-name">Alex Morgan</div>
+            <div class="ws-sidebar-user-email">Free plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+<div class="ws-main">
+<header class="ws-topbar"><div class="ws-topbar-left"><div class="ws-breadcrumb"><span class="ws-breadcrumb-current">Upload Resume</span></div></div>
+<div class="ws-topbar-right"><div class="ws-user-menu"><div class="ws-user-trigger"><div class="ws-user-avatar">A</div></div></div></div></header>
+<main class="ws-content">
+<section id="section-analysis-upload" class="ws-section ws-animate-in" style="display:block;">
+          <div class="ws-page-header">
+            <div>
+              <h1 class="ws-page-title">Upload Resume</h1>
+              <p class="ws-page-subtitle">Get a complete Level 5 professional ATS &amp; recruiter analysis</p>
+            </div>
+          </div>
+          <div class="ws-animate-stagger">
+            <div class="ws-card ws-mb-md">
+              <div class="ws-card-body" style="padding:32px;">
+                <div class="ws-upload-zone" id="analysisUploadZone" onclick="document.getElementById('analysisFileInput').click()" ondragover="event.preventDefault();this.classList.add('dragging')" ondragleave="this.classList.remove('dragging')" ondrop="handleDrop(event)" style="padding:48px 24px; text-align:center; border:2px dashed var(--ws-border); border-radius:var(--ws-radius-lg); cursor:pointer;">
+                  <div style="width:48px;height:48px;margin-bottom:16px;opacity:0.6;display:flex;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>
+                  <div style="font-size:16px;font-weight:600;color:var(--ws-text);margin-bottom:4px;" id="analysisUploadTitle">Drag and drop your resume here, or click to browse</div>
+                  <div style="font-size:12px;color:var(--ws-text-muted);">Supports PDF or TXT formats (Max 10MB)</div>
+                  <input type="file" id="analysisFileInput" accept=".pdf,.txt" style="display:none" onchange="handleAnalysisFileSelect(this.files[0])" onclick="event.stopPropagation()">
+                </div>
+                
+                <div class="ws-divider" style="margin:24px 0;"></div>
+                
+                <div class="ws-input-group">
+                  <label style="display:block; font-size:12px; font-weight:600; color:var(--ws-text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Target Job Description (Optional but Recommended)</label>
+                  <textarea class="ws-textarea" id="analysisJobDesc" rows="6" placeholder="Paste the job description you are targeting here. JobSpike will evaluate your resume against this role for Level 5 Keyword Optimization and Industry Fit..." style="font-size:13px;"></textarea>
+                  <p style="margin-top:10px; font-size:12.5px; color:var(--ws-text-secondary); line-height:1.5;">
+                    Or skip pasting one at a time — <a onclick="switchSection('jobsearch')" style="color:var(--ws-primary); font-weight:600; text-decoration:none; cursor:pointer;">search live listings and see your match on all of them&nbsp;→</a>
+                  </p>
+                </div>
+
+                <div style="margin-top:24px; text-align:right;">
+                  <button class="ws-btn ws-btn-primary ws-btn-lg" id="btnRunAnalysis" onclick="runAnalysis()" disabled="" style="padding:12px 32px; font-size:14px; font-weight:600;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"></path></svg> Analyze Resume
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+</main>
+</div>
+</div>
+</body></html>

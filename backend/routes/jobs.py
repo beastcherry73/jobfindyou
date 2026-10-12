@@ -91,6 +91,8 @@ def api_jobs_search():
             experience_level=(args.get("experience_level") or "").strip().lower(),
             guest_apply_only=(args.get("guest_apply") or "").strip().lower()
             in ("1", "true", "yes", "guest"),
+            visa_sponsorship=(args.get("visa_sponsorship") or "").strip().lower()
+            in ("1", "true", "yes", "visa"),
             user_id=user_id,
         )
         return jsonify(data)
@@ -413,6 +415,37 @@ def api_jobs_dismiss():
     except Exception as e:
         logger.error(f"Dismiss job failed: {e}")
         return jsonify({"error": "Could not dismiss this job."}), 500
+
+
+# ── Analytics (minimal, privacy-conscious) ────────────────────────────────
+# Records: page_view, search, job_view, apply_click, save_click, hide_click
+# No resume content, no secrets, no PII beyond user_id (NULL for anonymous).
+@jobs_bp.route("/api/analytics/event", methods=["POST"])
+@rate_limit(limit=200, window_seconds=300)
+def api_analytics_event():
+    body = request.get_json(silent=True) or {}
+    event_type = (body.get("event_type") or "").strip()
+    if not event_type:
+        return jsonify({"error": "Missing event_type."}), 400
+    allowed = {"page_view", "search", "job_view", "apply_click", "save_click", "hide_click"}
+    if event_type not in allowed:
+        return jsonify({"error": "Invalid event_type."}), 400
+    event_data = body.get("event_data") or {}
+    # Sanitize: only allow known keys, strip unknown
+    allowed_keys = {"country", "what", "where", "job_fingerprint", "source", "platform", "work_mode", "experience_level"}
+    clean_data = {k: v for k, v in event_data.items() if k in allowed_keys}
+    user_id = session.get("user_id")
+    try:
+        with get_db() as db:
+            db.execute(
+                """INSERT INTO analytics_events (user_id, event_type, event_data)
+                   VALUES (?, ?, ?)""",
+                (user_id, event_type, json.dumps(clean_data)),
+            )
+        return jsonify({"recorded": True})
+    except Exception as e:
+        logger.error(f"Analytics event failed: {e}")
+        return jsonify({"error": "Could not record event."}), 500
 
 
 # ── Tracker list + status update ───────────────────────────────────────

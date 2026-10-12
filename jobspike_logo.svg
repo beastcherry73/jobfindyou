@@ -1,0 +1,13 @@
+<svg width="600" height="200" viewBox="0 0 600 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon: upward spike, like a career breakthrough / stock spike -->
+  <g transform="translate(20, 30)">
+    <polyline points="0,120 35,120 55,40 75,90 95,10 115,70 140,70"
+              fill="none" stroke="#4F46E5" stroke-width="10"
+              stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="95" cy="10" r="9" fill="#4F46E5"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="200" y="120" font-family="Arial, Helvetica, sans-serif"
+        font-size="64" font-weight="700" fill="#1E1B2E">Job<tspan fill="#4F46E5">Spike</tspan></text>
+</svg>

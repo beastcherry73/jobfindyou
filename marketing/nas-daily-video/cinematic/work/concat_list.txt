@@ -1,0 +1,6 @@
+file 'C:/Users/venut/OneDrive/Desktop/Resume analyzer/marketing/nas-daily-video/cinematic/work/norm_seg0.mp4'
+file 'C:/Users/venut/OneDrive/Desktop/Resume analyzer/marketing/nas-daily-video/cinematic/work/norm_seg1.mp4'
+file 'C:/Users/venut/OneDrive/Desktop/Resume analyzer/marketing/nas-daily-video/cinematic/work/norm_seg2.mp4'
+file 'C:/Users/venut/OneDrive/Desktop/Resume analyzer/marketing/nas-daily-video/cinematic/work/norm_seg3.mp4'
+file 'C:/Users/venut/OneDrive/Desktop/Resume analyzer/marketing/nas-daily-video/cinematic/work/norm_seg4.mp4'
+file 'C:/Users/venut/OneDrive/Desktop/Resume analyzer/marketing/nas-daily-video/cinematic/work/cta_norm.mp4'

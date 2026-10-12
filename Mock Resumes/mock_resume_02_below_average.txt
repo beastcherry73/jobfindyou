@@ -1,0 +1,50 @@
+James Chen
+james.chen@outlook.com | (555) 333-4444 | linkedin.com/in/jameschen
+San Francisco, CA
+
+Summary
+Software Engineer with experience in web development. Worked on several projects.
+
+Skills
+• JavaScript, React, Node.js
+• HTML, CSS
+• MongoDB, SQL
+• Git
+
+Experience
+
+Junior Software Developer | DataFlow Systems | San Francisco, CA
+May 2022 - Present
+• Worked on the frontend of the main product
+• Fixed bugs reported by QA team
+• Participated in sprint planning and code reviews
+• Helped with deployment
+
+Associate Software Engineer | WebCraft Agency | Oakland, CA
+Jan 2021 - April 2022
+• Built websites for clients using React
+• Did testing and debugging
+• Met with clients
+• Updated website content
+
+IT Support Intern | Bay Area Medical Center
+June 2020 - Dec 2020
+• Helped with computer issues
+• Set up new computers
+• Worked on tickets
+
+Projects
+
+Personal Portfolio
+• Made a portfolio website
+
+Todo List App
+• Created a todo list with React
+
+Education
+
+University of California, Berkeley — Bachelor of Arts in Computer Science (2020)
+Minor in Mathematics
+
+Certifications
+• AWS Certified Cloud Practitioner

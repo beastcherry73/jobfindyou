@@ -1,0 +1,20 @@
+{
+    "mcpServers": {
+        "imagekit_devtools": {
+            "type": "http",
+            "url": "https://devtools-mcp.imagekit.io/mcp"
+        },
+        "imagekit_api": {
+            "type": "http",
+            "url": "https://api-mcp.imagekit.io/mcp"
+        },
+        "supabase": {
+            "type": "http",
+            "url": "https://mcp.supabase.com/mcp?project_ref=umvqlomdjffsstiazjig&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+        },
+        "higgsfield": {
+            "type": "http",
+            "url": "https://mcp.higgsfield.ai/mcp"
+        }
+    }
+}

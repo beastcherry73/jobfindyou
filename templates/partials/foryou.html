@@ -176,6 +176,9 @@
     }
     if (job.work_mode) bits.push(esc(job.work_mode));
     if (job.employment_type) bits.push(esc(job.employment_type));
+    if (job.visa_sponsorship) {
+      bits.push('<span class="ws-badge ws-badge-good" title="Employer mentions visa sponsorship / work permit support.">Visa sponsorship</span>');
+    }
 
     // Say WHY the role surfaced. A bare score the user cannot interrogate is
     // indistinguishable from a broken one.

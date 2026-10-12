@@ -1,0 +1,38 @@
+Alexandra Martinez
+alex.martinez@gmail.com | (555) 111-2222 | linkedin.com/in/alexmartinez
+
+Education
+University of Texas at Austin — Bachelor of Science in Computer Science (2023)
+GPA: 3.1
+
+Technical Skills
+Languages: Java, Python, HTML
+Tools: Git, VS Code, Excel
+
+Projects
+Event Management System
+• Helped develop an event management application
+• Used Java and MySQL
+• Worked with a team
+
+Library Management System
+• Created a library system for tracking books
+• Used Python and some frameworks
+
+Experience
+Intern, TechCorp Solutions (Summer 2022)
+• Assisted senior developers with testing
+• Helped write documentation
+• Attended team meetings
+
+Campus Bookstore, Sales Associate (2021 - 2023)
+• Helped customers find products
+• Managed inventory
+
+Achievements
+• Dean's List (one semester)
+• Member of Computer Science Club
+• Completed Java Certification
+
+Languages
+English (Native), Spanish (Intermediate)

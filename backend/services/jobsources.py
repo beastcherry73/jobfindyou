@@ -240,7 +240,7 @@ def _merge_rank_dedupe(groups):
 
 
 def unified_search(what="", where="", country="in", page=1, per_page=20,
-                   user_id=None, **adzuna_filters):
+                   user_id=None, visa_sponsorship=False, **adzuna_filters):
     """Return {count, results, country, currency, source_used, sources_used}.
 
     ATS-ONLY as of 2026-08-29. Every result now comes from our synced copy of
@@ -274,6 +274,7 @@ def unified_search(what="", where="", country="in", page=1, per_page=20,
     work_mode = (adzuna_filters.pop("work_mode", "") or "").strip().lower()
     experience_level = (adzuna_filters.pop("experience_level", "") or "").strip().lower()
     guest_apply_only = bool(adzuna_filters.pop("guest_apply_only", False))
+    visa_sponsorship = bool(adzuna_filters.pop("visa_sponsorship", False))
 
     # Salary sanity check. Previously this was enforced inside the Adzuna
     # client; with Adzuna gone the API would silently return an empty list for
@@ -301,6 +302,7 @@ def unified_search(what="", where="", country="in", page=1, per_page=20,
         sort_by=(adzuna_filters.get("sort_by") or "relevance"),
         guest_apply_only=guest_apply_only,
         user_id=user_id,
+        visa_sponsorship=visa_sponsorship,
     )
     results = (res or {}).get("results") or []
 

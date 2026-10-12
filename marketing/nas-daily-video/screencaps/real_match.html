@@ -1,0 +1,424 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://www.jobspike.in/static/css/workspace.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head><body>
+<div class="ws-layout">
+<aside class="ws-sidebar" id="sidebar">
+      <div class="ws-sidebar-header">
+        <a href="/" class="ws-sidebar-brand">
+          <span class="ws-sidebar-mark brand">
+            <img src="https://www.jobspike.in/static/img/jobspike-icon.svg" alt="" width="17" height="17">
+          </span>
+          <span class="ws-sidebar-name">
+            <img class="ws-brand-light" src="https://www.jobspike.in/static/img/jobspike-wordmark.svg" alt="JobSpike" height="17">
+            <img class="ws-brand-dark" src="https://www.jobspike.in/static/img/jobspike-wordmark-on-dark.svg" alt="" aria-hidden="true" height="17">
+          </span>
+        </a>
+      </div>
+      <nav class="ws-sidebar-nav">
+        <a class="ws-nav-item" data-section="dashboard"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg></span><span class="ws-nav-label">Dashboard</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Jobs</div>
+        <a class="ws-nav-item " data-section="jobsearch"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg></span><span class="ws-nav-label">Browse</span></a>
+        <a class="ws-nav-item active" data-section="foryou"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5.4 5.6.6-4.2 3.9 1.2 5.6L12 15.8 6.9 18.5l1.2-5.6L4 9l5.6-.6z"></path></svg></span><span class="ws-nav-label">For You</span></a>
+        <a class="ws-nav-item" data-section="pipeline"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="5" height="16" rx="1.4"></rect><rect x="10" y="4" width="5" height="11" rx="1.4"></rect><rect x="17" y="4" width="4" height="7" rx="1.4"></rect></svg></span><span class="ws-nav-label">Pipeline</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Analysis</div>
+        <a class="ws-nav-item " data-section="analysis-upload"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></span><span class="ws-nav-label">Upload Resume</span></a>
+        <a class="ws-nav-item" data-section="history"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"></path></svg></span><span class="ws-nav-label">Previous Analyses</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Improve Resume</div>
+        <a class="ws-nav-item " data-section="improve"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11l4 4 8-8"></path><path d="M17 7h4v4"></path></svg></span><span class="ws-nav-label">Improve Resume</span></a>
+        <div class="ws-nav-section-label" style="margin-top:8px;">Resume Builder</div>
+        <a class="ws-nav-item" data-section="builder"><span class="ws-nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></span><span class="ws-nav-label">Build</span></a>
+      </nav>
+      <div id="persistentHealthBadge" style="margin: 12px 14px; padding: 12px 14px; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ws-text-tertiary);">Resume Health</div>
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--ws-primary);">94 <span style="font-size: 0.7rem; font-weight: 700; color: #16A34A; background: rgba(34,197,94,0.15); padding: 2px 6px; border-radius: 4px; vertical-align: middle;">Excellent</span></div>
+        </div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--ws-primary);">Improve &rarr;</div>
+      </div>
+      <div class="ws-sidebar-footer">
+        <div class="ws-sidebar-user">
+          <div class="ws-sidebar-avatar">A</div>
+          <div class="ws-sidebar-user-info">
+            <div class="ws-sidebar-user-name">Alex Morgan</div>
+            <div class="ws-sidebar-user-email">Free plan</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+<div class="ws-main">
+<header class="ws-topbar"><div class="ws-topbar-left"><div class="ws-breadcrumb"><span class="ws-breadcrumb-current">For You</span></div></div>
+<div class="ws-topbar-right"><div class="ws-user-menu"><div class="ws-user-trigger"><div class="ws-user-avatar">A</div></div></div></div></header>
+<main class="ws-content">
+<section id="section-foryou" class="ws-section ws-animate-in" style="display:block;">
+          <!--
+  For You - the resume-matched shortlist.
+
+  Self-contained: fy-* scoped styles + an IIFE exposing window.initForYou,
+  matching the jobsearch/pipeline partials. It deliberately does NOT reach into
+  jobsearch.html's helpers - that partial wraps everything in an IIFE, so its
+  esc/toast/toneClass are private and borrowing them would break silently.
+
+  TWO-PHASE by design, and the phases are visible to the user:
+
+    Phase 1  GET /api/digest returns the keyword shortlist. Fast (0.4-1.5s
+             measured), no AI, so the list paints immediately.
+    Phase 2  each card's match percentage comes from the EXISTING
+             /api/jobs/match route, one call per card - the same lazy pattern
+             Browse already uses.
+
+  Phase 2 is not run for the whole list. Ten-plus sequential Groq calls would
+  exceed the serverless time budget in one request, which is exactly why the
+  digest engine's own stage 2 is not wired to the route. Here the top few are
+  scored automatically (two at a time, so the first percentages land in a
+  couple of seconds) and the rest are scored on demand. /api/jobs/match is rate
+  limited to 40 per 300s, so auto-scoring the entire list on every tab visit
+  would also burn a user's budget on roles they never looked at.
+-->
+<style>
+  .fy-list { display: flex; flex-direction: column; gap: 10px; }
+  .fy-card {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 16px; border: 1px solid var(--ws-border); border-radius: 12px;
+    background: var(--ws-surface);
+  }
+  .fy-card:hover { border-color: var(--ws-primary); }
+  .fy-logo {
+    width: 40px; height: 40px; flex: 0 0 40px; border-radius: 9px;
+    overflow: hidden; display: grid; place-items: center;
+    background: var(--ws-primary-subtle); border: 1px solid var(--ws-border);
+  }
+  .fy-logo img { width: 100%; height: 100%; object-fit: contain; }
+  .fy-letter { font-weight: 700; font-size: 15px; color: var(--ws-primary); }
+  .fy-main { min-width: 0; flex: 1; }
+  .fy-title { font-size: 14px; font-weight: 600; line-height: 1.35; }
+  .fy-meta { font-size: 12.5px; color: var(--ws-text-secondary); margin-top: 3px; }
+  .fy-why { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .fy-chip {
+    font-size: 11px; padding: 2px 7px; border-radius: 999px;
+    background: var(--ws-primary-subtle); color: var(--ws-primary); font-weight: 600;
+  }
+  .fy-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .fy-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .fy-pct { font-size: 19px; font-weight: 700; line-height: 1; }
+  .fy-pct-label { font-size: 10.5px; color: var(--ws-text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+  .fy-good { color: var(--ws-success, #1a7f52); }
+  .fy-warn { color: var(--ws-warning, #b26b00); }
+  .fy-bad  { color: var(--ws-text-secondary); }
+  .fy-skel { height: 86px; border-radius: 12px; border: 1px solid var(--ws-border);
+             background: var(--ws-surface); opacity: .55; }
+  .fy-note { font-size: 12.5px; color: var(--ws-text-secondary); }
+  @media (max-width: 640px) { .fy-card { flex-wrap: wrap; } .fy-side { align-items: flex-start; } }
+</style>
+
+<div class="ws-page-header">
+  <div>
+    <h1 class="ws-page-title">For you</h1>
+    <p class="ws-page-subtitle">
+      A short, ranked shortlist matched to your resume — instead of a search box.
+    </p>
+  </div>
+  <button class="ws-btn ws-btn-secondary ws-btn-sm" id="fyRefresh" onclick="fyReload()">Refresh</button>
+</div>
+
+<div id="fyKeywords" class="fy-note" style="margin-bottom: 14px;">Matched on skills from your latest analysis: <span class="fy-chip">AWS</span> <span class="fy-chip">Kubernetes</span> <span class="fy-chip">Microservices</span> <span class="fy-chip">Kafka</span> <span class="fy-chip">Java</span> <span class="fy-chip">System Design</span> <span class="fy-chip">Distributed Systems</span></div>
+<div id="fyBody"><div class="fy-list"><div class="fy-card" id="fyCard0"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/servicenow.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Sr Software Engineer - Cloud Platform—Kubernetes, Hyperscalers &amp; Distributed Systems</div><div class="fy-meta">ServiceNow · Hyderabad, , India · hybrid · Full-time</div><div class="fy-why"><span class="fy-chip">Kubernetes</span><span class="fy-chip">Distributed Systems</span></div><div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer's ATS</div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView0">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave0">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor0">Tailor for this</button></div></div><div class="fy-side" id="fySide0"><div class="fy-pct fy-good">85%</div><div class="fy-pct-label">match</div></div></div><div class="fy-card" id="fyCard1"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/servicenow.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Staff Software Engineer - Data Platform - Kubernetes - Distributed Systems - Federal</div><div class="fy-meta">ServiceNow · San Diego, CALIFORNIA, United States · hybrid · Full-time</div><div class="fy-why"><span class="fy-chip">Kubernetes</span><span class="fy-chip">Distributed Systems</span></div><div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer's ATS</div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView1">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave1">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor1">Tailor for this</button></div></div><div class="fy-side" id="fySide1"><div class="fy-pct fy-good">78%</div><div class="fy-pct-label">match</div></div></div><div class="fy-card" id="fyCard2"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/adyen.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Java Engineer in Java Application Core Components team</div><div class="fy-meta">Adyen · Amsterdam · onsite</div><div class="fy-why"><span class="fy-chip">Kubernetes</span><span class="fy-chip">Java</span><span class="fy-chip">Distributed Systems</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView2">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave2">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor2">Tailor for this</button></div></div><div class="fy-side" id="fySide2"><div class="fy-pct fy-good">75%</div><div class="fy-pct-label">match</div></div></div><div class="fy-card" id="fyCard3"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/bitpanda.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Software Engineer, Java (Asset Systems)</div><div class="fy-meta">Bitpanda · Vienna, Vienna, Austria · onsite</div><div class="fy-why"><span class="fy-chip">AWS</span><span class="fy-chip">Kubernetes</span><span class="fy-chip">Microservices</span><span class="fy-chip">Kafka</span><span class="fy-chip">Java</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView3">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave3">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor3">Tailor for this</button></div></div><div class="fy-side" id="fySide3"><div class="fy-pct fy-good">70%</div><div class="fy-pct-label">match</div></div></div><div class="fy-card" id="fyCard4"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/rubrik.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Software Engineer, Atlas Distributed Systems </div><div class="fy-meta">Rubrik Job Board · Palo Alto, CA · onsite</div><div class="fy-why"><span class="fy-chip">AWS</span><span class="fy-chip">Kubernetes</span><span class="fy-chip">Distributed Systems</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView4">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave4">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor4">Tailor for this</button></div></div><div class="fy-side" id="fySide4"><div class="fy-pct fy-warn">58%</div><div class="fy-pct-label">match</div></div></div><div class="fy-card" id="fyCard5"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/adyen.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Senior Software Engineer (Java) - Banking Accounts</div><div class="fy-meta">Adyen · Chicago · onsite</div><div class="fy-why"><span class="fy-chip">Java</span><span class="fy-chip">Distributed Systems</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView5">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave5">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor5">Tailor for this</button></div></div><div class="fy-side" id="fySide5"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch5">Check match</button></div></div><div class="fy-card" id="fyCard6"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/elastic.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Java Developer II - AutoOps Services - Platform Applications</div><div class="fy-meta">Elastic · Canada · onsite</div><div class="fy-why"><span class="fy-chip">Java</span><span class="fy-chip">System Design</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView6">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave6">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor6">Tailor for this</button></div></div><div class="fy-side" id="fySide6"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch6">Check match</button></div></div><div class="fy-card" id="fyCard7"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/unifonic.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Senior Java Software Engineer</div><div class="fy-meta">Unifonic · Cairo, Al Qāhirah, Egypt · onsite · Full-time</div><div class="fy-why"><span class="fy-chip">AWS</span><span class="fy-chip">Java</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView7">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave7">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor7">Tailor for this</button></div></div><div class="fy-side" id="fySide7"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch7">Check match</button></div></div><div class="fy-card" id="fyCard8"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/servicenow.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Senior Staff Data Platform Engineer - Kafka - Apache Iceberg - Apache Spark</div><div class="fy-meta">ServiceNow · San Diego, CALIFORNIA, United States · hybrid · Full-time</div><div class="fy-why"><span class="fy-chip">Kafka</span></div><div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer's ATS</div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView8">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave8">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor8">Tailor for this</button></div></div><div class="fy-side" id="fySide8"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch8">Check match</button></div></div><div class="fy-card" id="fyCard9"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/anthropic.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">AWS GTM Partnership Lead, Global System Integrators</div><div class="fy-meta">Anthropic · San Francisco, CA | New York City, NY | Seattle, WA · onsite</div><div class="fy-why"><span class="fy-chip">AWS</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView9">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave9">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor9">Tailor for this</button></div></div><div class="fy-side" id="fySide9"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch9">Check match</button></div></div><div class="fy-card" id="fyCard10"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/anthropic.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">AWS Partnerships Lead, DACH</div><div class="fy-meta">Anthropic · Munich, Germany · onsite</div><div class="fy-why"><span class="fy-chip">AWS</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView10">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave10">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor10">Tailor for this</button></div></div><div class="fy-side" id="fySide10"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch10">Check match</button></div></div><div class="fy-card" id="fyCard11"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/servicenow.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Senior Software Engineer - Data Platform - Kubernetes - Federal</div><div class="fy-meta">ServiceNow · San Diego, CALIFORNIA, United States · hybrid · Full-time</div><div class="fy-why"><span class="fy-chip">Kubernetes</span></div><div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer's ATS</div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView11">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave11">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor11">Tailor for this</button></div></div><div class="fy-side" id="fySide11"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch11">Check match</button></div></div><div class="fy-card" id="fyCard12"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/braze.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Senior Partner Account Director - Technology Partnerships - AWS</div><div class="fy-meta">Braze · Austin · onsite</div><div class="fy-why"><span class="fy-chip">AWS</span></div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView12">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave12">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor12">Tailor for this</button></div></div><div class="fy-side" id="fySide12"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch12">Check match</button></div></div><div class="fy-card" id="fyCard13"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/wise.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Senior Software Engineer I - Global KYC and Onboarding - Java</div><div class="fy-meta">Wise · London, , United Kingdom · onsite · Full-time</div><div class="fy-why"><span class="fy-chip">Java</span></div><div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer's ATS</div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView13">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave13">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor13">Tailor for this</button></div></div><div class="fy-side" id="fySide13"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch13">Check match</button></div></div><div class="fy-card" id="fyCard14"><span class="fy-logo"><img src="https://icons.duckduckgo.com/ip3/deliveryhero.com.ico" alt="" loading="lazy"></span><div class="fy-main"><div class="fy-title">Engineer II, Kotlin/Java - (Logistics Optimisation, Routing Core)</div><div class="fy-meta">Delivery Hero · Berlin, , Germany · onsite · Full-time</div><div class="fy-why"><span class="fy-chip">Java</span></div><div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer's ATS</div><div class="fy-actions"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView14">View posting <span aria-hidden="true" style="opacity:.7;">↗</span></button><button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave14">Save</button><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor14">Tailor for this</button></div></div><div class="fy-side" id="fySide14"><button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch14">Check match</button></div></div></div></div>
+
+<script>
+(function () {
+  var loaded = false;
+  var jobs = [];
+
+  function esc(s) {
+    return (s == null ? '' : String(s)).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function toast(msg) { if (window.showToast) window.showToast(msg, 'info'); }
+  function toneClass(p) { return p >= 70 ? 'fy-good' : p >= 40 ? 'fy-warn' : 'fy-bad'; }
+  function body() { return document.getElementById('fyBody'); }
+
+  // Only fetch once per page load. switchSection() calls initForYou on every
+  // visit to the tab, and refetching there would re-run the AI scoring each
+  // time the user flicks between tabs. Refresh is an explicit button instead.
+  window.initForYou = function () { if (!loaded) load(); };
+  window.fyReload = function () { loaded = false; jobs = []; load(); };
+
+  async function load() {
+    loaded = true;
+    var host = body();
+    host.innerHTML = '<div class="fy-list">' +
+      new Array(6).join('<div class="fy-skel"></div>') + '</div>';   // join gives n-1
+    document.getElementById('fyKeywords').style.display = 'none';
+
+    var data;
+    try {
+      var res = await fetch('/api/digest');
+      data = await res.json();
+      if (!res.ok) throw new Error(data && data.error ? data.error : 'Request failed');
+    } catch (e) {
+      loaded = false;   // a failed load must be retryable
+      host.innerHTML = state(
+        'Could not build your shortlist',
+        'Something went wrong reaching the matching service. Try again in a moment.',
+        '<button class="ws-btn ws-btn-primary" onclick="fyReload()">Try again</button>');
+      return;
+    }
+
+    // A brand-new account has no analysis to match against. That is a normal
+    // state with a clear next step, not an error and not an empty list.
+    if (data.no_resume) {
+      host.innerHTML = state(
+        'Analyze a resume first',
+        'We match roles against the skills your latest analysis found. Once you have run one, your shortlist appears here.',
+        '<button class="ws-btn ws-btn-primary" onclick="switchSection(\'analysis-upload\')">Analyze a resume</button>');
+      return;
+    }
+
+    jobs = data.candidates || [];
+    if (!jobs.length) {
+      host.innerHTML = state(
+        'Nothing matched yet',
+        'No roles posted in the last 30 days matched your resume’s skills. The job corpus refreshes daily, so this is worth checking again.',
+        '<button class="ws-btn ws-btn-secondary" onclick="switchSection(\'jobsearch\')">Browse all jobs</button>');
+      return;
+    }
+
+    var kw = document.getElementById('fyKeywords');
+    if ((data.keywords || []).length) {
+      kw.innerHTML = 'Matched on skills from your latest analysis: ' +
+        data.keywords.map(function (k) { return '<span class="fy-chip">' + esc(k) + '</span>'; }).join(' ');
+      kw.style.display = '';
+    }
+
+    render();
+    autoScore();
+  }
+
+  // Single place that paints the list, so `reorder` repaints identically to
+  // the first load. Every piece of per-card state the user can have caused
+  // (_match, _saved, _opened) lives on the job object rather than in the DOM,
+  // so a repaint cannot silently discard a Save the user made while the
+  // scoring batch was still running.
+  function render() {
+    body().innerHTML = '<div class="fy-list">' +
+      jobs.map(function (j, i) { return card(j, i); }).join('') + '</div>';
+    jobs.forEach(function (j, i) { wire(i); });
+  }
+
+  function state(title, desc, action) {
+    return '<div class="ws-card" style="padding:44px 24px;text-align:center;">' +
+      '<h2 style="font-size:16px;font-weight:600;margin-bottom:6px;">' + esc(title) + '</h2>' +
+      '<p style="font-size:13px;color:var(--ws-text-secondary);max-width:430px;' +
+      'margin:0 auto 18px;line-height:1.6;">' + desc + '</p>' + action + '</div>';
+  }
+
+  function card(job, i) {
+    var initial = esc((job.company || '?').trim().charAt(0).toUpperCase() || '?');
+    var logo = job.company_logo
+      ? '<span class="fy-logo"><img src="' + esc(job.company_logo) + '" alt="" loading="lazy"></span>'
+      : '<span class="fy-logo"><span class="fy-letter">' + initial + '</span></span>';
+
+    var bits = [];
+    if (job.company) bits.push(esc(job.company));
+    if (job.location) bits.push(esc(job.location));
+    if (job.work_mode) bits.push(esc(job.work_mode));
+    if (job.employment_type) bits.push(esc(job.employment_type));
+
+    // Say WHY the role surfaced. A bare score the user cannot interrogate is
+    // indistinguishable from a broken one.
+    var why = (job.matched_keywords || []).slice(0, 6).map(function (k) {
+      return '<span class="fy-chip">' + esc(k) + '</span>';
+    }).join('');
+
+    // The stored URL is the employer's own application page for every ATS
+    // row, but the label still follows apply_is_direct rather than asserting
+    // it, so this cannot start lying if a non-direct source is ever merged in.
+    var viewLabel = job.apply_is_direct ? 'View posting' : ('View on ' + (job.source || 'source'));
+    var acct = job.requires_account
+      ? '<div class="ws-badge ws-badge-warn" style="margin-top:10px;">Applying needs an account with this employer&#39;s ATS</div>'
+      : '';
+
+    var viewBtn = job._opened
+      ? '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView' + i + '" disabled>Opened &#8599;</button>'
+      : '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyView' + i + '">' +
+          esc(viewLabel) + ' <span aria-hidden="true" style="opacity:.7;">&#8599;</span></button>';
+    var saveBtn = job._saved
+      ? '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave' + i + '" disabled>Saved</button>'
+      : '<button class="ws-btn ws-btn-secondary ws-btn-sm" id="fySave' + i + '">Save</button>';
+    var side = job._match != null
+      ? '<div class="fy-pct ' + toneClass(job._match) + '">' + job._match + '%</div>' +
+        '<div class="fy-pct-label">match</div>'
+      : '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch' + i + '">Check match</button>';
+
+    return '<div class="fy-card" id="fyCard' + i + '">' + logo +
+      '<div class="fy-main">' +
+        '<div class="fy-title">' + esc(job.title || 'Untitled role') + '</div>' +
+        '<div class="fy-meta">' + bits.join(' &middot; ') + '</div>' +
+        (why ? '<div class="fy-why">' + why + '</div>' : '') + acct +
+        '<div class="fy-actions">' + viewBtn + saveBtn +
+          '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyTailor' + i + '">Tailor for this</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fy-side" id="fySide' + i + '">' + side + '</div>' +
+    '</div>';
+  }
+
+  function wire(i) {
+    var job = jobs[i];
+    var card = document.getElementById('fyCard' + i);
+    if (!card) return;
+    // Bound in JS, not an inline onerror="" - the inline form needs quotes
+    // nested three deep and takes the whole script block down when one level
+    // loses its escaping (see the note in jobsearch.html).
+    var img = card.querySelector('.fy-logo img');
+    if (img) {
+      var initial = (job.company || '?').trim().charAt(0).toUpperCase() || '?';
+      img.addEventListener('error', function () {
+        var box = img.parentNode;
+        if (box) box.innerHTML = '<span class="fy-letter">' + esc(initial) + '</span>';
+      });
+      if (img.complete && img.naturalWidth === 0) img.dispatchEvent(new Event('error'));
+    }
+    byId('fyView' + i, function (b) { b.addEventListener('click', function () { applyJob(i, b); }); });
+    byId('fySave' + i, function (b) { b.addEventListener('click', function () { saveJob(i, b); }); });
+    byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
+    byId('fyTailor' + i, function (b) { b.addEventListener('click', function () { tailorFor(i); }); });
+  }
+
+  function byId(id, fn) { var el = document.getElementById(id); if (el) fn(el); }
+
+  // Score the top few automatically, two in flight at a time so the first
+  // percentages appear in a couple of seconds rather than after a serial
+  // walk of the whole list.
+  var AUTO_SCORE = 5, CONCURRENCY = 2;
+
+  function autoScore() {
+    var next = 0;
+    function worker() {
+      if (next >= Math.min(AUTO_SCORE, jobs.length)) return Promise.resolve();
+      var i = next++;
+      return checkMatch(i, false).then(worker);
+    }
+    var runners = [];
+    for (var w = 0; w < CONCURRENCY; w++) runners.push(worker());
+    return Promise.all(runners).then(reorder);
+  }
+
+  // Re-order ONCE, after the auto-scored batch lands.
+  //
+  // The two numbers on this screen come from different stages: the list
+  // arrives ordered by keyword `match_score`, but the figure each card DISPLAYS
+  // is the AI match percentage. Left alone those disagree visibly - the first
+  // render measured 30%, 68%, 20%, 20%, 20% straight down the page, which reads
+  // as a broken ranking whatever the shortlist logic did. The keyword score
+  // decides WHICH roles make the shortlist; the percentage decides the order of
+  // the ones actually scored.
+  //
+  // Deliberately a single reflow after the batch, not a re-sort per arriving
+  // score, which would shuffle cards under the user's cursor while they read.
+  // Unscored roles keep their keyword order and stay below the scored ones,
+  // since there is no percentage to rank them by - they are not claimed to be
+  // worse, just not yet measured.
+  function reorder() {
+    if (!jobs.length) return;
+    var scored = jobs.filter(function (j) { return j._match != null; });
+    if (scored.length < 2) return;
+    var rest = jobs.filter(function (j) { return j._match == null; });
+    scored.sort(function (a, b) { return b._match - a._match; });
+    jobs = scored.concat(rest);
+    render();
+  }
+
+  async function checkMatch(i, manual) {
+    var job = jobs[i];
+    var side = document.getElementById('fySide' + i);
+    if (!side || job._match != null) return;
+    var desc = (job.description || '').trim();
+    if (!desc) desc = (job.title || '') + ' at ' + (job.company || '');
+
+    side.innerHTML = '<span class="fy-pct-label">Scoring…</span>';
+    try {
+      var res = await fetch('/api/jobs/match', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: desc })
+      });
+      var d = await res.json();
+      if (d.no_resume || d.error) {
+        side.innerHTML = '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch' + i + '">Check match</button>';
+        byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
+        if (manual) toast(d.error || 'Analyze a resume first to see matches.');
+        return;
+      }
+      job._match = d.match_percent;
+      side.innerHTML =
+        '<div class="fy-pct ' + toneClass(d.match_percent) + '">' + d.match_percent + '%</div>' +
+        '<div class="fy-pct-label">match</div>';
+    } catch (e) {
+      side.innerHTML = '<button class="ws-btn ws-btn-ghost ws-btn-sm" id="fyMatch' + i + '">Check match</button>';
+      byId('fyMatch' + i, function (b) { b.addEventListener('click', function () { checkMatch(i, true); }); });
+      if (manual) toast('Could not compute match.');
+    }
+  }
+
+  async function saveJob(i, btn) {
+    var job = jobs[i];
+    btn.disabled = true;
+    try {
+      var res = await fetch('/api/jobs/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: job.title, company: job.company, location: job.location,
+          listing_url: job.redirect_url,
+          match_percent: (job._match != null ? job._match : null)
+        })
+      });
+      if (res.ok) { job._saved = true; btn.textContent = 'Saved'; toast('Saved to your pipeline.'); }
+      else { btn.disabled = false; toast('Could not save this role.'); }
+    } catch (e) { btn.disabled = false; toast('Could not save this role.'); }
+  }
+
+  // Opening a posting is NOT an application. It is tracked as 'Viewed' and the
+  // user self-reports the application later, exactly as Browse does.
+  async function applyJob(i, btn) {
+    var job = jobs[i];
+    if (job.redirect_url) window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
+    btn.disabled = true;
+    try {
+      var res = await fetch('/api/jobs/track', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_title: job.title, company: job.company, location: job.location,
+          listing_url: job.redirect_url,
+          match_percent: (job._match != null ? job._match : null)
+        })
+      });
+      if (res.ok) {
+        job._opened = true;
+        btn.textContent = 'Opened ↗';
+        toast('Opened listing — saved to your tracker.');
+      } else { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+    } catch (e) { btn.disabled = false; toast('Opened listing, but could not track it.'); }
+  }
+
+  // Hands the job description to the analysis flow, which is what actually
+  // tailors a resume against a role today.
+  function tailorFor(i) {
+    var job = jobs[i];
+    var jd = (job.description || '').trim();
+    if (!jd) jd = (job.title || '') + ' at ' + (job.company || '');
+    try {
+      if (typeof switchSection === 'function') switchSection('analysis-upload');
+      var box = document.getElementById('analysisJobDesc');
+      if (box) { box.value = jd; box.dispatchEvent(new Event('input', { bubbles: true })); }
+      toast('Job description loaded — pick your resume to tailor it.');
+    } catch (e) { toast('Could not open the tailoring step.'); }
+  }
+})();
+</script>
+        </section>
+</main>
+</div>
+</div>
+</body></html>

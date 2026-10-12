@@ -313,6 +313,14 @@
             </select>
             <span class="jp-help">Hides employers whose ATS asks you to register first.</span>
           </div>
+          <div class="jp-filter">
+            <label for="jpVisa">Visa sponsorship</label>
+            <div class="ws-input-group" style="display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="jpVisa" class="ws-checkbox" style="width:18px; height:18px; accent-color:var(--ws-primary);">
+              <span style="font-size:13px; color:var(--ws-text);">Show only jobs offering visa sponsorship</span>
+            </div>
+            <span class="jp-help">Filters for employers mentioning H-1B, work permit, or visa support.</span>
+          </div>
           <div class="jp-filter jp-span2">
             <label for="jpExclude">Exclude keywords</label>
             <input class="ws-input" id="jpExclude" placeholder="e.g. senior, sales">
@@ -350,6 +358,21 @@
     <button type="button" class="jp-desk ws-btn ws-btn-secondary ws-btn-sm" data-desk="staff-plus" onclick="loadDesk(this)">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Staff+
     </button>
+  </div>
+
+  <!-- Browse by location: quick links to top hiring cities in India -->
+  <div class="jp-browse-locations" style="margin:16px 0 8px;">
+    <span style="font-size:12px; font-weight:600; color:var(--ws-text-secondary); margin-right:8px;">Browse by city:</span>
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Bengaluru')">Bengaluru</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Hyderabad')">Hyderabad</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Pune')">Pune</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Chennai')">Chennai</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Mumbai')">Mumbai</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Delhi NCR')">Delhi NCR</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Kolkata')">Kolkata</button>
+      <button type="button" class="ws-btn ws-btn-ghost ws-btn-sm" onclick="browseLocation('Ahmedabad')">Ahmedabad</button>
+    </div>
   </div>
 
   <div class="jp-split" id="jpSplit">
@@ -472,6 +495,7 @@
     { id:'jpWorkMode',   label:'Work mode' },
     { id:'jpMaxDays',    label:'Posted' },
     { id:'jpApply',      label:'Applying' },
+    { id:'jpVisa',       label:'Visa sponsorship' },
     { id:'jpExclude',    label:'Excluding' }
   ];
 
@@ -592,8 +616,10 @@
       var workMode = val('jpWorkMode'); if (workMode) params.set('work_mode', workMode);
       var experience = val('jpExperience'); if (experience) params.set('experience_level', experience);
       if (val('jpApply') === 'guest') params.set('guest_apply', '1');
+      if (document.getElementById('jpVisa').checked) params.set('visa_sponsorship', '1');
       var sortBy = val('jpSortBy'); if (sortBy) params.set('sort_by', sortBy);
       currentPage = 1;
+      trackEvent('search', { country: country, what: what || '', where: where || '', work_mode: workMode || '', experience_level: experience || '', visa_sponsorship: document.getElementById('jpVisa').checked });
     }
     try {
       var res = await fetch('/api/jobs/search?' + params.toString());
@@ -689,10 +715,14 @@
           : job.experience_level.charAt(0).toUpperCase() + job.experience_level.slice(1);
         sub.push('<span class="ws-badge ws-badge-good">' + esc(expLabel) + '</span>');
       }
-      // Set expectations before the click: SmartRecruiters is the one source
+// Set expectations before the click: SmartRecruiters is the one source
       // whose apply flow needs an account, where the rest allow a guest apply.
       if (job.requires_account) {
-        sub.push('<span class="ws-badge ws-badge-warn" title="This employer&#39;s application site asks you to create an account (or sign in) before applying.">Account required</span>');
+        sub.push('<span class="ws-badge ws-badge-warn" title="This employer\'s application site asks you to create an account (or sign in) before applying.">Account required</span>');
+      }
+      // Visa sponsorship badge — key for international students.
+      if (job.visa_sponsorship) {
+        sub.push('<span class="ws-badge ws-badge-good" title="Employer mentions visa sponsorship / work permit support.">Visa sponsorship</span>');
       }
       if (isNew(job.created)) sub.unshift('<span class="jp-new">New</span>');
       if (job.created) sub.push('<span>' + esc(fmtAgo(job.created)) + '</span>');
@@ -762,7 +792,7 @@
   }
 
   // -- Detail panel --------------------------------------------------------
-  function selectJob(idx) {
+function selectJob(idx) {
     var job = currentList[idx];
     if (!job) return;
     selectedIdx = idx;
@@ -771,6 +801,7 @@
       function (c, i) { c.classList.toggle('jp-selected', i === idx); });
     document.getElementById('jpSplit').classList.add('jp-showing-detail');
     renderDetail(job);
+    trackEvent('job_view', { job_fingerprint: job.fingerprint, source: job.source, platform: job.platform, work_mode: job.work_mode, experience_level: job.experience_level });
     // On a narrow screen the list is hidden and the detail becomes the active
     // view. Move it to the viewport instead of leaving a reader at the old
     // list scroll position after choosing a low card.
@@ -801,8 +832,11 @@ var bits = [];
     if (job.last_checked_at) bits.push('Employer board checked ' + esc(fmtDate(job.last_checked_at)));
     var salary = job.salary_text ? job.salary_text
       : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
-    if (salary) bits.push(esc(salary));
+if (salary) bits.push(esc(salary));
     if (job.employment_type) bits.push(esc(job.employment_type));
+    if (job.visa_sponsorship) {
+      bits.push('<span class="ws-badge ws-badge-good" title="Employer mentions visa sponsorship / work permit support.">Visa sponsorship</span>');
+    }
 
     // Same honesty rule as the card: never imply a direct application when the
     // link only reaches an aggregator.
@@ -908,6 +942,7 @@ var bits = [];
   // roles the user has not applied to yet.
   async function saveJob(job, btn) {
     btn.disabled = true;
+    trackEvent('save_click', { job_fingerprint: job.fingerprint, source: job.source });
     try {
       var res = await fetch('/api/jobs/track', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -926,6 +961,7 @@ var bits = [];
   async function dismissJob(job, btn) {
     if (!job.fingerprint) { toast('Cannot dismiss this listing.'); return; }
     btn.disabled = true; btn.textContent = 'Hiding…';
+    trackEvent('hide_click', { job_fingerprint: job.fingerprint, source: job.source });
     try {
       var res = await fetch('/api/jobs/dismiss', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1007,6 +1043,7 @@ var bits = [];
   async function applyJob(job, card, btn) {
     if (job.redirect_url) window.open(job.redirect_url, '_blank', 'noopener,noreferrer');
     btn.disabled = true;
+    trackEvent('apply_click', { job_fingerprint: job.fingerprint, source: job.source, platform: job.platform });
     try {
       var res = await fetch('/api/jobs/track', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -1111,6 +1148,15 @@ var bits = [];
     window.addEventListener('focus', maybeShowConfirm);
   }
 
+  // Minimal analytics — privacy-conscious, no PII beyond user_id (sent via session cookie)
+  function trackEvent(eventType, eventData) {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/analytics/event', JSON.stringify({ event_type: eventType, event_data: eventData }));
+    } else {
+      fetch('/api/analytics/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_type: eventType, event_data: eventData }), keepalive: true });
+    }
+  }
+
   // Market Desks: curated starting points that run a targeted search
   var DESK_SPECS = {
     'just-posted': { what: '', max_days_old: '1', sort_by: 'date' },
@@ -1161,6 +1207,14 @@ var bits = [];
     doSearch(null, false);
   }
 
+  // Browse by location — quick links to top hiring cities
+  function browseLocation(city) {
+    clearDeskSelection();
+    document.getElementById('jpWhere').value = city;
+    currentPage = 1;
+    doSearch(null, false);
+  }
+
   function clearDeskSelection() {
     activeDesk = null;
     document.querySelectorAll('.jp-desk').forEach(function(b){ b.classList.remove('active', 'ws-btn-primary'); b.classList.add('ws-btn-secondary'); });
@@ -1171,6 +1225,7 @@ var bits = [];
     if (inited) return;
     inited = true;
     wire();
+    trackEvent('page_view', { page: 'jobsearch' });
     // Browse-first: land on results, not on an empty box. doSearch() already
     // tolerates an empty title/location -- it only needs the country, which
     // loadCountries() sets -- so the page opens with the newest listings for

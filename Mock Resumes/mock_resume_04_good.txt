@@ -1,0 +1,61 @@
+Michael Okafor
+michael.okafor@gmail.com | (555) 777-8888
+linkedin.com/in/michaelokafor | Seattle, WA | (206) 555-7777
+
+PROFESSIONAL SUMMARY
+Senior Software Engineer with 7+ years of experience architecting distributed systems and leading platform engineering initiatives. Specializing in scalable microservices, cloud-native architecture on AWS, and mentoring engineering teams. Reduced infrastructure costs by 40% and improved system reliability to 99.97% uptime across three major platform migrations.
+
+CORE COMPETENCIES
+• Distributed Systems & Microservices Architecture
+• Cloud Infrastructure (AWS, GCP)
+• Java, Kotlin, Python, Go
+• Kubernetes, Docker, Terraform
+• System Design & Performance Optimization
+• Technical Leadership & Mentoring
+• CI/CD & Developer Experience
+
+PROFESSIONAL EXPERIENCE
+
+Senior Software Engineer | Atlas Commerce | Seattle, WA
+Jan 2021 - Present
+• Architected event-driven microservices platform handling 10M+ daily transactions using Java 17, Spring Boot, and Apache Kafka, improving system throughput by 300%
+• Designed and implemented multi-region active-active deployment on AWS EKS serving users across US, EU, and APAC with sub-100ms p99 latency
+• Reduced cloud infrastructure costs by $1.2M annually through right-sizing, spot instance adoption, and implementing auto-scaling policies
+• Led migration of 60+ services from monolithic architecture to event-driven microservices over 18 months with zero downtime
+• Established engineering standards including code review processes, testing requirements (85% coverage minimum), and incident response playbooks
+• Mentored 5 mid-level engineers through promotion cycles, with 3 achieving senior titles
+
+Software Engineer II | NexaPay | San Francisco, CA
+June 2018 - Dec 2020
+• Built real-time payment processing pipeline handling $500M+ monthly transaction volume with exactly-once semantics using Kafka Streams and PostgreSQL
+• Reduced payment settlement latency from 24 hours to 90 seconds by redesigning batch processing to streaming architecture
+• Implemented distributed tracing across 25+ microservices using OpenTelemetry and Jaeger, reducing mean time to resolution by 60%
+• Designed and implemented idempotent API patterns preventing duplicate payment processing, saving $2M+ in potential losses
+
+Software Engineer | HealthBridge Technologies | San Francisco, CA
+Sept 2016 - May 2018
+• Developed HIPAA-compliant patient data platform serving 500+ hospitals nationwide
+• Built scalable document storage system using AWS S3 and DynamoDB handling 2M+ medical records
+• Implemented role-based access control (RBAC) system for 50k+ healthcare provider users
+• Reduced database query latency by 70% through index optimization and query refactoring
+
+EDUCATION
+
+Carnegie Mellon University — Master of Science in Computer Science (2016)
+• Research: Distributed Consensus Protocols
+• GPA: 3.8
+
+University of Washington — Bachelor of Science in Computer Engineering (2014)
+• Magna Cum Laude | GPA: 3.7
+• Dean's List all semesters
+
+PUBLICATIONS & TALKS
+• "Event-Driven Architecture at Scale" — AWS re:Invent 2023 Conference Speaker
+• "Migrating Monoliths to Microservices: A Practical Guide" — IEEE Software Magazine, 2022
+• "Distributed Tracing in Production Systems" — QCon San Francisco 2022
+
+CERTIFICATIONS
+• AWS Solutions Architect — Professional
+• Certified Kubernetes Administrator (CKA)
+• Google Cloud Professional Data Engineer
+</attachment>

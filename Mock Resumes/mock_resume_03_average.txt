@@ -1,0 +1,55 @@
+Priya Sharma
+priya.sharma@icloud.com | (555) 555-6666 | linkedin.com/in/priyasharma
+Austin, TX | (512) 555-6666
+
+PROFESSIONAL SUMMARY
+Full Stack Engineer with 4+ years of experience building web applications using React, Python, and AWS. Passionate about clean code and user experience.
+
+TECHNICAL SKILLS
+Languages: JavaScript/TypeScript, Python, SQL, HTML/CSS
+Frameworks: React, Node.js, Express, Flask, Django
+Cloud & DevOps: AWS (EC2, S3, Lambda), Docker, GitHub Actions
+Databases: PostgreSQL, MongoDB, Redis
+Tools: Git, Jira, Datadog, Sentry
+
+WORK EXPERIENCE
+
+Full Stack Engineer | FinFlow | Austin, TX
+March 2022 - Present
+• Developed RESTful APIs using Node.js/Express handling 50k+ daily requests
+• Built React dashboard components with real-time data visualization using D3.js
+• Migrated legacy PHP monolith to microservices architecture
+• Reduced API response times by 35% through query optimization and Redis caching
+• Wrote unit and integration tests achieving 80% code coverage
+
+Software Engineer | CloudPulse | Dallas, TX
+June 2020 - Feb 2022
+• Built internal tools using React and Django
+• Created CI/CD pipelines using GitHub Actions for automated testing and deployment
+• Participated in on-call rotation handling production incidents
+• Mentored 2 new graduate engineers during onboarding
+
+Junior Developer | RetailHub | Austin, TX
+Jan 2019 - May 2020
+• Developed new features for e-commerce platform using Python/Django
+• Fixed average of 15 bugs per sprint
+• Collaborated with design team on UI/UX improvements
+
+EDUCATION
+
+University of Michigan, Ann Arbor
+Bachelor of Science in Computer Science (2018)
+• GPA: 3.5
+• Coursework: Data Structures, Algorithms, Operating Systems, Databases
+
+PROJECTS
+
+Real-time Chat Application
+• Built WebSocket-based chat app with React frontend and Node.js backend
+• Implemented message queuing with Redis Pub/Sub for horizontal scaling
+• Deployed on AWS ECS with auto-scaling
+
+Expense Tracker API
+• Designed and built a personal finance tracking API with Django REST Framework
+• Integrated Plaid API for automatic bank transaction syncing
+</attachment>
