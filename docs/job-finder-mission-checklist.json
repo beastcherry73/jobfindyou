@@ -1,0 +1,20 @@
+{
+  "mission": "JobSpike job finder improvement",
+  "updated_at": "2026-10-12",
+  "branch": "codex/job-finder-trust",
+  "status": "implementation_complete_pending_commit",
+  "tasks": [
+    {"id": "audit", "status": "complete", "artifact": "docs/job-finder-improvement-audit.md"},
+    {"id": "competitive_research", "status": "complete", "artifact": "docs/job-finder-improvement-audit.md"},
+    {"id": "individual_listing_freshness", "status": "complete", "files": ["backend/services/ats.py", "templates/partials/jobsearch.html", "scratch/test_ats_layer.py"]},
+    {"id": "ats_regression_tests", "status": "passed", "result": "124 passed, 0 failed, 0 skipped"},
+    {"id": "template_javascript_check", "status": "passed", "result": "8 templates, 14 inline scripts, 0 errors"},
+    {"id": "independent_review", "status": "blocked", "reason": "Separate review environment failed before source inspection"},
+    {"id": "preview_deployment", "status": "blocked", "reason": "No deployment credentials or deployment tool configured"},
+    {"id": "production_deployment", "status": "not_attempted", "reason": "Preview prerequisite unavailable"}
+  ],
+  "known_limits": [
+    "No production database or Vercel access was available.",
+    "Live inventory size, sync recency and employer-link health were not claimed."
+  ]
+}

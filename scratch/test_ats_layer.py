@@ -283,6 +283,8 @@ def test_schema():
     check("flagged as direct apply", all(r["apply_is_direct"] for r in rows))
     check("redirect_url alias kept for the tracker flow",
           all(r["redirect_url"] == r["apply_url"] for r in rows))
+    check("last_checked_at is present only from a real employer-board fetch",
+          all("last_checked_at" in r and r["last_checked_at"] for r in rows))
     check("source names the real platform",
           all(r["source"] in [p["label"] for p in ats.PLATFORMS.values()] for r in rows))
 

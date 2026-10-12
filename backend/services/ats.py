@@ -1945,7 +1945,7 @@ def search(what="", where="", country="", page=1, per_page=20, what_exclude="",
     cols = ("id, fingerprint, platform, company_token, title, company, location, "
             "country_code, work_mode, employment_type, experience_level, "
             "salary_min, salary_max, salary_currency, salary_text, posted_at, "
-            "apply_url, SUBSTR(description, 1, 1500) AS description")
+            "last_seen_at, apply_url, SUBSTR(description, 1, 1500) AS description")
     narrow = "id, company_token, title, company, posted_at, salary_max"
     base = (f"SELECT {narrow}, "
             "ROW_NUMBER() OVER (PARTITION BY LOWER(title), LOWER(company) "
@@ -2073,6 +2073,14 @@ def to_unified(row):
     posted = row.get("posted_at") or ""
     if not isinstance(posted, str):
         posted = getattr(posted, "isoformat", lambda: str(posted))()
+    # This is deliberately not called "verified" or "active". It is the
+    # timestamp of the last successful fetch in which this exact posting was
+    # returned by its employer-hosted board. That is a useful, defensible
+    # freshness signal; it does not prove that an applicant can complete every
+    # subsequent step of the employer's application flow.
+    last_checked = row.get("last_seen_at") or ""
+    if not isinstance(last_checked, str):
+        last_checked = getattr(last_checked, "isoformat", lambda: str(last_checked))()
     return {
         "id": str(row.get("id") or ""),
         "title": row.get("title") or "",
@@ -2085,6 +2093,7 @@ def to_unified(row):
         "employment_type": row.get("employment_type") or "",
         "posted_at": posted,
         "created": posted,                 # alias (existing UI date formatting)
+        "last_checked_at": last_checked,
         "publisher": label,
         "apply_url": row.get("apply_url") or "",
         "redirect_url": row.get("apply_url") or "",   # alias (Apply/tracker flow)

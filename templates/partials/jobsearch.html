@@ -318,7 +318,7 @@
   </form>
 
 <div id="jpStatus" style="font-size:12.5px;color:var(--ws-text-tertiary);margin-bottom:6px;"></div>
-  <div class="jp-attribution">Every listing comes straight from the employer's own careers site (Workday, Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, Breezy), so &ldquo;Apply&rdquo; takes you to the real application &mdash; not a job-board repost. Roles the employer takes down are removed on the next refresh.</div>
+  <div class="jp-attribution">Every listing comes from an employer-hosted careers board (Workday, Greenhouse, Lever, Ashby, SmartRecruiters, Workable, Recruitee, or Breezy), so &ldquo;View posting&rdquo; opens the original listing. Each card shows when JobSpike last saw that listing on its employer board; a later refresh removes roles no longer returned there.</div>
 
   <!-- Market Desks: curated starting points (like ResumeAX) -->
   <div class="jp-desks" id="jpDesks" style="display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 8px; padding:0 4px;">
@@ -679,6 +679,11 @@
       }
       if (isNew(job.created)) sub.unshift('<span class="jp-new">New</span>');
       if (job.created) sub.push('<span>' + esc(fmtAgo(job.created)) + '</span>');
+      // `last_checked_at` is the timestamp of a successful fetch where this
+      // exact job appeared on the employer-hosted board. It is intentionally
+      // described as a check, not as a promise that every apply flow is still
+      // available at this instant.
+      if (job.last_checked_at) sub.push('<span title="Last successful employer-board fetch">Checked ' + esc(fmtAgo(job.last_checked_at)) + '</span>');
       // Be honest about provenance: name the true publisher when the source
       // gives us one, and say plainly when the link only reaches the aggregator.
       if (job.apply_is_direct) {
@@ -764,6 +769,7 @@
     var bits = [];
     if (job.location) bits.push(esc(job.location));
     if (job.created) bits.push('Posted ' + esc(fmtDate(job.created)));
+    if (job.last_checked_at) bits.push('Employer board checked ' + esc(fmtDate(job.last_checked_at)));
     var salary = job.salary_text ? job.salary_text
       : fmtSalary(job.salary_min, job.salary_max, job.salary_is_predicted);
     if (salary) bits.push(esc(salary));
